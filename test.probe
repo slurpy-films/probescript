@@ -1,0 +1,11 @@
+function makeAdd(offset) {
+    function add(x, y) {
+        x + y + offset
+    }
+
+    add
+}
+
+var add = makeAdd(12)
+
+console.log(add(1, 2))
