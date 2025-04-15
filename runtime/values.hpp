@@ -14,7 +14,8 @@ namespace ValueType {
         Boolean,
         Object,
         NativeFn,
-        Function
+        Function,
+        String,
     };
 }
 
@@ -37,6 +38,12 @@ struct NumberVal : public RuntimeVal {
     std::string number;
 
     NumberVal(std::string val) : RuntimeVal(ValueType::Number, val), number(val) {}
+};
+
+struct StringVal : public RuntimeVal {
+    std::string string;
+
+    StringVal(std::string val) : RuntimeVal(ValueType::String, val), string(val) {}
 };
 
 struct BooleanVal : public RuntimeVal {

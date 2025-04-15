@@ -130,7 +130,8 @@ class Parser {
 
                 Expr* value = parseExpr();
 
-                properties.push_back(new PropertyLiteralType(key, new NullLiteralType()));
+
+                properties.push_back(new PropertyLiteralType(key, value));
 
                 if (at().type != Lexer::ClosedBrace) {
                     expect(Lexer::Comma, "Expected comma");
@@ -212,7 +213,7 @@ class Parser {
             while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket) {
                 Lexer::Token op = eat();
                 Expr* property;
-                bool computed = false;
+                bool computed;
 
                 if (op.type == Lexer::Dot) {
                     computed = false;

@@ -56,16 +56,43 @@ NumberVal* evalNumericBinExpr(NumberVal* lhs, NumberVal* rhs, string op) {
 }
 
 RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
-    RuntimeVal* obj = eval(expr->object);
+    RuntimeVal* obj = eval(expr->object, env);
 
     if (obj->type != ValueType::Object) {
         cerr << "Cannot find member of non object";
         exit(1);
     }
 
-    ObjectVal* object = static_cast<ObjectVal*>(obj);
+    string key;
 
-    return object->properties.find(expr.)
+    if (expr->computed) {
+        RuntimeVal* propValue = eval(expr->property, env);
+
+        if (propValue->type != ValueType::String) {
+            cerr << "Computed property must evaluate to a string";
+            exit(1);
+        }
+
+        key = static_cast<StringVal*>(propValue)->string;
+    } else {
+        IdentifierType* ident = static_cast<IdentifierType*>(expr->property);
+        key = ident->symbol;
+    }
+
+    ObjectVal* objectVal = static_cast<ObjectVal*>(obj);
+
+    string objName = static_cast<IdentifierType*>(expr->object)->symbol;
+
+    ObjectVal* object = static_cast<ObjectVal*>(env->lookupVar(objName));
+
+    
+
+    if (object->properties.count(key) == 0) {
+        cerr << "Object has no property " << key;
+        exit(1);
+    }
+
+    return object->properties[key];
 }
 
 RuntimeVal* evalBinExpr(BinaryExprType* binop, Env* env) {
@@ -88,7 +115,6 @@ RuntimeVal* evalObject(ObjectLiteralType* obj, Env* env) {
     ObjectVal* object = new ObjectVal();
     for (PropertyLiteralType* property : obj->properties) {
         RuntimeVal* runtimeval = (property->val == nullptr) ? env->lookupVar(property->key) : eval(property->val, env);
-
         object->properties[property->key] = runtimeval;
     }
 
@@ -134,7 +160,7 @@ RuntimeVal* evalCall(CallExprType* call, Env* env) {
         return result;
     }
 
-    cerr << "Cannot call value that is not a function";
+    cerr << "Cannot call value that is not a function, " << fn->type;
     exit(1);
 }
 

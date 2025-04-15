@@ -14,21 +14,6 @@ class Env {
             if (global) {
                 declareVar("true", new BooleanVal("true"), true);
                 declareVar("false", new BooleanVal("false"), true);
-                declareVar("print", new NativeFnValue([](vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
-                    for (auto* arg : args) {
-                        switch (arg->type) {
-                            case ValueType::Number:
-                                cout << static_cast<NumberVal*>(arg)->number;
-                                break;
-
-                            default:
-                                cout << "Invalid type: " << arg->type;
-                                exit(1);
-                        }
-                    }
-                    cout << endl;
-                    return new NullVal();
-                }), true);
 
                 unordered_map<string, RuntimeVal*> console = {
                     { "log", new NativeFnValue([](vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
@@ -39,7 +24,7 @@ class Env {
                                     break;
                 
                                 default:
-                                    cout << "Invalid type: " << static_cast<int>(arg->type);
+                                    cout << "Invalid type: " << arg->type;
                                     exit(1);
                             }
                         }
