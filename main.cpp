@@ -1,5 +1,5 @@
-#include "parser.cpp"
-#include "runtime/interpreter.cpp"
+#include "parser.hpp"
+#include "runtime/interpreter.hpp"
 #include <iostream>
 #include <string>
 #include <fstream>

@@ -3,7 +3,7 @@
 #include "../ast.hpp"
 #include <cmath>
 #include <string>
-#include "env.cpp"
+#include "env.hpp"
 
 RuntimeVal* eval(Stmt* astNode, Env* env);
 

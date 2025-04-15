@@ -1,8 +1,8 @@
 #pragma once
 #include "ast.hpp"
-#include "lexer.cpp"
+#include "lexer.hpp"
 #include <iostream>
-#include "utils/shift.cpp"
+#include "utils/shift.hpp"
 
 using namespace std;
 

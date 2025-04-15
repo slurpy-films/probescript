@@ -1,8 +1,9 @@
+#pragma once
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "utils/split.cpp"
-#include "utils/shift.cpp"
+#include "utils/split.hpp"
+#include "utils/shift.hpp"
 #include <iostream>
 
 using namespace std;
