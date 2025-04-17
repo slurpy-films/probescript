@@ -6,33 +6,6 @@
 
 using namespace std;
 
-string nodeTypeToString(NodeType type) {
-    switch (type) {
-        case Program: return "Program";
-        case NumericLiteral: return "NumericLiteral";
-        case Identifier: return "Identifier";
-        case BinaryExpr: return "BinaryExpr";
-        case NullLiteral: return "NullLiteral";
-        default: return "Unknown";
-    }
-}
-
-
-void printProgram(const ProgramType* program) {
-    for (const Stmt* stmt : program->body) {
-
-        if (stmt->kind == NodeType::NumericLiteral) {
-            const NumericLiteralType* num = static_cast<const NumericLiteralType*>(stmt);
-            cout << "Number: " << num->numValue << endl;
-        } else if (stmt->kind == NodeType::BinaryExpr) {
-            const BinaryExprType* bin = static_cast<const BinaryExprType*>(stmt);
-            cout << "BinaryExpr: " << bin->value() << endl;
-        } else {
-            cout << nodeTypeToString(stmt->kind) << endl;
-        }
-    }
-}
-
 
 int main(int argc, char* argv[]) {
     Parser parser;

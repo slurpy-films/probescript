@@ -34,6 +34,9 @@ class Parser {
                     return parseVarDeclaration(true);
                 case Lexer::Function:
                     return parseFunctionDeclaration();
+                case Lexer::NewLine:
+                    eat();
+                    return parseStmt();
                 default:
                     return parseExpr();
             }
@@ -248,6 +251,9 @@ class Parser {
                 case Lexer::Number:
                     return new NumericLiteralType(stod(eat().value));
 
+                case Lexer::String:
+                    return new StringLiteralType(eat().value);
+
                 case Lexer::OpenParen: {
                     eat();
                     Expr* value = parseExpr();
@@ -267,9 +273,6 @@ class Parser {
                 default:
                     cout << "Unexpected token found while parsing: ";
                     cout << "\"" << at().value << "\": " << at().type << endl;
-                    for (int i = 0; i < tokens.size(); ++i) {
-                        cout << tokens[i].value << endl;
-                    }
                     exit(1);
             }
         }

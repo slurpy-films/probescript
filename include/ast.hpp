@@ -9,6 +9,7 @@ using namespace std;
 enum NodeType {
     Program,
     NumericLiteral,
+    StringLiteral,
     Identifier,
     BinaryExpr,
     FunctionDeclaration,
@@ -100,6 +101,15 @@ struct NumericLiteralType : public Expr {
     
     string value() const override {
         return to_string(numValue);
+    }
+};
+
+struct StringLiteralType : public Expr {
+    string strValue;
+    StringLiteralType(string val) : Expr(NodeType::StringLiteral), strValue(val) {}
+
+    string value() const override {
+        return strValue;
     }
 };
 

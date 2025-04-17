@@ -22,6 +22,10 @@ class Env {
                                 case ValueType::Number:
                                     cout << static_cast<NumberVal*>(arg)->number;
                                     break;
+
+                                case ValueType::String:
+                                    cout << static_cast<StringVal*>(arg)->string;
+                                    break;
                 
                                 default:
                                     cout << "Invalid type: " << arg->type;

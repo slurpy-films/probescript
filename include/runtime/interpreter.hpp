@@ -55,6 +55,19 @@ NumberVal* evalNumericBinExpr(NumberVal* lhs, NumberVal* rhs, string op) {
     return new NumberVal(std::to_string(result));
 }
 
+StringVal* evalStringericBinExpr(StringVal* lhs, StringVal* rhs, string op) {
+    string result = "";
+
+    string left = lhs->string;
+    string right = rhs->string;
+
+    if (op == "+") {
+        result = left + right;
+    }
+
+    return new StringVal(result);
+}
+
 RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
     RuntimeVal* obj = eval(expr->object, env);
 
@@ -103,7 +116,12 @@ RuntimeVal* evalBinExpr(BinaryExprType* binop, Env* env) {
         return evalNumericBinExpr(static_cast<NumberVal*>(left), static_cast<NumberVal*>(right), binop->op);
     }
 
-    return new NullVal();
+    if (left->type == ValueType::String && right->type == ValueType::String) {
+        return evalStringericBinExpr(static_cast<StringVal*>(left), static_cast<StringVal*>(right), binop->op);
+    }
+
+    cerr << "Invalid operants: " << left->value << " and " << right->value;
+    exit(1);
 }
 
 RuntimeVal* evalIdent(IdentifierType* ident, Env* env) {
@@ -173,8 +191,13 @@ RuntimeVal* evalVarDeclaration(VarDecalarationType* var, Env* env, bool constant
 RuntimeVal* eval(Stmt* astNode, Env* env) {
     switch (astNode->kind) {
         case NodeType::NumericLiteral: {
-            auto num = static_cast<NumericLiteralType*>(astNode);
+            NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);
             return new NumberVal(num->value());
+        }
+
+        case NodeType::StringLiteral: {
+            StringLiteralType* str = static_cast<StringLiteralType*>(astNode);
+            return new StringVal(str->value());
         }
 
         case NodeType::BinaryExpr:

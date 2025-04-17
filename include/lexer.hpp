@@ -29,7 +29,9 @@ enum TokenType {
     OpenBracket,
     CloseBracket,
     Dot,
-    Function
+    Function,
+    String,
+    NewLine,
 };
 
 struct Token {
@@ -50,7 +52,7 @@ bool isInt(const string& str) {
 }
 
 bool isSkippable(const string str) {
-    return str == " " || str == "\n" || str == "\t" || str == "\r";
+    return str == " " || str == "\t" || str == "\r";
 }
 
 unordered_map<string, TokenType> getKeyWords() {
@@ -72,6 +74,8 @@ vector<Token> tokenize(const string& sourceCode) {
     while (src.size() > 0) {
         if (isSkippable(src[0])) {
             shift(src);
+        } else if (src[0] == "\n") {
+            tokens.push_back(token(shift(src), NewLine));
         } else if (src[0] == "(") {
             tokens.push_back(token(shift(src), OpenParen));
         } else if (src[0] == ")") {
@@ -96,6 +100,19 @@ vector<Token> tokenize(const string& sourceCode) {
             tokens.push_back(token(shift(src), Semicolon));
         } else if (src[0] == ".") {
             tokens.push_back(token(shift(src), Dot));
+        } else if (src[0] == "\"") {
+            shift(src);
+            string value = "";
+            while (src[0] != "\"") {
+                if (src[0] == "\n" || src.size() <= 0) {
+                    cerr << "Expected closing quote";
+                    exit(1);
+                } 
+                value += shift(src);
+            }
+
+            shift(src);
+            tokens.push_back(token(value, String));
         } else if (isInt(src[0])) {
             string num = "";
             while (src.size() > 0 && isInt(src[0])) {
