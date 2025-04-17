@@ -21,6 +21,7 @@ enum NodeType {
     ObjectLiteral,
     MemberExpr,
     CallExpr,
+    IfStmt,
 };
 
 struct Stmt {
@@ -55,6 +56,13 @@ struct VarDecalarationType : public Stmt {
     Expr* value;
     string identifier;
     bool constant;
+};
+
+struct IfStmtType : public Stmt {
+    IfStmtType(Expr* condition, vector<Stmt*> body) : Stmt(NodeType::IfStmt), condition(condition), body(body) {}
+
+    Expr* condition;
+    vector<Stmt*> body;
 };
 
 struct AssignmentExprType : public Expr {

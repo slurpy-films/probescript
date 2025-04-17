@@ -50,6 +50,10 @@ struct BooleanVal : public RuntimeVal {
     std::string value;
 
     BooleanVal(std::string val) : RuntimeVal(ValueType::Boolean, val), value(val) {}
+
+    bool getValue() {
+        return value == "true";
+    }
 };
 
 struct ObjectVal : public RuntimeVal {

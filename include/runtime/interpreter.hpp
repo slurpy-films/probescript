@@ -68,6 +68,27 @@ StringVal* evalStringericBinExpr(StringVal* lhs, StringVal* rhs, string op) {
     return new StringVal(result);
 }
 
+RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
+    RuntimeVal* condition = eval(stmt->condition, baseEnv);
+
+    if (condition->type != ValueType::Boolean) {
+        cerr << "If statement must evaluate to a boolean";
+        exit(1);
+    }
+
+    BooleanVal* boolval = static_cast<BooleanVal*>(condition);
+
+    if (boolval->getValue()) {
+        Env* env = new Env(baseEnv);
+
+        for (Stmt* stmt : stmt->body) {
+            eval(stmt, env);
+        }
+    }
+
+    return new BooleanVal(boolval->value);
+}
+
 RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
     RuntimeVal* obj = eval(expr->object, env);
 
@@ -220,6 +241,9 @@ RuntimeVal* eval(Stmt* astNode, Env* env) {
 
         case NodeType::VarDeclaration:
             return evalVarDeclaration(static_cast<VarDecalarationType*>(astNode), env);
+
+        case NodeType::IfStmt:
+            return evalIfStmt(static_cast<IfStmtType*>(astNode), env);
 
         case NodeType::FunctionDeclaration:
             return evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(astNode), env);

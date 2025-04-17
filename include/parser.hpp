@@ -34,9 +34,11 @@ class Parser {
                     return parseVarDeclaration(true);
                 case Lexer::Function:
                     return parseFunctionDeclaration();
-                case Lexer::NewLine:
+                case Lexer::Semicolon:
                     eat();
                     return parseStmt();
+                case Lexer::If:
+                    return parseIfStmt();
                 default:
                     return parseExpr();
             }
@@ -72,6 +74,29 @@ class Parser {
             FunctionDeclarationType* fn = new FunctionDeclarationType(params, name, body);
 
             return fn;
+        }
+
+        Stmt* parseIfStmt() {
+            eat();
+            expect(Lexer::OpenParen, "Expected opening parethesis");
+
+            Expr* condition = parseExpr();
+
+            expect(Lexer::ClosedParen, "Expected closing parenthesis");
+
+            expect(Lexer::Openbrace, "Expected open brace");
+            
+            vector<Stmt*> body;
+
+            while (at().type != Lexer::END && at().type != Lexer::ClosedBrace) {
+                body.push_back(parseStmt());
+            }
+
+            expect(Lexer::ClosedBrace, "Expected closing brace");
+
+            IfStmtType* ifStmt = new IfStmtType(condition, body);
+
+            return ifStmt;
         }
 
         VarDecalarationType* parseVarDeclaration(bool isConstant = false) {

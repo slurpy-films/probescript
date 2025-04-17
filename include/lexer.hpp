@@ -31,7 +31,7 @@ enum TokenType {
     Dot,
     Function,
     String,
-    NewLine,
+    If,
 };
 
 struct Token {
@@ -52,7 +52,7 @@ bool isInt(const string& str) {
 }
 
 bool isSkippable(const string str) {
-    return str == " " || str == "\t" || str == "\r";
+    return str == " " || str == "\t" || str == "\n" || str == "\r";
 }
 
 unordered_map<string, TokenType> getKeyWords() {
@@ -61,6 +61,7 @@ unordered_map<string, TokenType> getKeyWords() {
         { "null", Null },
         { "const", Const },
         { "function", Function },
+        { "if", If },
     };
 
     return keywords;
@@ -74,8 +75,6 @@ vector<Token> tokenize(const string& sourceCode) {
     while (src.size() > 0) {
         if (isSkippable(src[0])) {
             shift(src);
-        } else if (src[0] == "\n") {
-            tokens.push_back(token(shift(src), NewLine));
         } else if (src[0] == "(") {
             tokens.push_back(token(shift(src), OpenParen));
         } else if (src[0] == ")") {
