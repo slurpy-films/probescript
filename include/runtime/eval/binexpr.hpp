@@ -2,8 +2,15 @@
 #include "ast.hpp"
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
+#include "boolbinop.hpp"
+
+static unordered_map<string, bool> booleanOperators = {{"&&", true}, {"||", true}, {">=", true}, {"<=", true}, {"<", true}, {">", true}, {"!=", true}, {"==", true}};
 
 RuntimeVal* evalBinExpr(BinaryExprType* binop, Env* env) {
+    if (booleanOperators.find(binop->op) != booleanOperators.end()) {
+        return evalBooleanBinExpr(binop, env);
+    }
+
     RuntimeVal* left = eval(binop->left, env);
     RuntimeVal* right = eval(binop->right, env);
 

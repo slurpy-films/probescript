@@ -19,6 +19,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env);
 #include "eval/object.hpp"
 #include "eval/call.hpp"
 #include "eval/vardeclaration.hpp"
+#include "eval/boolbinop.hpp"
 
 RuntimeVal* eval(Stmt* astNode, Env* env) {
     switch (astNode->kind) {

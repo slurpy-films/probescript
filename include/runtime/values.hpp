@@ -52,7 +52,7 @@ struct BooleanVal : public RuntimeVal {
     BooleanVal(std::string val) : RuntimeVal(ValueType::Boolean, val), value(val) {}
 
     bool getValue() {
-        return value == "true";
+        return value == "true" || value == "1";
     }
 };
 

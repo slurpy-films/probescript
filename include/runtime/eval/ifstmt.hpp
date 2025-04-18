@@ -7,7 +7,7 @@ RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
     RuntimeVal* condition = eval(stmt->condition, baseEnv);
 
     if (condition->type != ValueType::Boolean) {
-        cerr << "If statement must evaluate to a boolean";
+        cerr << "If statement must evaluate to a boolean, got " << condition->value;
         exit(1);
     }
 
