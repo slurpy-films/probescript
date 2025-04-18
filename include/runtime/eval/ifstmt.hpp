@@ -1,0 +1,25 @@
+#pragma once
+#include "ast.hpp"
+#include "runtime/env.hpp"
+#include "runtime/values.hpp"
+
+RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
+    RuntimeVal* condition = eval(stmt->condition, baseEnv);
+
+    if (condition->type != ValueType::Boolean) {
+        cerr << "If statement must evaluate to a boolean";
+        exit(1);
+    }
+
+    BooleanVal* boolval = static_cast<BooleanVal*>(condition);
+
+    if (boolval->getValue()) {
+        Env* env = new Env(baseEnv);
+
+        for (Stmt* stmt : stmt->body) {
+            eval(stmt, env);
+        }
+    }
+
+    return new BooleanVal(boolval->value);
+}

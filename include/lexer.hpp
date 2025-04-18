@@ -32,6 +32,10 @@ enum TokenType {
     Function,
     String,
     If,
+    AndOperator,
+    OrOperator,
+    DoubleEquals,
+    NotEquals,
 };
 
 struct Token {
@@ -72,55 +76,84 @@ vector<Token> tokenize(const string& sourceCode) {
     vector<string> src = splitToChars(sourceCode);
 
     unordered_map<string, TokenType> keywords = getKeyWords();
-    while (src.size() > 0) {
+
+    unordered_map<string, TokenType> singleCharTokens = {
+        { "(", OpenParen }, { ")", ClosedParen },
+        { "{", Openbrace }, { "}", ClosedBrace },
+        { "[", OpenBracket }, { "]", CloseBracket },
+        { ",", Comma }, { ":", Colon }, { ".", Dot },
+        { "+", BinaryOperator }, { "-", BinaryOperator },
+        { "*", BinaryOperator }, { "/", BinaryOperator },
+        { "%", BinaryOperator }, { "=", Equals },
+        { ";", Semicolon }, { "<", BinaryOperator },
+        { ">", BinaryOperator }
+    };
+
+    vector<pair<string, TokenType>> multiCharTokens = {
+        { "&&", AndOperator },
+        { "||", OrOperator },
+        { "==", DoubleEquals },
+        { "!=", NotEquals },
+        { "<=", BinaryOperator },
+        { ">=", BinaryOperator },
+    };
+
+    while (!src.empty()) {
         if (isSkippable(src[0])) {
             shift(src);
-        } else if (src[0] == "(") {
-            tokens.push_back(token(shift(src), OpenParen));
-        } else if (src[0] == ")") {
-            tokens.push_back(token(shift(src), ClosedParen));
-        } else if (src[0] == "{") {
-            tokens.push_back(token(shift(src), Openbrace));
-        } else if (src[0] == "}") {
-            tokens.push_back(token(shift(src), ClosedBrace));
-        } else if (src[0] == "[") {
-            tokens.push_back(token(shift(src), OpenBracket));
-        } else if (src[0] == "]") {
-            tokens.push_back(token(shift(src), CloseBracket));
-        } else if (src[0] == ",") {
-            tokens.push_back(token(shift(src), Comma));
-        } else if (src[0] == ":") {
-            tokens.push_back(token(shift(src), Colon));
-        } else if (src[0] == "+" || src[0] == "-" || src[0] == "*" || src[0] == "/" || src[0] == "%") {
-            tokens.push_back(token(shift(src), BinaryOperator));
-        } else if (src[0] == "=") {
-            tokens.push_back(token(shift(src), Equals));
-        } else if (src[0] == ";") {
-            tokens.push_back(token(shift(src), Semicolon));
-        } else if (src[0] == ".") {
-            tokens.push_back(token(shift(src), Dot));
-        } else if (src[0] == "\"") {
+            continue;
+        }
+
+        bool matchedMulti = false;
+        for (const auto& [symbol, type] : multiCharTokens) {
+            if (src.size() >= symbol.length()) {
+                string joined = "";
+                for (size_t i = 0; i < symbol.length(); ++i)
+                    joined += src[i];
+
+                if (joined == symbol) {
+                    for (size_t i = 0; i < symbol.length(); ++i)
+                        shift(src);
+                    tokens.push_back(token(symbol, type));
+                    matchedMulti = true;
+                    break;
+                }
+            }
+        }
+        if (matchedMulti) continue;
+
+        if (singleCharTokens.find(src[0]) != singleCharTokens.end()) {
+            tokens.push_back(token(shift(src), singleCharTokens[src[0]]));
+            continue;
+        }
+
+        if (src[0] == "\"") {
             shift(src);
             string value = "";
-            while (src[0] != "\"") {
-                if (src[0] == "\n" || src.size() <= 0) {
+            while (!src.empty() && src[0] != "\"") {
+                if (src[0] == "\n") {
                     cerr << "Expected closing quote";
                     exit(1);
-                } 
+                }
                 value += shift(src);
             }
-
-            shift(src);
+            if (!src.empty()) shift(src);
             tokens.push_back(token(value, String));
-        } else if (isInt(src[0])) {
+            continue;
+        }
+
+        if (isInt(src[0])) {
             string num = "";
-            while (src.size() > 0 && isInt(src[0])) {
+            while (!src.empty() && isInt(src[0])) {
                 num += shift(src);
             }
             tokens.push_back(token(num, Number));
-        } else if (isAlpha(src[0])) {
+            continue;
+        }
+
+        if (isAlpha(src[0])) {
             string ident = "";
-            while (src.size() > 0 && isAlpha(src[0])) {
+            while (!src.empty() && isAlpha(src[0])) {
                 ident += shift(src);
             }
             if (keywords.find(ident) != keywords.end()) {
@@ -128,17 +161,15 @@ vector<Token> tokenize(const string& sourceCode) {
             } else {
                 tokens.push_back(token(ident, Identifier));
             }
-        } else {
-            cout << "Unrecognized character found in source: ";
-            cout << src[0] << endl;
-            exit(1);
+            continue;
         }
+
+        cout << "Unrecognized character in source: " << src[0] << endl;
+        exit(1);
     }
-    
 
     tokens.push_back(token("EndOfFile", END));
-
     return tokens;
-};
+}
 
 }

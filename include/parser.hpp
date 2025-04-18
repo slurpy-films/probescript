@@ -82,7 +82,11 @@ class Parser {
 
             Expr* condition = parseExpr();
 
-            expect(Lexer::ClosedParen, "Expected closing parenthesis");
+            Lexer::Token lastToken = eat();
+            if (lastToken.type != Lexer::ClosedParen) {
+                cerr << "Expected closing parenthesis, recieved " << lastToken.value;
+                exit(1);
+            }
 
             expect(Lexer::Openbrace, "Expected open brace");
             
@@ -122,7 +126,7 @@ class Parser {
         }
 
         Expr* parseAssignmentExpr() {
-            Expr* left = parseObjectExpr();
+            Expr* left = parseLogicalExpr();
 
             if (at().type == Lexer::Equals) {
                 eat();
@@ -130,6 +134,45 @@ class Parser {
                 return new AssignmentExprType(left, value);
             }
             
+            return left;
+        }
+
+        Expr* parseLogicalExpr() {
+            Expr* left = parseEqualityExpr();
+
+            while (at().type == Lexer::AndOperator || at().type == Lexer::OrOperator) {
+                string op = eat().value;
+                Expr* right = parseEqualityExpr();
+                left = new BinaryExprType(left, right, op);
+            }
+
+            return left;
+        }
+
+        Expr* parseEqualityExpr() {
+            Expr* left = parseRelationalExpr();
+
+            while (at().type == Lexer::DoubleEquals || at().type == Lexer::NotEquals) {
+                string op = eat().value;
+
+                Expr* right = parseRelationalExpr();
+                left = new BinaryExprType(left, right, op);
+            }
+
+            return left;
+        }
+
+        Expr* parseRelationalExpr() {
+            Expr* left = parseObjectExpr();
+
+            while (at().value == "<" || at().value == ">" || at().value == "<=" || at().value == ">=") {
+                string op = eat().value;
+
+                Expr* right = parseObjectExpr();
+
+                left = new BinaryExprType(left, right, op);
+            }
+
             return left;
         }
 
@@ -302,8 +345,8 @@ class Parser {
             }
         }
     
-        Lexer::Token at() {
-            return tokens[0];
+        Lexer::Token at(int index = 0) {
+            return tokens[index];
         }
 
         Lexer::Token next() {
