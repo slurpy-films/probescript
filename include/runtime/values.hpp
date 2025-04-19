@@ -38,6 +38,10 @@ struct NumberVal : public RuntimeVal {
     std::string number;
 
     NumberVal(std::string val) : RuntimeVal(ValueType::Number, val), number(val) {}
+
+    double getValue() {
+        return stod(number);
+    }
 };
 
 struct StringVal : public RuntimeVal {

@@ -12,6 +12,50 @@ RuntimeVal* evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
         return new BooleanVal(to_string(boolean));
     }
 
+    if (binop->op == "<") {
+        double leftnum = static_cast<NumberVal*>(left)->getValue();
+        double rightnum = static_cast<NumberVal*>(right)->getValue();
+
+        return new BooleanVal(to_string(leftnum < rightnum));
+    }
+
+    if (binop->op == ">") {
+        double leftnum = static_cast<NumberVal*>(left)->getValue();
+        double rightnum = static_cast<NumberVal*>(right)->getValue();
+
+        return new BooleanVal(to_string(leftnum > rightnum));
+    }
+
+    if (binop->op == "<=") {
+        double leftnum = static_cast<NumberVal*>(left)->getValue();
+        double rightnum = static_cast<NumberVal*>(right)->getValue();
+
+        return new BooleanVal(to_string(leftnum <= rightnum));
+    }
+
+    
+    if (binop->op == ">=") {
+        double leftnum = static_cast<NumberVal*>(left)->getValue();
+        double rightnum = static_cast<NumberVal*>(right)->getValue();
+
+        return new BooleanVal(to_string(leftnum >= rightnum));
+    }
+
+    if (binop->op == "==") {
+        double leftnum = static_cast<NumberVal*>(left)->getValue();
+        double rightnum = static_cast<NumberVal*>(right)->getValue();
+
+        return new BooleanVal(to_string(leftnum == rightnum));
+    }
+
+    
+    if (binop->op == "!=") {
+        double leftnum = static_cast<NumberVal*>(left)->getValue();
+        double rightnum = static_cast<NumberVal*>(right)->getValue();
+
+        return new BooleanVal(to_string(leftnum != rightnum));
+    }
+
     cout << "Invalid operants";
 
     exit(1);

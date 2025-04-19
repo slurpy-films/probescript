@@ -64,7 +64,7 @@ unordered_map<string, TokenType> getKeyWords() {
         { "var", Var },
         { "null", Null },
         { "const", Const },
-        { "function", Function },
+        { "fn", Function },
         { "if", If },
     };
 
