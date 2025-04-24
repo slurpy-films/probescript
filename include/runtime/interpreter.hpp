@@ -5,9 +5,10 @@
 #include <string>
 #include "env.hpp"
 
-RuntimeVal* eval(Stmt* astNode, Env* env);
+RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName = "Main");
 
 #include "eval/program.hpp"
+#include "eval/probedeclaration.hpp"
 #include "eval/assignment.hpp"
 #include "eval/fndeclaration.hpp"
 #include "eval/numbinexpr.hpp"
@@ -20,8 +21,9 @@ RuntimeVal* eval(Stmt* astNode, Env* env);
 #include "eval/call.hpp"
 #include "eval/vardeclaration.hpp"
 #include "eval/boolbinop.hpp"
+#include "eval/runprobe.hpp"
 
-RuntimeVal* eval(Stmt* astNode, Env* env) {
+RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName) {
     switch (astNode->kind) {
         case NodeType::NumericLiteral: {
             NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);
@@ -33,11 +35,14 @@ RuntimeVal* eval(Stmt* astNode, Env* env) {
             return new StringVal(str->value());
         }
 
+        case NodeType::ProbeDeclaration:
+            return evalProbeDeclaration(static_cast<ProbeDeclarationType*>(astNode), env);
+
         case NodeType::BinaryExpr:
             return evalBinExpr(static_cast<BinaryExprType*>(astNode), env);
 
         case NodeType::Program:
-            return evalProgram(static_cast<ProgramType*>(astNode), env);
+            return evalProgram(static_cast<ProgramType*>(astNode), env, ProbeName);
 
         case NodeType::NullLiteral:
             return new NullVal();

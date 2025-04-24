@@ -11,7 +11,13 @@ int main(int argc, char* argv[]) {
     Parser parser;
     Env* env = new Env();
     if (argc > 1) {
-        string arg = argv[1];
+        string probe = "Main";
+        string arg;
+        for (size_t i = 0; i < argc; ++i) {
+            if (argv[i] == "-P") {
+                probe = argv[i + 1];
+            } else arg = argv[i];
+        }
         if (arg.find(".probe") == std::string::npos) {
             arg += ".probe";
         }
@@ -20,7 +26,7 @@ int main(int argc, char* argv[]) {
         string file((istreambuf_iterator<char>(stream)), istreambuf_iterator<char>());
         
         ProgramType* program = parser.produceAST(file);
-        RuntimeVal* result = eval(program, env);
+        RuntimeVal* result = eval(program, env, probe);
     } else {
     cout << "REPL v0.1" << endl;
 
@@ -33,7 +39,7 @@ int main(int argc, char* argv[]) {
 
         ProgramType* program = parser.produceAST(input);
 
-        RuntimeVal* result = eval(program, env);
+        RuntimeVal* result = eval(program, env, "Main");
 
         cout << result->value << endl;
         

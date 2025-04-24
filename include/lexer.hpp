@@ -11,6 +11,7 @@ using namespace std;
 namespace Lexer {
 
 enum TokenType {
+    Probe,
     Number,
     Identifier,
     Equals,
@@ -66,6 +67,7 @@ unordered_map<string, TokenType> getKeyWords() {
         { "const", Const },
         { "fn", Function },
         { "if", If },
+        { "probe", Probe },
     };
 
     return keywords;
@@ -85,8 +87,7 @@ vector<Token> tokenize(const string& sourceCode) {
         { "+", BinaryOperator }, { "-", BinaryOperator },
         { "*", BinaryOperator }, { "/", BinaryOperator },
         { "%", BinaryOperator }, { "=", Equals },
-        { ";", Semicolon }, { "<", BinaryOperator },
-        { ">", BinaryOperator }
+        { "<", BinaryOperator }, { ">", BinaryOperator }
     };
 
     vector<pair<string, TokenType>> multiCharTokens = {
@@ -100,6 +101,11 @@ vector<Token> tokenize(const string& sourceCode) {
 
     while (!src.empty()) {
         if (isSkippable(src[0])) {
+            shift(src);
+            continue;
+        }
+
+        if (src[0] == ";") {
             shift(src);
             continue;
         }

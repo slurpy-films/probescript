@@ -8,6 +8,7 @@ using namespace std;
 
 enum NodeType {
     Program,
+    ProbeDeclaration,
     NumericLiteral,
     StringLiteral,
     Identifier,
@@ -22,6 +23,7 @@ enum NodeType {
     MemberExpr,
     CallExpr,
     IfStmt,
+    UndefinedLiteral,
 };
 
 struct Stmt {
@@ -49,6 +51,13 @@ struct Expr : public Stmt {
     string toString() const override {
         return value();
     }
+};
+
+struct ProbeDeclarationType : public Stmt {
+    ProbeDeclarationType(string name, vector<Stmt*> body) : Stmt(NodeType::ProbeDeclaration), name(name), body(body) {}
+
+    string name;
+    vector<Stmt*> body;
 };
 
 struct VarDecalarationType : public Stmt {
@@ -125,6 +134,13 @@ struct NullLiteralType : public Expr {
     NullLiteralType() : Expr(NodeType::NullLiteral) {}
     string value() const override {
         return "null";
+    };
+};
+
+struct UndefinedLiteralType : public Expr {
+    UndefinedLiteralType() : Expr(NodeType::UndefinedLiteral) {}
+    string value() const override {
+        return "undefined";
     };
 };
 

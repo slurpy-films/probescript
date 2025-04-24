@@ -2,13 +2,14 @@
 #include "ast.hpp"
 #include "runtime/values.hpp"
 #include "runtime/env.hpp"
+#include "runprobe.hpp"
 
-RuntimeVal* evalProgram(ProgramType* program, Env* env) {
-    RuntimeVal* lastEval = new NullVal();
-
+RuntimeVal* evalProgram(ProgramType* program, Env* env, string probeName) {
     for (Stmt* stmt : program->body) {
-        lastEval = eval(stmt, env);
+        eval(stmt, env);
     }
+
+    RuntimeVal* lastEval = evalProbeCall(probeName, env);
 
     return lastEval;
 }

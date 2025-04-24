@@ -28,6 +28,8 @@ class Parser {
     
         Stmt* parseStmt() {
             switch (at().type) {
+                case Lexer::Probe:
+                    return parseProbeDeclaration();
                 case Lexer::Var:
                     return parseVarDeclaration();
                 case Lexer::Const:
@@ -42,6 +44,25 @@ class Parser {
                 default:
                     return parseExpr();
             }
+        }
+
+        Stmt* parseProbeDeclaration() {
+            eat();
+            string name = expect(Lexer::Identifier, "Expected identifier").value;
+
+            expect(Lexer::Openbrace, "Expected probe body");
+
+            vector<Stmt*> body;
+
+            while (at().type != Lexer::END && at().type != Lexer::ClosedBrace) {
+                body.push_back(parseStmt());
+            }
+
+            expect(Lexer::ClosedBrace, "Expected closing brace");
+
+            ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);
+
+            return prb;
         }
 
         Stmt* parseFunctionDeclaration() {
@@ -107,7 +128,7 @@ class Parser {
             eat();
             string ident = expect(Lexer::Identifier, "Expected identifier, recieved: ").value;
 
-            if (at().type == Lexer::Semicolon) {
+            if (at().type != Lexer::Equals) {
                 eat();
                 if (isConstant) {
                     cout << "Must assign value to constant variable";

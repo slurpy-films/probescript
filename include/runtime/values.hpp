@@ -9,6 +9,7 @@ struct Env;
 
 namespace ValueType {
     enum ValueType {
+        Probe,
         Null,
         Number,
         Boolean,
@@ -16,6 +17,7 @@ namespace ValueType {
         NativeFn,
         Function,
         String,
+        Undefined,
     };
 }
 
@@ -29,6 +31,9 @@ struct RuntimeVal {
     virtual ~RuntimeVal() = default;
 };
 
+struct UndefinedVal : public RuntimeVal {
+    UndefinedVal() : RuntimeVal(ValueType::Undefined, "undefined") {}
+};
 
 struct NullVal : public RuntimeVal {
     NullVal() : RuntimeVal(ValueType::Null, "null") {}
@@ -81,6 +86,14 @@ struct FunctionValue : public RuntimeVal {
     : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body) {}
     string name;
     vector<string> params;
+    Env* declarationEnv;
+    vector<Stmt*> body;
+};
+
+struct ProbeValue : public RuntimeVal {
+    ProbeValue (string name, Env* declarationEnv, vector<Stmt*> body) 
+    : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
+    string name;
     Env* declarationEnv;
     vector<Stmt*> body;
 };
