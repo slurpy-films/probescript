@@ -26,6 +26,16 @@ class Env {
                                 case ValueType::String:
                                     cout << static_cast<StringVal*>(arg)->string;
                                     break;
+                                case ValueType::Boolean: {
+                                    bool booleanval = (static_cast<BooleanVal*>(arg)->getValue());
+                                    if (booleanval) {
+                                        cout << "true";
+                                    } else {
+                                        cout << "false";
+                                    }
+
+                                    break;
+                                }
                                 case ValueType::Object: {
                                     ObjectVal* obj = static_cast<ObjectVal*>(arg);
 

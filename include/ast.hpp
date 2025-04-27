@@ -21,6 +21,7 @@ enum NodeType {
     PropertyLiteral,
     ObjectLiteral,
     MemberExpr,
+    MemberAssignment,
     CallExpr,
     IfStmt,
     UndefinedLiteral,
@@ -186,6 +187,15 @@ struct MemberExprType : public Expr {
     MemberExprType(Expr* object = new Expr(), Expr* property = new Expr(), bool computed = false) : Expr(NodeType::MemberExpr), object(object), property(property), computed(computed) {}
     Expr* object;
     Expr* property;
+    bool computed;
+};
+
+struct MemberAssignmentType : public Expr {
+    MemberAssignmentType(Expr* obj, Expr* property, Expr* value, bool computed) :
+        Expr(NodeType::MemberAssignment), object(obj), newvalue(value),property(property), computed(computed) {}
+    Expr* object;
+    Expr* property;
+    Expr* newvalue;
     bool computed;
 };
 

@@ -116,6 +116,15 @@ vector<Token> tokenize(const string& sourceCode) {
             continue;
         }
 
+        if (isInt(src[0]) || (src[0] == "-" && isInt(src[1]))) {
+            string num = "";
+            while (!src.empty() && (isInt(src[0]) || (src[0] == "-" && isInt(src[1])))) {
+                num += shift(src);
+            }
+            tokens.push_back(token(num, Number));
+            continue;
+        }
+
         bool matchedMulti = false;
         for (const auto& [symbol, type] : multiCharTokens) {
             if (src.size() >= symbol.length()) {
@@ -154,14 +163,6 @@ vector<Token> tokenize(const string& sourceCode) {
             continue;
         }
 
-        if (isInt(src[0])) {
-            string num = "";
-            while (!src.empty() && isInt(src[0])) {
-                num += shift(src);
-            }
-            tokens.push_back(token(num, Number));
-            continue;
-        }
 
         if (isAlpha(src[0])) {
             string ident = "";

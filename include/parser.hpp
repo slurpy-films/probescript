@@ -353,12 +353,16 @@ class Parser {
                     expect(Lexer::CloseBracket, "Expected closing bracket");
                 }
 
-                obj = new MemberExprType(obj, property, computed);
-
+                if (at().type == Lexer::Equals) {
+                    eat();
+                    Expr* value = parseExpr();
+                    obj = new MemberAssignmentType(obj, property, value, computed);
+                } else {
+                    obj = new MemberExprType(obj, property, computed);
+                }
             }
 
             return obj;
-            
         }
     
         Expr* parsePrimaryExpr() {

@@ -23,6 +23,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::C
 #include "eval/vardeclaration.hpp"
 #include "eval/boolbinop.hpp"
 #include "eval/runprobe.hpp"
+#include "eval/memberassignment.hpp"
 
 RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
@@ -75,6 +76,9 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
 
         case NodeType::MemberExpr:
             return evalMemberExpr(static_cast<MemberExprType*>(astNode), env);
+
+        case NodeType::MemberAssignment:
+            return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);
 
         default:
             cout << "Unexpected AST-node kind found: ";

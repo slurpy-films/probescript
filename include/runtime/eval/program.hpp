@@ -76,12 +76,33 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                 
                 string exportname;
                 RuntimeVal* exporting;
+                bool found = false;
 
                 switch (exportstmt->exporting->kind) {
                     case NodeType::Identifier: {
                         IdentifierType* ident = static_cast<IdentifierType*>(exportstmt->exporting);
                         exportname = ident->symbol;
                         lasteval = exporting = eval(ident, env);
+                        found = true;
+                        
+                        break;
+                    }
+
+                    case NodeType::ProbeDeclaration: {
+                        ProbeDeclarationType* probe = static_cast<ProbeDeclarationType*>(exportstmt->exporting);
+                        exportname = probe->name;
+                        lasteval = exporting = eval(probe, env);
+                        found = true;
+
+                        break;
+                    }
+
+                    case NodeType::FunctionDeclaration: {
+                        FunctionDeclarationType* fn = static_cast<FunctionDeclarationType*>(exportstmt->exporting);
+                        exportname = fn->name;
+                        found = true;
+                        lasteval = exporting = eval(fn, env);
+
                         break;
                     }
 
