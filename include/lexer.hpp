@@ -37,6 +37,9 @@ enum TokenType {
     OrOperator,
     DoubleEquals,
     NotEquals,
+    Import,
+    Export,
+    Module,
 };
 
 struct Token {
@@ -68,6 +71,9 @@ unordered_map<string, TokenType> getKeyWords() {
         { "fn", Function },
         { "if", If },
         { "probe", Probe },
+        { "import", Import },
+        { "export", Export },
+        { "module", Module }, 
     };
 
     return keywords;

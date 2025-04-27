@@ -24,6 +24,8 @@ enum NodeType {
     CallExpr,
     IfStmt,
     UndefinedLiteral,
+    ImportStmt,
+    ExportStmt,
 };
 
 struct Stmt {
@@ -43,6 +45,16 @@ struct ProgramType : public Stmt {
             delete stmt;
         }
     }
+};
+
+struct ImportStmtType : public Stmt {
+    ImportStmtType(string module) : Stmt(NodeType::ImportStmt), module(module) {}
+    string module;
+};
+
+struct ExportStmtType : public Stmt {
+    ExportStmtType(Stmt* value) : Stmt(NodeType::ExportStmt), exporting(value) {}
+    Stmt* exporting;
 };
 
 struct Expr : public Stmt { 

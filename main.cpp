@@ -1,5 +1,8 @@
 #include "parser.hpp"
 #include "runtime/interpreter.hpp"
+#include "REPL.hpp"
+#include "modules.hpp"
+#include "config.hpp"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -21,31 +24,23 @@ int main(int argc, char* argv[]) {
         if (arg.find(".probe") == std::string::npos) {
             arg += ".probe";
         }
-        
+
         ifstream stream(arg);
         string file((istreambuf_iterator<char>(stream)), istreambuf_iterator<char>());
+
+        Config::Config* config = new Config::Config(Config::Normal, probe);
+
+        config->modules = indexModules();
         
         ProgramType* program = parser.produceAST(file);
-        RuntimeVal* result = eval(program, env, probe);
+        RuntimeVal* result = eval(program, env, config);
     } else {
-    cout << "REPL v0.1" << endl;
+        REPL* repl = new REPL();
 
-    while (true) {
-        string input;
-        cout << "> ";
-        getline(cin, input);
+        repl->start();
 
-        if (input.find("exit") == 0) break;
-
-        ProgramType* program = parser.produceAST(input);
-
-        RuntimeVal* result = eval(program, env, "Main");
-
-        cout << result->value << endl;
-        
-        delete program;
-    }
-    }
+        delete repl;
+    };
 
     return 0;
 }

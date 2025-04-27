@@ -26,7 +26,15 @@ class Env {
                                 case ValueType::String:
                                     cout << static_cast<StringVal*>(arg)->string;
                                     break;
-                
+                                case ValueType::Object: {
+                                    ObjectVal* obj = static_cast<ObjectVal*>(arg);
+
+                                    for (const auto& pair : obj->properties) {
+                                        cout << pair.first << "\n";
+                                    }
+                                    break;
+                                }
+
                                 default:
                                     cout << "Invalid type: " << arg->type;
                                     exit(1);

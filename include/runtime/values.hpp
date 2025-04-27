@@ -25,9 +25,11 @@ namespace ValueType {
 struct RuntimeVal {
     ValueType::ValueType type;
     std::string value;
+    std::unordered_map<string, RuntimeVal*> exports;
 
     RuntimeVal(ValueType::ValueType type) : type(type), value("") {}
     RuntimeVal(ValueType::ValueType type, const std::string& val) : type(type), value(val) {}
+    RuntimeVal(ValueType::ValueType type, std::unordered_map<string, RuntimeVal*> exports) {}
     virtual ~RuntimeVal() = default;
 };
 

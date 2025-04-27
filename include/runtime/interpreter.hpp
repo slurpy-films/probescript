@@ -4,8 +4,9 @@
 #include <cmath>
 #include <string>
 #include "env.hpp"
+#include "config.hpp"
 
-RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName = "Main");
+RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config());
 
 #include "eval/program.hpp"
 #include "eval/probedeclaration.hpp"
@@ -23,7 +24,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName = "Main");
 #include "eval/boolbinop.hpp"
 #include "eval/runprobe.hpp"
 
-RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName) {
+RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
         case NodeType::NumericLiteral: {
             NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);
@@ -35,6 +36,10 @@ RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName) {
             return new StringVal(str->value());
         }
 
+        case NodeType::UndefinedLiteral: {
+            return new UndefinedVal();
+        }
+
         case NodeType::ProbeDeclaration:
             return evalProbeDeclaration(static_cast<ProbeDeclarationType*>(astNode), env);
 
@@ -42,7 +47,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName) {
             return evalBinExpr(static_cast<BinaryExprType*>(astNode), env);
 
         case NodeType::Program:
-            return evalProgram(static_cast<ProgramType*>(astNode), env, ProbeName);
+            return evalProgram(static_cast<ProgramType*>(astNode), env, config);
 
         case NodeType::NullLiteral:
             return new NullVal();
@@ -74,6 +79,6 @@ RuntimeVal* eval(Stmt* astNode, Env* env, string ProbeName) {
         default:
             cout << "Unexpected AST-node kind found: ";
             cout << astNode->kind << endl;
-            return new NullVal();
+            exit(1);
     }
 }

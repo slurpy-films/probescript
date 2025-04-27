@@ -39,8 +39,14 @@ class Parser {
                 case Lexer::Semicolon:
                     eat();
                     return parseStmt();
+                case Lexer::Module:
+                    return parseModuleDeclaration();
                 case Lexer::If:
                     return parseIfStmt();
+                case Lexer::Import:
+                    return parseImportStmt();
+                case Lexer::Export:
+                    return parseExportStmt();
                 default:
                     return parseExpr();
             }
@@ -63,6 +69,31 @@ class Parser {
             ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);
 
             return prb;
+        }
+
+        Stmt* parseModuleDeclaration() {
+            eat();
+            expect(Lexer::Identifier, "Expected Identifier after module declaration");
+
+            return new UndefinedLiteralType();
+        }
+
+        Stmt* parseImportStmt() {
+            eat();
+            string module = expect(Lexer::Identifier, "Expected identifier after import statement").value;
+
+            ImportStmtType* importstmt = new ImportStmtType(module);
+
+            return importstmt;
+        }
+
+        Stmt* parseExportStmt() {
+            eat();
+            Stmt* value = parseStmt();
+
+            ExportStmtType* exportstmt = new ExportStmtType(value);
+
+            return exportstmt;
         }
 
         Stmt* parseFunctionDeclaration() {
@@ -133,7 +164,7 @@ class Parser {
                 if (isConstant) {
                     cout << "Must assign value to constant variable";
                 }
-                return new VarDecalarationType(nullptr, ident);
+                return new VarDecalarationType(new UndefinedLiteralType(), ident);
             }
             
             expect(Lexer::Equals, "Expected equals token in variable declaration, revieved: ");
