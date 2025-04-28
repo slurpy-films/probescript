@@ -7,8 +7,8 @@
 
 namespace fs = std::filesystem;
 
-std::unordered_map<std::string, fs::path> indexModules() {
-    fs::path current = fs::current_path();
+std::unordered_map<std::string, fs::path> indexModules(string fileName) {
+    fs::path current = fs::current_path() / fileName;
     fs::path projectFile;
 
     for (size_t i = 0; i < 10; ++i) {

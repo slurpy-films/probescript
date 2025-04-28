@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
         Config::Config* config = new Config::Config(Config::Normal, probe);
 
-        config->modules = indexModules();
+        config->modules = indexModules(arg);
         
         ProgramType* program = parser.produceAST(file);
         RuntimeVal* result = eval(program, env, config);
