@@ -24,6 +24,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::C
 #include "eval/boolbinop.hpp"
 #include "eval/runprobe.hpp"
 #include "eval/memberassignment.hpp"
+#include "eval/array.hpp"
 
 RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
@@ -58,6 +59,9 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
 
         case NodeType::ObjectLiteral:
             return evalObject(static_cast<ObjectLiteralType*>(astNode), env);
+
+        case NodeType::ArrayLiteral:
+            return evalArray(static_cast<ArrayLiteralType*>(astNode), env);
 
         case NodeType::CallExpr:
             return evalCall(static_cast<CallExprType*>(astNode), env);

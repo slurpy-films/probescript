@@ -18,6 +18,7 @@ namespace ValueType {
         Function,
         String,
         Undefined,
+        Array,
     };
 }
 
@@ -74,6 +75,11 @@ struct ObjectVal : public RuntimeVal {
     std::unordered_map<std::string, RuntimeVal*> properties;
 };
 
+struct ArrayVal : public RuntimeVal {
+    ArrayVal(std::vector<RuntimeVal*> items)
+        : RuntimeVal(ValueType::Array), items(items) {}
+    vector<RuntimeVal*> items;
+};
 
 using NativeFunction = std::function<RuntimeVal*(std::vector<RuntimeVal*>, Env*)>;
 

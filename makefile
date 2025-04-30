@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -Iinclude
 SRC = src/main.cpp
 OBJ = $(SRC:.cpp=.o)
-TARGET = ProbeScript.exe
+TARGET = a.exe
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET)

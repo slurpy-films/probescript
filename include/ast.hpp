@@ -20,6 +20,7 @@ enum NodeType {
     AssignmentExpr,
     PropertyLiteral,
     ObjectLiteral,
+    ArrayLiteral,
     MemberExpr,
     MemberAssignment,
     CallExpr,
@@ -175,6 +176,12 @@ struct ObjectLiteralType : public Expr {
     };
 
     vector<PropertyLiteralType*> properties;
+};
+
+struct ArrayLiteralType : public Expr {
+    ArrayLiteralType(vector<Expr*> items) : Expr(NodeType::ArrayLiteral), items(items) {}
+
+    vector<Expr*> items;
 };
 
 struct CallExprType : public Expr {

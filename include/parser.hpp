@@ -279,15 +279,41 @@ class Parser {
 
         Expr* parseMultiplicativeExpr() {
 
-            Expr* left = parseCallMemberExpr();
+            Expr* left = parseArrayExpr();
 
             while (at().value == "*" || at().value == "/" || at().value == "%") {
                 string op = eat().value;
-                Expr* right = parseCallMemberExpr();
+                Expr* right = parseArrayExpr();
                 left = new BinaryExprType(left, right, op);
             }
     
             return left;
+        }
+
+        Expr* parseArrayExpr() {
+            if (at().type != Lexer::OpenBracket) {
+                return parseCallMemberExpr();
+            }
+
+            eat();
+
+            vector<Expr*> items;
+
+            if (at().type == Lexer::CloseBracket) {
+                eat();
+                return new ArrayLiteralType(items);
+            }
+            
+            items.push_back(parseExpr());
+
+            while (at().type == Lexer::Comma) {
+                eat();
+                items.push_back(parseExpr());
+            }
+
+            expect(Lexer::CloseBracket, "Expected closing bracket");
+
+            return new ArrayLiteralType(items);
         }
 
         Expr* parseCallMemberExpr() {

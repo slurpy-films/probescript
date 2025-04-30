@@ -27,6 +27,11 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
             } else if (stmt->kind == NodeType::ImportStmt) {
                 ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
                 string modulename = importstmt->module;
+                if (config->modules.find(modulename) == config->modules.end()) {
+                    cerr << "Cannot find module " << modulename;
+                    exit(1);
+                }
+
                 fs::path filepath = config->modules[modulename];
 
                 ifstream stream(filepath);
