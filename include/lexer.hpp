@@ -40,6 +40,7 @@ enum TokenType {
     Import,
     Export,
     Module,
+    While,
 };
 
 struct Token {
@@ -73,7 +74,8 @@ unordered_map<string, TokenType> getKeyWords() {
         { "probe", Probe },
         { "import", Import },
         { "export", Export },
-        { "module", Module }, 
+        { "module", Module },
+        { "while", While },
     };
 
     return keywords;

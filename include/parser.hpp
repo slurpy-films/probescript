@@ -449,4 +449,21 @@ class Parser {
 
             return prev;
         }
+
+        vector<Stmt*> parseBody() {
+            if (at().type == Lexer::Openbrace) {
+                eat();
+                vector<Stmt*> body;
+                while (at().type != Lexer::ClosedBrace && at().type != Lexer::END) {
+                    body.push_back(parseStmt());
+                }
+
+                expect(Lexer::ClosedBrace, "Expected closing brace");
+                return body;
+            } else {
+                vector<Stmt*> body;
+                body.push_back(parseStmt());
+                return body;
+            }
+        }
 };

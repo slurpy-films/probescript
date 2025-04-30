@@ -7,7 +7,7 @@
 
 RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
     RuntimeVal* obj = eval(expr->object, env);
-
+    
     if (obj->type == ValueType::Object) {
         string key;
 
@@ -25,9 +25,7 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
             key = ident->symbol;
         }
 
-        string objName = static_cast<IdentifierType*>(expr->object)->symbol;
-
-        ObjectVal* object = static_cast<ObjectVal*>(env->lookupVar(objName));
+        ObjectVal* object = static_cast<ObjectVal*>(obj);
 
         if (object->properties.count(key) == 0) {
             cerr << "Object has no property " << key;
@@ -40,6 +38,8 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
             IdentifierType* ident = static_cast<IdentifierType*>(expr->property);
             if (ident->symbol == "size") {
                 return arraySize(static_cast<IdentifierType*>(expr->object)->symbol);
+            } else if (ident->symbol == "push") {
+                return arrayPush(static_cast<IdentifierType*>(expr->object)->symbol);
             }
         }
 
@@ -52,9 +52,7 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
 
         NumberVal* index = static_cast<NumberVal*>(indexval);
 
-        string arrayName = static_cast<IdentifierType*>(expr->object)->symbol;
-
-        ArrayVal* array = static_cast<ArrayVal*>(env->lookupVar(arrayName));
+        ArrayVal* array = static_cast<ArrayVal*>(obj);
 
         int idx = stoi(index->number);
 
