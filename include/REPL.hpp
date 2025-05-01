@@ -24,7 +24,7 @@ class REPL {
 
                 RuntimeVal* result = eval(program, env, config);
 
-                cout << result->value << "\n";
+                cout << result->toString() << "\n";
 
                 delete program;
             }

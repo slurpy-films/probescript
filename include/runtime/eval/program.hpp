@@ -6,6 +6,7 @@
 #include "runtime/env.hpp"
 #include "config.hpp"
 #include "runprobe.hpp"
+#include "stdlib/stdlib.hpp"
 #include "probedeclaration.hpp"
 #include "runtime/interpreter.hpp"
 #include "parser.hpp"
@@ -27,6 +28,11 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
             } else if (stmt->kind == NodeType::ImportStmt) {
                 ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
                 string modulename = importstmt->module;
+                if (stdlib.find(modulename) != stdlib.end()) {
+                    env->declareVar(modulename, stdlib[modulename]);
+                    continue;
+                }
+                
                 if (config->modules.find(modulename) == config->modules.end()) {
                     cerr << "Cannot find module " << modulename;
                     exit(1);

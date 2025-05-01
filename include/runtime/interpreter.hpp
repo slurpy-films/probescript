@@ -25,6 +25,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::C
 #include "eval/runprobe.hpp"
 #include "eval/memberassignment.hpp"
 #include "eval/array.hpp"
+#include "eval/whilestmt.hpp"
 
 RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
@@ -47,6 +48,8 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
 
         case NodeType::BinaryExpr:
             return evalBinExpr(static_cast<BinaryExprType*>(astNode), env);
+        case NodeType::WhileStmt:
+            return evalWhileStmt(static_cast<WhileStmtType*>(astNode), env);
 
         case NodeType::Program:
             return evalProgram(static_cast<ProgramType*>(astNode), env, config);

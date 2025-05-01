@@ -47,6 +47,8 @@ class Parser {
                     return parseImportStmt();
                 case Lexer::Export:
                     return parseExportStmt();
+                case Lexer::While:
+                    return parseWhileStmt();
                 default:
                     return parseExpr();
             }
@@ -68,6 +70,18 @@ class Parser {
             expect(Lexer::Identifier, "Expected Identifier after module declaration");
 
             return new UndefinedLiteralType();
+        }
+
+        Stmt* parseWhileStmt() {
+            eat();
+            expect(Lexer::OpenParen, "Expected open parenthesis after while keyword");
+
+            Expr* condition = parseExpr();
+
+            expect(Lexer::ClosedParen, "Expected closing parenthesis after while condition");
+
+            vector<Stmt*> body = parseBody();
+            return new WhileStmtType(condition, body);
         }
 
         Stmt* parseImportStmt() {
@@ -157,10 +171,10 @@ class Parser {
         Expr* parseAssignmentExpr() {
             Expr* left = parseLogicalExpr();
 
-            if (at().type == Lexer::Equals) {
-                eat();
+            if (at().type == Lexer::Equals || at().type == Lexer::AssignmentOperator) {
+                string op = eat().value;
                 Expr* value = parseAssignmentExpr();
-                return new AssignmentExprType(left, value);
+                return new AssignmentExprType(left, value, op);
             }
             
             return left;

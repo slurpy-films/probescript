@@ -28,6 +28,7 @@ enum NodeType {
     UndefinedLiteral,
     ImportStmt,
     ExportStmt,
+    WhileStmt,
 };
 
 struct Stmt {
@@ -67,6 +68,13 @@ struct Expr : public Stmt {
     }
 };
 
+struct WhileStmtType : public Stmt {
+    WhileStmtType(Expr* condition, vector<Stmt*> body)
+        : Stmt(NodeType::WhileStmt), condition(condition), body(body) {}
+        Expr* condition;
+        vector<Stmt*> body;
+    };
+
 struct ProbeDeclarationType : public Stmt {
     ProbeDeclarationType(string name, vector<Stmt*> body) : Stmt(NodeType::ProbeDeclaration), name(name), body(body) {}
 
@@ -89,10 +97,11 @@ struct IfStmtType : public Stmt {
 };
 
 struct AssignmentExprType : public Expr {
-    AssignmentExprType(Expr* assigne = new Expr(), Expr* value = new Expr()) : Expr(NodeType::AssignmentExpr), assigne(assigne), value(value) {}
+    AssignmentExprType(Expr* assigne, Expr* value, string op) : Expr(NodeType::AssignmentExpr), assigne(assigne), value(value), op(op) {}
 
     Expr* assigne;
     Expr* value;
+    string op;
 };
 
 struct BinaryExprType : public Expr {

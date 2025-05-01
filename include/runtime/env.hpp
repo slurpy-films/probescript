@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "values.hpp"
 #include "stdlib/console.hpp"
+#include "stdlib/datatypes.hpp"
 #include <iostream>
 
 using namespace std;
@@ -15,9 +16,9 @@ class Env {
             if (global) {
                 declareVar("true", new BooleanVal("true"), true);
                 declareVar("false", new BooleanVal("false"), true);
-
-                
-                declareVar("console", new ObjectVal(console));
+                declareVar("num", new NativeFnValue(toNum), true);
+                declareVar("str", new NativeFnValue(toStr), true);
+                declareVar("console", new ObjectVal(console), true);
             }
         }
 

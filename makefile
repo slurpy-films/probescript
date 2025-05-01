@@ -12,3 +12,6 @@ $(TARGET): $(OBJ)
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+
+reset: clean
+	$(MAKE)

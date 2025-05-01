@@ -41,6 +41,7 @@ enum TokenType {
     Export,
     Module,
     While,
+    AssignmentOperator,
 };
 
 struct Token {
@@ -105,6 +106,10 @@ vector<Token> tokenize(const string& sourceCode) {
         { "!=", NotEquals },
         { "<=", BinaryOperator },
         { ">=", BinaryOperator },
+        { "+=", AssignmentOperator },
+        { "-=", AssignmentOperator },
+        { "*=", AssignmentOperator },
+        { "/=", AssignmentOperator },
     };
 
     while (!src.empty()) {
@@ -118,9 +123,9 @@ vector<Token> tokenize(const string& sourceCode) {
             continue;
         }
 
-        if (isInt(src[0]) || (src[0] == "-" && isInt(src[1]))) {
+        if (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1]))) {
             string num = "";
-            while (!src.empty() && (isInt(src[0]) || (src[0] == "-" && isInt(src[1])))) {
+            while (!src.empty() && (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1])))) {
                 num += shift(src);
             }
             tokens.push_back(token(num, Number));
