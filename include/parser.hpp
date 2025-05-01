@@ -143,6 +143,12 @@ class Parser {
 
             IfStmtType* ifStmt = new IfStmtType(condition, body);
 
+            if (at().type == Lexer::Else) {
+                eat();
+                ifStmt->elseStmt = parseBody();
+                ifStmt->hasElse = true;
+            }
+
             return ifStmt;
         }
 

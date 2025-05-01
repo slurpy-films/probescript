@@ -94,6 +94,8 @@ struct IfStmtType : public Stmt {
 
     Expr* condition;
     vector<Stmt*> body;
+    vector<Stmt*> elseStmt;
+    bool hasElse = false;
 };
 
 struct AssignmentExprType : public Expr {

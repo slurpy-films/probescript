@@ -19,6 +19,12 @@ RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
         for (Stmt* stmt : stmt->body) {
             eval(stmt, env);
         }
+    } else if (stmt->hasElse) {
+        Env* env = new Env(baseEnv);
+
+        for (Stmt* stmt : stmt->elseStmt) {
+            eval(stmt, env);
+        }
     }
 
     return new BooleanVal(boolval->value);

@@ -33,6 +33,7 @@ enum TokenType {
     Function,
     String,
     If,
+    Else,
     AndOperator,
     OrOperator,
     DoubleEquals,
@@ -77,6 +78,7 @@ unordered_map<string, TokenType> getKeyWords() {
         { "export", Export },
         { "module", Module },
         { "while", While },
+        { "else", Else },
     };
 
     return keywords;
