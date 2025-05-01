@@ -6,9 +6,10 @@
 #include <fstream>
 
 namespace fs = std::filesystem;
+using namespace std;
 
-std::unordered_map<std::string, fs::path> indexModules(string fileName) {
-    fs::path current = fs::current_path() / fileName;
+std::unordered_map<std::string, fs::path> indexModules(fs::path fileName) {
+    fs::path current = fs::current_path() / fileName.parent_path();
     fs::path projectFile;
 
     for (size_t i = 0; i < 10; ++i) {

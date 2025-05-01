@@ -56,15 +56,7 @@ class Parser {
             eat();
             string name = expect(Lexer::Identifier, "Expected identifier").value;
 
-            expect(Lexer::Openbrace, "Expected probe body");
-
-            vector<Stmt*> body;
-
-            while (at().type != Lexer::END && at().type != Lexer::ClosedBrace) {
-                body.push_back(parseStmt());
-            }
-
-            expect(Lexer::ClosedBrace, "Expected closing brace");
+            vector<Stmt*> body = parseBody();
 
             ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);
 
@@ -113,15 +105,7 @@ class Parser {
                 params.push_back(static_cast<IdentifierType*>(arg)->symbol);
             }
 
-            expect(Lexer::Openbrace, "Expected function declaration expression");
-
-            vector<Stmt*> body;
-
-            while (at().type != Lexer::END && at().type != Lexer::ClosedBrace) {
-                body.push_back(parseStmt());
-            }
-
-            expect(Lexer::ClosedBrace, "Expected closing brace");
+            vector<Stmt*> body = parseBody();
 
             FunctionDeclarationType* fn = new FunctionDeclarationType(params, name, body);
 
@@ -140,15 +124,8 @@ class Parser {
                 exit(1);
             }
 
-            expect(Lexer::Openbrace, "Expected open brace");
             
-            vector<Stmt*> body;
-
-            while (at().type != Lexer::END && at().type != Lexer::ClosedBrace) {
-                body.push_back(parseStmt());
-            }
-
-            expect(Lexer::ClosedBrace, "Expected closing brace");
+            vector<Stmt*> body = parseBody();
 
             IfStmtType* ifStmt = new IfStmtType(condition, body);
 

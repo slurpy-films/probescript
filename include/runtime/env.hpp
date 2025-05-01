@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include "values.hpp"
+#include "stdlib/console.hpp"
 #include <iostream>
 
 using namespace std;
@@ -15,47 +16,7 @@ class Env {
                 declareVar("true", new BooleanVal("true"), true);
                 declareVar("false", new BooleanVal("false"), true);
 
-                unordered_map<string, RuntimeVal*> console = {
-                    { "log", new NativeFnValue([](vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
-                        for (auto* arg : args) {
-                            switch (arg->type) {
-                                case ValueType::Number:
-                                    cout << static_cast<NumberVal*>(arg)->number;
-                                    break;
-
-                                case ValueType::String:
-                                    cout << static_cast<StringVal*>(arg)->string;
-                                    break;
-                                case ValueType::Boolean: {
-                                    bool booleanval = (static_cast<BooleanVal*>(arg)->getValue());
-                                    if (booleanval) {
-                                        cout << "true";
-                                    } else {
-                                        cout << "false";
-                                    }
-
-                                    break;
-                                }
-                                case ValueType::Object: {
-                                    ObjectVal* obj = static_cast<ObjectVal*>(arg);
-
-                                    for (const auto& pair : obj->properties) {
-                                        cout << pair.first << "\n";
-                                    }
-                                    break;
-                                }
-
-                                default:
-                                    cout << "Invalid type: " << arg->type;
-                                    exit(1);
-                            }
-                        }
                 
-                        cout << endl;
-                        return new NullVal();
-                    }) }
-                };
-
                 declareVar("console", new ObjectVal(console));
             }
         }
