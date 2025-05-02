@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include "runtime/interpreter.hpp"
+#include "stdlib/frame/frame.hpp"
 #include "REPL.hpp"
 #include "modules.hpp"
 #include "config.hpp"
@@ -7,15 +8,14 @@
 #include <string>
 #include <fstream>
 
-using namespace std;
 
 
 int main(int argc, char* argv[]) {
     Parser parser;
     Env* env = new Env();
     if (argc > 1) {
-        string probe = "Main";
-        string arg;
+        std::string probe = "Main";
+        std::string arg;
         for (size_t i = 0; i < argc; ++i) {
             if (argv[i] == "-P") {
                 probe = argv[i + 1];
@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
             arg += ".probe";
         }
 
-        ifstream stream(arg);
-        string file((istreambuf_iterator<char>(stream)), istreambuf_iterator<char>());
+        std::ifstream stream(arg);
+        std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 
         Config::Config* config = new Config::Config(Config::Normal, probe);
 

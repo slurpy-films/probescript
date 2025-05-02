@@ -6,11 +6,11 @@
 #include "runtime/values.hpp"
 #include "runtime/interpreter.hpp"
 
-RuntimeVal* evalProbeCall(string probeName, Env* declarationEnv) {
+RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv) {
     RuntimeVal* val = declarationEnv->lookupVar(probeName);
 
     if (val->type != ValueType::Probe) {
-        cerr << "Probe " << probeName << " is not of type probe";
+        std::cerr << "Probe " << probeName << " is not of type probe";
         exit(1);
     }
 
@@ -19,7 +19,17 @@ RuntimeVal* evalProbeCall(string probeName, Env* declarationEnv) {
     Env* env = new Env(declarationEnv);
 
     for (Stmt* stmt : probe->body) {
-        eval(stmt, env);
+        switch (stmt->kind) {
+            case NodeType::VarDeclaration:
+                eval(stmt, env);
+                break;
+            case NodeType::FunctionDeclaration:
+                eval(stmt, env);
+                break;
+            default:
+                std::cerr << "Only variable and function declarations are allowed within probe bodies";
+                exit(1);
+        }
     }
 
     RuntimeVal* last = new UndefinedVal();
@@ -27,7 +37,7 @@ RuntimeVal* evalProbeCall(string probeName, Env* declarationEnv) {
     RuntimeVal* runfnval = env->lookupVar("run");
 
     if (runfnval->type != ValueType::Function) {
-        cerr << "Expected run to be of type function, got " << runfnval->type;
+        std::cerr << "Expected run to be of type function, got " << runfnval->type;
         exit(1);
     }
 

@@ -5,7 +5,6 @@
 #include "stdlib/datatypes.hpp"
 #include <iostream>
 
-using namespace std;
 
 class Env {
     public:
@@ -22,9 +21,11 @@ class Env {
             }
         }
 
-        RuntimeVal* declareVar(string varName, RuntimeVal* value, bool constant = false) {
+        std::unordered_map<std::string, RuntimeVal*> variables;
+
+        RuntimeVal* declareVar(std::string varName, RuntimeVal* value, bool constant = false) {
             if (variables.find(varName) != variables.end()) {
-                cout << "Variable " << varName << " is already defined" << endl;
+                std::cout << "Variable " << varName << " is already defined" << std::endl;
                 exit(1);
             }
 
@@ -33,11 +34,11 @@ class Env {
             return value;
         }
 
-        RuntimeVal* assignVar(string varName, RuntimeVal* value) {
+        RuntimeVal* assignVar(std::string varName, RuntimeVal* value) {
             Env* env = resolve(varName);
 
             if (env->constants.find(varName) != env->constants.end() && env->constants[varName]) {
-                cout << "Assignment to constant variable " << varName << endl;
+                std::cout << "Assignment to constant variable " << varName << std::endl;
                 exit(1);
             }
 
@@ -46,18 +47,18 @@ class Env {
             return value;
         }
 
-        RuntimeVal* lookupVar(string varName) {
+        RuntimeVal* lookupVar(std::string varName) {
             Env* env = resolve(varName);
             return env->variables[varName];
         }
 
-        Env* resolve(string varname) {
+        Env* resolve(std::string varname) {
             if (variables.find(varname) != variables.end()) {
                 return this;
             }
 
             if (parent == nullptr) {
-                cout << "Cannot resolve variable " << varname << " as it does not exist";
+                std::cout << "Cannot resolve variable " << varname << " as it does not exist";
                 exit(1);
             }
 
@@ -66,6 +67,5 @@ class Env {
 
     private:
         Env* parent;
-        unordered_map<string, RuntimeVal*> variables;
-        unordered_map<string, bool> constants;
+        std::unordered_map<std::string, bool> constants;
 };

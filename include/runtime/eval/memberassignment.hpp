@@ -10,17 +10,17 @@ RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
     RuntimeVal* value = eval(expr->newvalue, env);
 
     if (obj->type != ValueType::Object) {
-        cerr << "Cannot find member of non object";
+        std::cerr << "Cannot find member of non object";
         exit(1);
     }
 
-    string key;
+    std::string key;
 
     if (expr->computed) {
         RuntimeVal* propValue = eval(expr->property, env);
 
         if (propValue->type != ValueType::String) {
-            cerr << "Computed property must evaluate to a string";
+            std::cerr << "Computed property must evaluate to a string";
             exit(1);
         }
 
@@ -32,7 +32,7 @@ RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
 
     ObjectVal* objectVal = static_cast<ObjectVal*>(obj);
 
-    string objName = static_cast<IdentifierType*>(expr->object)->symbol;
+    std::string objName = static_cast<IdentifierType*>(expr->object)->symbol;
 
     ObjectVal* object = static_cast<ObjectVal*>(env->lookupVar(objName));
 

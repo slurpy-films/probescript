@@ -6,7 +6,6 @@
 #include "utils/shift.hpp"
 #include <iostream>
 
-using namespace std;
 
 namespace Lexer {
 
@@ -43,31 +42,35 @@ enum TokenType {
     Module,
     While,
     AssignmentOperator,
+    Class,
+    New,
+    Return,
+    Extends,
 };
 
 struct Token {
-    string value;
+    std::string value;
     TokenType type;
 };
 
-Token token(const string& value, const TokenType type) {
+Token token(const std::string& value, const TokenType type) {
     return { value, type };
 }
 
-bool isAlpha(const string& str) {
+bool isAlpha(const std::string& str) {
     return (str[0] >= 'a' && str[0] <= 'z') || (str[0] >= 'A' && str[0] <= 'Z');
 }
 
-bool isInt(const string& str) {
+bool isInt(const std::string& str) {
     return str.length() == 1 && isdigit(str[0]);
 }
 
-bool isSkippable(const string str) {
+bool isSkippable(const std::string str) {
     return str == " " || str == "\t" || str == "\n" || str == "\r";
 }
 
-unordered_map<string, TokenType> getKeyWords() {
-    static unordered_map<string, TokenType> keywords = {
+std::unordered_map<std::string, TokenType> getKeyWords() {
+    static std::unordered_map<std::string, TokenType> keywords = {
         { "var", Var },
         { "null", Null },
         { "const", Const },
@@ -79,18 +82,22 @@ unordered_map<string, TokenType> getKeyWords() {
         { "module", Module },
         { "while", While },
         { "else", Else },
+        { "class", Class },
+        { "new", New },
+        { "return", Return },
+        { "extends", Extends },
     };
 
     return keywords;
 }
 
-vector<Token> tokenize(const string& sourceCode) {
-    vector<Token> tokens;
-    vector<string> src = splitToChars(sourceCode);
+std::vector<Token> tokenize(const std::string& sourceCode) {
+    std::vector<Token> tokens;
+    std::vector<std::string> src = splitToChars(sourceCode);
 
-    unordered_map<string, TokenType> keywords = getKeyWords();
+    std::unordered_map<std::string, TokenType> keywords = getKeyWords();
 
-    unordered_map<string, TokenType> singleCharTokens = {
+    std::unordered_map<std::string, TokenType> singleCharTokens = {
         { "(", OpenParen }, { ")", ClosedParen },
         { "{", Openbrace }, { "}", ClosedBrace },
         { "[", OpenBracket }, { "]", CloseBracket },
@@ -101,7 +108,7 @@ vector<Token> tokenize(const string& sourceCode) {
         { "<", BinaryOperator }, { ">", BinaryOperator }
     };
 
-    vector<pair<string, TokenType>> multiCharTokens = {
+    std::vector<std::pair<std::string, TokenType>> multiCharTokens = {
         { "&&", AndOperator },
         { "||", OrOperator },
         { "==", DoubleEquals },
@@ -126,7 +133,7 @@ vector<Token> tokenize(const string& sourceCode) {
         }
 
         if (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1]))) {
-            string num = "";
+            std::string num = "";
             while (!src.empty() && (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1])))) {
                 num += shift(src);
             }
@@ -137,7 +144,7 @@ vector<Token> tokenize(const string& sourceCode) {
         bool matchedMulti = false;
         for (const auto& [symbol, type] : multiCharTokens) {
             if (src.size() >= symbol.length()) {
-                string joined = "";
+                std::string joined = "";
                 for (size_t i = 0; i < symbol.length(); ++i)
                     joined += src[i];
 
@@ -159,10 +166,10 @@ vector<Token> tokenize(const string& sourceCode) {
 
         if (src[0] == "\"") {
             shift(src);
-            string value = "";
+            std::string value = "";
             while (!src.empty() && src[0] != "\"") {
                 if (src[0] == "\n") {
-                    cerr << "Expected closing quote";
+                    std::cerr << "Expected closing quote";
                     exit(1);
                 }
                 value += shift(src);
@@ -174,7 +181,7 @@ vector<Token> tokenize(const string& sourceCode) {
 
 
         if (isAlpha(src[0])) {
-            string ident = "";
+            std::string ident = "";
             while (!src.empty() && isAlpha(src[0])) {
                 ident += shift(src);
             }
@@ -186,7 +193,7 @@ vector<Token> tokenize(const string& sourceCode) {
             continue;
         }
 
-        cout << "Unrecognized character in source: " << src[0] << endl;
+        std::cout << "Unrecognized character in source: " << src[0] << std::endl;
         exit(1);
     }
 

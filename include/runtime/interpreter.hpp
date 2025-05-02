@@ -26,6 +26,8 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::C
 #include "eval/memberassignment.hpp"
 #include "eval/array.hpp"
 #include "eval/whilestmt.hpp"
+#include "eval/classdefinition.hpp"
+#include "eval/newexpr.hpp"
 
 RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
@@ -43,8 +45,13 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
             return new UndefinedVal();
         }
 
+        case NodeType::ClassDefinition:
+            return evalClassDefinition(static_cast<ClassDefinitionType*>(astNode), env);
+
         case NodeType::ProbeDeclaration:
             return evalProbeDeclaration(static_cast<ProbeDeclarationType*>(astNode), env);
+        case NodeType::NewExpr:
+            return evalNewExpr(static_cast<NewExprType*>(astNode), env);
 
         case NodeType::BinaryExpr:
             return evalBinExpr(static_cast<BinaryExprType*>(astNode), env);
@@ -85,11 +92,11 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
             return evalMemberExpr(static_cast<MemberExprType*>(astNode), env);
 
         case NodeType::MemberAssignment:
-            return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);
+            return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);        
 
         default:
-            cout << "Unexpected AST-node kind found: ";
-            cout << astNode->kind << endl;
+            std::cout << "Unexpected AST-node kind found: ";
+            std::cout << astNode->kind << std::endl;
             exit(1);
     }
 }

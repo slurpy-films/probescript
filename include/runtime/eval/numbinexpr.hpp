@@ -3,7 +3,7 @@
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
 
-NumberVal* evalNumericBinExpr(NumberVal* lhs, NumberVal* rhs, string op) {
+NumberVal* evalNumericBinExpr(NumberVal* lhs, NumberVal* rhs, std::string op) {
     double result = 0;
 
     double left = std::stod(lhs->value);

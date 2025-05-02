@@ -9,13 +9,13 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
     RuntimeVal* obj = eval(expr->object, env);
     
     if (obj->type == ValueType::Object) {
-        string key;
+        std::string key;
 
         if (expr->computed) {
             RuntimeVal* propValue = eval(expr->property, env);
     
             if (propValue->type != ValueType::String) {
-                cerr << "Computed property must evaluate to a string";
+                std::cerr << "Computed property must evaluate to a string";
                 exit(1);
             }
     
@@ -28,7 +28,7 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
         ObjectVal* object = static_cast<ObjectVal*>(obj);
 
         if (object->properties.count(key) == 0) {
-            cerr << "Object has no property " << key;
+            std::cerr << "Object has no property " << key;
             exit(1);
         }
 
@@ -46,7 +46,7 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
         RuntimeVal* indexval = eval(expr->property, env);
 
         if (indexval->type != ValueType::Number) {
-            cerr << "Array index must evaluate to a number";
+            std::cerr << "Array index must evaluate to a number";
             exit(1);
         }
 
@@ -62,7 +62,7 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
 
         return array->items[idx];
     } else {
-        cerr << "Cannot evaluate member expression of type " << obj->type;
+        std::cerr << "Cannot evaluate member expression of type " << obj->type;
         exit(1);
     }
 }

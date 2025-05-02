@@ -8,7 +8,7 @@ RuntimeVal* evalWhileStmt(WhileStmtType* stmt, Env* env) {
     while (true) {
         RuntimeVal* result = eval(stmt->condition, env);
         if (result->type != ValueType::Boolean) {
-            cerr << "While condition must evaluate to a boolean";
+            std::cerr << "While condition must evaluate to a boolean";
             exit(1);
         }
 

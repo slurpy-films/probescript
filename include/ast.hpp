@@ -4,8 +4,6 @@
 #include <iostream>
 #include <memory>
 
-using namespace std;
-
 enum NodeType {
     Program,
     ProbeDeclaration,
@@ -29,19 +27,22 @@ enum NodeType {
     ImportStmt,
     ExportStmt,
     WhileStmt,
+    ClassDefinition,
+    NewExpr,
+    ReturnStmt,
 };
 
 struct Stmt {
     NodeType kind;
     Stmt(NodeType kind) : kind(kind) {}
     virtual ~Stmt() = default;
-    virtual string toString() const { return ""; }
-    virtual string value() const { return "default"; }
+    virtual std::string toString() const { return ""; }
+    virtual std::string value() const { return "default"; }
 };
 
 struct ProgramType : public Stmt {
     ProgramType() : Stmt(NodeType::Program) {}
-    vector<Stmt*> body;
+    std::vector<Stmt*> body;
     
     ~ProgramType() {
         for (auto stmt : body) {
@@ -50,9 +51,15 @@ struct ProgramType : public Stmt {
     }
 };
 
+struct ReturnStmtType : public Stmt {
+    Stmt* stmt;
+    ReturnStmtType(Stmt* stmt)
+        : Stmt(NodeType::ReturnStmt), stmt(stmt) {}
+};
+
 struct ImportStmtType : public Stmt {
-    ImportStmtType(string module) : Stmt(NodeType::ImportStmt), module(module) {}
-    string module;
+    ImportStmtType(std::string module) : Stmt(NodeType::ImportStmt), module(module) {}
+    std::string module;
 };
 
 struct ExportStmtType : public Stmt {
@@ -63,51 +70,51 @@ struct ExportStmtType : public Stmt {
 struct Expr : public Stmt { 
     Expr(NodeType kind = NodeType::NullLiteral) : Stmt(kind) {}
 
-    string toString() const override {
+    std::string toString() const override {
         return value();
     }
 };
 
 struct WhileStmtType : public Stmt {
-    WhileStmtType(Expr* condition, vector<Stmt*> body)
+    WhileStmtType(Expr* condition, std::vector<Stmt*> body)
         : Stmt(NodeType::WhileStmt), condition(condition), body(body) {}
         Expr* condition;
-        vector<Stmt*> body;
+        std::vector<Stmt*> body;
     };
 
 struct ProbeDeclarationType : public Stmt {
-    ProbeDeclarationType(string name, vector<Stmt*> body) : Stmt(NodeType::ProbeDeclaration), name(name), body(body) {}
+    ProbeDeclarationType(std::string name, std::vector<Stmt*> body) : Stmt(NodeType::ProbeDeclaration), name(name), body(body) {}
 
-    string name;
-    vector<Stmt*> body;
+    std::string name;
+    std::vector<Stmt*> body;
 };
 
 struct VarDecalarationType : public Stmt {
-    VarDecalarationType(Expr* value, string ident, bool constant = false) : Stmt(NodeType::VarDeclaration), value(value), identifier(ident), constant(constant) {}
+    VarDecalarationType(Expr* value, std::string ident, bool constant = false) : Stmt(NodeType::VarDeclaration), value(value), identifier(ident), constant(constant) {}
     Expr* value;
-    string identifier;
+    std::string identifier;
     bool constant;
 };
 
 struct IfStmtType : public Stmt {
-    IfStmtType(Expr* condition, vector<Stmt*> body) : Stmt(NodeType::IfStmt), condition(condition), body(body) {}
+    IfStmtType(Expr* condition, std::vector<Stmt*> body) : Stmt(NodeType::IfStmt), condition(condition), body(body) {}
 
     Expr* condition;
-    vector<Stmt*> body;
-    vector<Stmt*> elseStmt;
+    std::vector<Stmt*> body;
+    std::vector<Stmt*> elseStmt;
     bool hasElse = false;
 };
 
 struct AssignmentExprType : public Expr {
-    AssignmentExprType(Expr* assigne, Expr* value, string op) : Expr(NodeType::AssignmentExpr), assigne(assigne), value(value), op(op) {}
+    AssignmentExprType(Expr* assigne, Expr* value, std::string op) : Expr(NodeType::AssignmentExpr), assigne(assigne), value(value), op(op) {}
 
     Expr* assigne;
     Expr* value;
-    string op;
+    std::string op;
 };
 
 struct BinaryExprType : public Expr {
-    BinaryExprType(Expr* left, Expr* right, const string& op) 
+    BinaryExprType(Expr* left, Expr* right, const std::string& op) 
         : Expr(NodeType::BinaryExpr), left(left), right(right), op(op) {}
     
     ~BinaryExprType() {
@@ -117,20 +124,20 @@ struct BinaryExprType : public Expr {
 
     Expr* left;
     Expr* right;
-    string op;
+    std::string op;
     
-    string value() const override {
+    std::string value() const override {
         return left->toString() + " " + op + " " + right->toString();
     }
 };
 
 struct IdentifierType : public Expr {
-    IdentifierType(const string& symbol) 
+    IdentifierType(const std::string& symbol) 
         : Expr(NodeType::Identifier), symbol(symbol) {}
 
-    string symbol;
+    std::string symbol;
     
-    string value() const override {
+    std::string value() const override {
         return symbol;
     }
 };
@@ -141,63 +148,76 @@ struct NumericLiteralType : public Expr {
     
     double numValue;
     
-    string value() const override {
-        return to_string(numValue);
+    std::string value() const override {
+        return std::to_string(numValue);
     }
 };
 
 struct StringLiteralType : public Expr {
-    string strValue;
-    StringLiteralType(string val) : Expr(NodeType::StringLiteral), strValue(val) {}
+    std::string strValue;
+    StringLiteralType(std::string val) : Expr(NodeType::StringLiteral), strValue(val) {}
 
-    string value() const override {
+    std::string value() const override {
         return strValue;
     }
 };
 
 struct NullLiteralType : public Expr {
     NullLiteralType() : Expr(NodeType::NullLiteral) {}
-    string value() const override {
+    std::string value() const override {
         return "null";
     };
 };
 
 struct UndefinedLiteralType : public Expr {
     UndefinedLiteralType() : Expr(NodeType::UndefinedLiteral) {}
-    string value() const override {
+    std::string value() const override {
         return "undefined";
     };
 };
 
+struct ClassDefinitionType : public Stmt {
+    ClassDefinitionType(std::string name, std::vector<Stmt*> body) : Stmt(NodeType::ClassDefinition), name(name), body(body) {}
+    std::string name;
+    std::vector<Stmt*> body;
+};
+
 struct PropertyLiteralType : public Expr {
-    PropertyLiteralType(string key, Expr* val) : Expr(NodeType::PropertyLiteral), key(key), val(val) {}
-    string value() const override {
+    PropertyLiteralType(std::string key, Expr* val) : Expr(NodeType::PropertyLiteral), key(key), val(val) {}
+    std::string value() const override {
         return "null";
     };
 
-    string key;
+    std::string key;
     Expr* val;
 
 };
 
 struct ObjectLiteralType : public Expr {
-    ObjectLiteralType(vector<PropertyLiteralType*> properties) : Expr(NodeType::ObjectLiteral), properties(properties) {}
-    string value() const override {
+    ObjectLiteralType(std::vector<PropertyLiteralType*> properties) : Expr(NodeType::ObjectLiteral), properties(properties) {}
+    std::string value() const override {
         return "null";
     };
 
-    vector<PropertyLiteralType*> properties;
+    std::vector<PropertyLiteralType*> properties;
 };
 
 struct ArrayLiteralType : public Expr {
-    ArrayLiteralType(vector<Expr*> items) : Expr(NodeType::ArrayLiteral), items(items) {}
+    ArrayLiteralType(std::vector<Expr*> items) : Expr(NodeType::ArrayLiteral), items(items) {}
 
-    vector<Expr*> items;
+    std::vector<Expr*> items;
+};
+
+struct NewExprType : public Expr {
+    Expr* constructor;
+    std::vector<Expr*> args;
+
+    NewExprType(Expr* constructor, std::vector<Expr*> args) : Expr(NodeType::NewExpr), constructor(constructor), args(args) {}
 };
 
 struct CallExprType : public Expr {
-    CallExprType(Expr* calee = new Expr(), vector<Expr*> args = {}) : Expr(NodeType::CallExpr), args(args), calee(calee) {}
-    vector<Expr*> args;
+    CallExprType(Expr* calee = new Expr(), std::vector<Expr*> args = {}) : Expr(NodeType::CallExpr), args(args), calee(calee) {}
+    std::vector<Expr*> args;
     Expr* calee;
 };
 
@@ -218,9 +238,9 @@ struct MemberAssignmentType : public Expr {
 };
 
 struct FunctionDeclarationType : public Stmt {
-    FunctionDeclarationType(vector<string> params, string name, vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
+    FunctionDeclarationType(std::vector<std::string> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
 
-    vector<string> parameters;
-    string name;
-    vector<Stmt*> body;
+    std::vector<std::string> parameters;
+    std::string name;
+    std::vector<Stmt*> body;
 };

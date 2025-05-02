@@ -20,6 +20,7 @@ namespace ValueType {
         String,
         Undefined,
         Array,
+        Class,
     };
 }
 
@@ -65,7 +66,7 @@ struct NumberVal : public RuntimeVal {
     double getValue() { return stod(number); }
     std::string toString() const override {
         double num = stod(number);
-        return (floor(num) == num) ? to_string(static_cast<int>(num)) : to_string(num);
+        return (std::floor(num) == num) ? std::to_string(static_cast<int>(num)) : std::to_string(num);
     }
     double toNum() const override { return stod(number); }
 };
@@ -144,5 +145,16 @@ struct ProbeValue : public RuntimeVal {
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
     std::string toString() const override {
         return "[probe " + name + "]";
+    }
+};
+
+struct ClassVal : public RuntimeVal {
+    std::string name;
+    Env* parentEnv;
+    std::vector<Stmt*> body;
+    ClassVal(std::string name, Env* declarationEnv, std::vector<Stmt*> body) 
+    : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body) {}
+    std::string toString() const override {
+        return "[class " + name + "]";
     }
 };

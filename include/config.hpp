@@ -5,7 +5,6 @@
 
 namespace Config {
 
-using namespace std;
 
 enum RuntimeType {
     Normal,
@@ -14,10 +13,10 @@ enum RuntimeType {
 };
 
 struct Config {
-    Config(RuntimeType type = Normal, string probeName = "Main") : type(type), probeName(probeName) {} 
+    Config(RuntimeType type = Normal, std::string probeName = "Main") : type(type), probeName(probeName) {} 
     RuntimeType type;
-    string probeName = "Main";
-    std::unordered_map<std::string, filesystem::path> modules;
+    std::string probeName = "Main";
+    std::unordered_map<std::string, std::filesystem::path> modules;
     bool importsDone = false;
 };
 

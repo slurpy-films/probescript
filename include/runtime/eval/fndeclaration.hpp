@@ -3,8 +3,8 @@
 #include "runtime/values.hpp"
 #include "runtime/env.hpp"
 
-RuntimeVal* evalFunctionDeclaration(FunctionDeclarationType* declaration, Env* env) {
+RuntimeVal* evalFunctionDeclaration(FunctionDeclarationType* declaration, Env* env, bool onlyValue = false) {
     FunctionValue* fn = new FunctionValue(declaration->name, declaration->parameters, env, declaration->body);
 
-    return env->declareVar(declaration->name, fn, true);
+    return onlyValue ? fn : env->declareVar(declaration->name, fn, true);
 }

@@ -4,7 +4,7 @@
 #include "runtime/values.hpp"
 #include "boolbinop.hpp"
 
-static unordered_map<string, bool> booleanOperators = {{"&&", true}, {"||", true}, {">=", true}, {"<=", true}, {"<", true}, {">", true}, {"!=", true}, {"==", true}};
+static std::unordered_map<std::string, bool> booleanOperators = {{"&&", true}, {"||", true}, {">=", true}, {"<=", true}, {"<", true}, {">", true}, {"!=", true}, {"==", true}};
 
 RuntimeVal* evalBinExpr(BinaryExprType* binop, Env* env) {
     if (booleanOperators.find(binop->op) != booleanOperators.end()) {
@@ -22,6 +22,6 @@ RuntimeVal* evalBinExpr(BinaryExprType* binop, Env* env) {
         return evalStringericBinExpr(static_cast<StringVal*>(left), static_cast<StringVal*>(right), binop->op);
     }
 
-    cerr << "Invalid operants: " << left->value << " and " << right->value;
+    std::cerr << "Invalid operants: " << left->value << " and " << right->value;
     exit(1);
 }

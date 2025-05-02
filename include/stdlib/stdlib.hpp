@@ -5,6 +5,6 @@
 #include <unordered_map>
 
 
-unordered_map<string, ObjectVal*> stdlib = {
+std::unordered_map<std::string, ObjectVal*> stdlib = {
     {"Fs", new ObjectVal(filesystemModule)}
 };

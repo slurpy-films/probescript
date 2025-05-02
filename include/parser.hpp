@@ -4,11 +4,10 @@
 #include <iostream>
 #include "utils/shift.hpp"
 
-using namespace std;
 
 class Parser {
     public:
-        ProgramType* produceAST(string& sourceCode) {
+        ProgramType* produceAST(std::string& sourceCode) {
             tokens = Lexer::tokenize(sourceCode);
             ProgramType* program = new ProgramType();
     
@@ -20,7 +19,7 @@ class Parser {
         }
     
     private:
-        vector<Lexer::Token> tokens;
+        std::vector<Lexer::Token> tokens;
     
         bool notEOF() {
             return tokens[0].type != Lexer::END;
@@ -45,10 +44,14 @@ class Parser {
                     return parseIfStmt();
                 case Lexer::Import:
                     return parseImportStmt();
+                case Lexer::Return:
+                    return parseReturnStmt();
                 case Lexer::Export:
                     return parseExportStmt();
                 case Lexer::While:
                     return parseWhileStmt();
+                case Lexer::Class:
+                    return parseClassDeclaration();
                 default:
                     return parseExpr();
             }
@@ -56,13 +59,27 @@ class Parser {
 
         Stmt* parseProbeDeclaration() {
             eat();
-            string name = expect(Lexer::Identifier, "Expected identifier").value;
+            std::string name = expect(Lexer::Identifier, "Expected identifier").value;
 
-            vector<Stmt*> body = parseBody();
+            std::vector<Stmt*> body = parseBody();
 
             ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);
 
             return prb;
+        }
+
+        Stmt* parseReturnStmt() {
+            eat();
+
+            return new ReturnStmtType(parseStmt());
+        }
+
+        Stmt* parseClassDeclaration() {
+            eat();
+            std::string name = expect(Lexer::Identifier, "Expected identifier").value;
+            std::vector<Stmt*> body = parseBody();
+
+            return new ClassDefinitionType(name, body);
         }
 
         Stmt* parseModuleDeclaration() {
@@ -80,13 +97,13 @@ class Parser {
 
             expect(Lexer::ClosedParen, "Expected closing parenthesis after while condition");
 
-            vector<Stmt*> body = parseBody();
+            std::vector<Stmt*> body = parseBody();
             return new WhileStmtType(condition, body);
         }
 
         Stmt* parseImportStmt() {
             eat();
-            string module = expect(Lexer::Identifier, "Expected identifier after import statement").value;
+            std::string module = expect(Lexer::Identifier, "Expected identifier after import statement").value;
 
             ImportStmtType* importstmt = new ImportStmtType(module);
 
@@ -104,22 +121,22 @@ class Parser {
 
         Stmt* parseFunctionDeclaration() {
             eat();
-            string name = expect(Lexer::Identifier, "Expected identifier").value;
+            std::string name = expect(Lexer::Identifier, "Expected identifier").value;
 
-            vector<Expr*> args = parseArgs();
+            std::vector<Expr*> args = parseArgs();
         
-            vector<string> params;
+            std::vector<std::string> params;
             
             for (Expr* arg : args) {
                 if (arg->kind != NodeType::Identifier) {
-                    cerr << "Expected parameter to be of type string";
+                    std::cerr << "Expected parameter to be of type string";
                     exit(1);
                 }
 
                 params.push_back(static_cast<IdentifierType*>(arg)->symbol);
             }
 
-            vector<Stmt*> body = parseBody();
+            std::vector<Stmt*> body = parseBody();
 
             FunctionDeclarationType* fn = new FunctionDeclarationType(params, name, body);
 
@@ -134,12 +151,12 @@ class Parser {
 
             Lexer::Token lastToken = eat();
             if (lastToken.type != Lexer::ClosedParen) {
-                cerr << "Expected closing parenthesis, recieved " << lastToken.value;
+                std::cerr << "Expected closing parenthesis, recieved " << lastToken.value;
                 exit(1);
             }
 
             
-            vector<Stmt*> body = parseBody();
+            std::vector<Stmt*> body = parseBody();
 
             IfStmtType* ifStmt = new IfStmtType(condition, body);
 
@@ -154,12 +171,12 @@ class Parser {
 
         VarDecalarationType* parseVarDeclaration(bool isConstant = false) {
             eat();
-            string ident = expect(Lexer::Identifier, "Expected identifier, recieved: ").value;
+            std::string ident = expect(Lexer::Identifier, "Expected identifier, recieved: ").value;
 
             if (at().type != Lexer::Equals) {
                 eat();
                 if (isConstant) {
-                    cout << "Must assign value to constant variable";
+                    std::cout << "Must assign value to constant variable";
                 }
                 return new VarDecalarationType(new UndefinedLiteralType(), ident);
             }
@@ -178,7 +195,7 @@ class Parser {
             Expr* left = parseLogicalExpr();
 
             if (at().type == Lexer::Equals || at().type == Lexer::AssignmentOperator) {
-                string op = eat().value;
+                std::string op = eat().value;
                 Expr* value = parseAssignmentExpr();
                 return new AssignmentExprType(left, value, op);
             }
@@ -190,7 +207,7 @@ class Parser {
             Expr* left = parseEqualityExpr();
 
             while (at().type == Lexer::AndOperator || at().type == Lexer::OrOperator) {
-                string op = eat().value;
+                std::string op = eat().value;
                 Expr* right = parseEqualityExpr();
                 left = new BinaryExprType(left, right, op);
             }
@@ -202,7 +219,7 @@ class Parser {
             Expr* left = parseRelationalExpr();
 
             while (at().type == Lexer::DoubleEquals || at().type == Lexer::NotEquals) {
-                string op = eat().value;
+                std::string op = eat().value;
 
                 Expr* right = parseRelationalExpr();
                 left = new BinaryExprType(left, right, op);
@@ -215,7 +232,7 @@ class Parser {
             Expr* left = parseObjectExpr();
 
             while (at().value == "<" || at().value == ">" || at().value == "<=" || at().value == ">=") {
-                string op = eat().value;
+                std::string op = eat().value;
 
                 Expr* right = parseObjectExpr();
 
@@ -232,10 +249,10 @@ class Parser {
 
             eat();
 
-            vector<PropertyLiteralType*> properties;
+            std::vector<PropertyLiteralType*> properties;
 
             while (notEOF() && at().type != Lexer::ClosedBrace) {
-                string key = expect(Lexer::Identifier, "Object literal key expected").value;
+                std::string key = expect(Lexer::Identifier, "Object literal key expected").value;
 
                 if (at().type == Lexer::Comma) {
                     eat();
@@ -266,7 +283,7 @@ class Parser {
         Expr* parseAdditiveExpr() {
             Expr* left = parseMultiplicativeExpr();
             while (at().value == "+" || at().value == "-") {
-                string op = eat().value;
+                std::string op = eat().value;
                 Expr* right = parseMultiplicativeExpr();
                 left = new BinaryExprType(left, right, op);
             }
@@ -276,11 +293,11 @@ class Parser {
 
         Expr* parseMultiplicativeExpr() {
 
-            Expr* left = parseArrayExpr();
+            Expr* left = parseNewExpr();
 
             while (at().value == "*" || at().value == "/" || at().value == "%") {
-                string op = eat().value;
-                Expr* right = parseArrayExpr();
+                std::string op = eat().value;
+                Expr* right = parseNewExpr();
                 left = new BinaryExprType(left, right, op);
             }
     
@@ -294,7 +311,7 @@ class Parser {
 
             eat();
 
-            vector<Expr*> items;
+            std::vector<Expr*> items;
 
             if (at().type == Lexer::CloseBracket) {
                 eat();
@@ -322,15 +339,15 @@ class Parser {
         }
 
         Expr* parseCallexpr(Expr* caller) {
-            vector<Expr*> args = parseArgs();
+            std::vector<Expr*> args = parseArgs();
             return new CallExprType(caller, args);
         }
         
 
-        vector<Expr*> parseArgs() {
+        std::vector<Expr*> parseArgs() {
             expect(Lexer::OpenParen, "Expected open parenthesis");
 
-            vector<Expr*> args; 
+            std::vector<Expr*> args; 
             if (at().type != Lexer::ClosedParen) {
                 args = parseArgList();
             };
@@ -340,8 +357,8 @@ class Parser {
             return args;
         }
 
-        vector<Expr*> parseArgList() {
-            vector<Expr*> args = {};
+        std::vector<Expr*> parseArgList() {
+            std::vector<Expr*> args = {};
 
             args.push_back(parseAssignmentExpr());
 
@@ -351,6 +368,23 @@ class Parser {
             }
 
             return args;
+        }
+
+        Expr* parseNewExpr() {
+            if (at().type != Lexer::New) {
+                return parseCallMemberExpr();
+            }
+
+            eat();
+
+            Expr* constructor = parseMemberExpr();
+
+            std::vector<Expr*> args;
+            if (at().type == Lexer::OpenParen) {
+                args = parseArgs();
+            }
+
+            return new NewExprType(constructor, args);
         }
 
         Expr* parseMemberExpr() {
@@ -366,7 +400,7 @@ class Parser {
                     property = parsePrimaryExpr();
 
                     if (property->kind != NodeType::Identifier) {
-                        cerr << "Cannot use dot operator without right hand side being an identifier";
+                        std::cerr << "Cannot use dot operator without right hand side being an identifier";
                         exit(1);
                     }
                 } else {
@@ -390,13 +424,16 @@ class Parser {
     
         Expr* parsePrimaryExpr() {
             Lexer::TokenType tk = at().type;
-    
+            if (tk == Lexer::OpenBracket) {
+                return parseArrayExpr();
+            }
+
             switch (tk) {
                 case Lexer::Identifier:
                     return new IdentifierType(eat().value);
     
                 case Lexer::Number:
-                    return new NumericLiteralType(stod(eat().value));
+                    return new NumericLiteralType(std::stod(eat().value));
 
                 case Lexer::String:
                     return new StringLiteralType(eat().value);
@@ -418,8 +455,8 @@ class Parser {
                     return new NullLiteralType();
     
                 default:
-                    cout << "Unexpected token found while parsing: ";
-                    cout << "\"" << at().value << "\": " << at().type << endl;
+                    std::cout << "Unexpected token found while parsing: ";
+                    std::cout << "\"" << at().value << "\": " << at().type << std::endl;
                     exit(1);
             }
         }
@@ -437,20 +474,20 @@ class Parser {
             return prev;
         }
 
-        Lexer::Token expect(Lexer:: TokenType type, string err) {
+        Lexer::Token expect(Lexer:: TokenType type, std::string err) {
             Lexer::Token prev = shift(tokens);
             if (prev.type != type) {
-                cerr << err;
+                std::cerr << err;
                 exit(1);
             }
 
             return prev;
         }
 
-        vector<Stmt*> parseBody() {
+        std::vector<Stmt*> parseBody() {
             if (at().type == Lexer::Openbrace) {
                 eat();
-                vector<Stmt*> body;
+                std::vector<Stmt*> body;
                 while (at().type != Lexer::ClosedBrace && at().type != Lexer::END) {
                     body.push_back(parseStmt());
                 }
@@ -458,7 +495,7 @@ class Parser {
                 expect(Lexer::ClosedBrace, "Expected closing brace");
                 return body;
             } else {
-                vector<Stmt*> body;
+                std::vector<Stmt*> body;
                 body.push_back(parseStmt());
                 return body;
             }

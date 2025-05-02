@@ -6,7 +6,7 @@
 #include "runtime/env.hpp"
 
 RuntimeVal* evalArray(ArrayLiteralType* expr, Env* env) {
-    vector<RuntimeVal*> items;
+    std::vector<RuntimeVal*> items;
 
     for (Expr* item : expr->items) {
         items.push_back(eval(item, env));

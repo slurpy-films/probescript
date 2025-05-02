@@ -27,22 +27,22 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                 break;
             } else if (stmt->kind == NodeType::ImportStmt) {
                 ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
-                string modulename = importstmt->module;
+                std::string modulename = importstmt->module;
                 if (stdlib.find(modulename) != stdlib.end()) {
                     env->declareVar(modulename, stdlib[modulename]);
                     continue;
                 }
-                
+
                 if (config->modules.find(modulename) == config->modules.end()) {
-                    cerr << "Cannot find module " << modulename;
+                    std::cerr << "Cannot find module " << modulename;
                     exit(1);
                 }
 
                 fs::path filepath = config->modules[modulename];
 
-                ifstream stream(filepath);
+                std::ifstream stream(filepath);
 
-                string file((istreambuf_iterator<char>(stream)), istreambuf_iterator<char>());
+                std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 
                 Parser parser;
 
@@ -57,7 +57,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
         }
 
         if (!foundProbe) {
-            cerr << "Probe " << config->probeName << " is not declared";
+            std::cerr << "Probe " << config->probeName << " is not declared";
             exit(1);
         }
 
@@ -75,7 +75,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
 
         return lastEval;
     } else if (config->type == Config::Exports) {
-        unordered_map<string, RuntimeVal*> exports;
+        std::unordered_map<std::string, RuntimeVal*> exports;
 
         Env* env = new Env();
 
@@ -85,7 +85,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
             if (stmt->kind == NodeType::ExportStmt) {
                 ExportStmtType* exportstmt = static_cast<ExportStmtType*>(stmt);
                 
-                string exportname;
+                std::string exportname;
                 RuntimeVal* exporting;
                 bool found = false;
 
@@ -117,8 +117,17 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                         break;
                     }
 
+                    case NodeType::ClassDefinition: {
+                        ClassDefinitionType* cls = static_cast<ClassDefinitionType*>(exportstmt->exporting);
+                        exportname = cls->name;
+                        found = true;
+                        lasteval = exporting = eval(cls, env);
+
+                        break;
+                    }
+
                     default:
-                        cerr << "Type " << exportstmt->exporting->kind << " cannot be exported";
+                        std::cerr << "Type " << exportstmt->exporting->kind << " cannot be exported";
                         exit(1);
                 }
 

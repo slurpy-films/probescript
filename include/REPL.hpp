@@ -9,14 +9,14 @@
 class REPL {
     public:
         void start() {
-            cout << "REPL v1.0\n";
+            std::cout << "REPL v1.0\n";
             Env* env = new Env();
             Config::Config* config = new Config::Config(Config::REPL);
             while (true) {
-                cout << "> ";
+                std::cout << "> ";
                 Parser parser;
-                string src;
-                getline(cin, src);
+                std::string src;
+                std::getline(std::cin, src);
 
                 if (src.find("exit") == 0) break;
 
@@ -24,7 +24,7 @@ class REPL {
 
                 RuntimeVal* result = eval(program, env, config);
 
-                cout << result->toString() << "\n";
+                std::cout << result->toString() << "\n";
 
                 delete program;
             }

@@ -8,28 +8,28 @@
 
 namespace fs = std::filesystem;
 
-unordered_map<string, RuntimeVal*> filesystemModule = {
-    { "readFile", new NativeFnValue([](vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
+std::unordered_map<std::string, RuntimeVal*> filesystemModule = {
+    { "readFile", new NativeFnValue([](std::vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
         if (args.size() != 1) {
-            cerr << "readFile: Expected one argument, file path." << endl;
+            std::cerr << "readFile: Expected one argument, file path." << std::endl;
             exit(1);
         }
 
         std::string filePath = static_cast<StringVal*>(args[0])->string;
 
         if (!fs::exists(filePath)) {
-            cerr << "File does not exist: " << filePath << endl;
+            std::cerr << "File does not exist: " << filePath << std::endl;
             exit(1);
         }
 
         if (!fs::is_regular_file(filePath)) {
-            cerr << "Provided path is not a file: " << filePath << endl;
+            std::cerr << "Provided path is not a file: " << filePath << std::endl;
             exit(1);
         }
 
         std::ifstream file(filePath);
         if (!file.is_open()) {
-            cerr << "Failed to open file: " << filePath << endl;
+            std::cerr << "Failed to open file: " << filePath << std::endl;
             exit(1);
         }
 
