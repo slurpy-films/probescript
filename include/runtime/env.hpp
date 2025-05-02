@@ -18,6 +18,7 @@ class Env {
                 declareVar("num", new NativeFnValue(toNum), true);
                 declareVar("str", new NativeFnValue(toStr), true);
                 declareVar("console", new ObjectVal(console), true);
+                declareVar("undefined", new UndefinedVal(), true);
             }
         }
 

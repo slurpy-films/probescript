@@ -78,9 +78,10 @@ RuntimeVal* evalCallWithFnVal(RuntimeVal* fn, std::vector<RuntimeVal*> args, Env
 
         for (int i = 0; i < func->params.size(); i++) {
             std::string varname = func->params[i];
-            scope->declareVar(varname, args[i], false);
+            RuntimeVal* value = (i < args.size()) ? args[i] : new UndefinedVal();
+            scope->declareVar(varname, value, false);
         }
-
+        
         RuntimeVal* result = new UndefinedVal();
 
         for (Stmt* stmt : func->body) {

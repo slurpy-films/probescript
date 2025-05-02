@@ -152,8 +152,12 @@ struct ClassVal : public RuntimeVal {
     std::string name;
     Env* parentEnv;
     std::vector<Stmt*> body;
+    Expr* extends;
+    bool doesExtend = false;
     ClassVal(std::string name, Env* declarationEnv, std::vector<Stmt*> body) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body) {}
+    ClassVal(std::string name, Env* declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[class " + name + "]";
     }

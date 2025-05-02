@@ -178,8 +178,11 @@ struct UndefinedLiteralType : public Expr {
 
 struct ClassDefinitionType : public Stmt {
     ClassDefinitionType(std::string name, std::vector<Stmt*> body) : Stmt(NodeType::ClassDefinition), name(name), body(body) {}
+    ClassDefinitionType(std::string name, std::vector<Stmt*> body, Expr* extends) : Stmt(NodeType::ClassDefinition), name(name), body(body), extends(extends), doesExtend(true) {}
     std::string name;
     std::vector<Stmt*> body;
+    Expr* extends;
+    bool doesExtend = false;
 };
 
 struct PropertyLiteralType : public Expr {
