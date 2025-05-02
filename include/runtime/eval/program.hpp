@@ -15,6 +15,7 @@ namespace fs = std::filesystem;
 
 RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) {
     if (config->type == Config::Normal) {
+        Env* scope = new Env(env);
         ProbeDeclarationType* probeDeclaration;
         bool foundProbe = false;
         for (Stmt* stmt : program->body) {
@@ -53,6 +54,24 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                 ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
 
                 env->declareVar(modulename, moduleObj, true);
+            } else {
+                switch (stmt->kind) {
+                    case NodeType::VarDeclaration:
+                        eval(stmt, scope);
+                        break;
+                    case NodeType::FunctionDeclaration:
+                        eval(stmt, scope);
+                        break;
+                    case NodeType::ClassDefinition:
+                        eval(stmt, scope);
+                        break;
+                    case NodeType::ProbeDeclaration:
+                        eval(stmt, scope);
+                        break;
+                    default:
+                        std::cerr << "Only variable, function, class, and probe declarations are allowed";
+                        exit(1);
+                }
             }
         }
 
@@ -62,9 +81,9 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
         }
 
 
-        ProbeValue* probe = static_cast<ProbeValue*>(evalProbeDeclaration(probeDeclaration, env));
+        ProbeValue* probe = static_cast<ProbeValue*>(evalProbeDeclaration(probeDeclaration, scope));
 
-        RuntimeVal* lastEval = evalProbeCall(probe->name, env);
+        RuntimeVal* lastEval = evalProbeCall(probe->name, scope);
 
         return lastEval;
     } else if (config->type == Config::REPL) {

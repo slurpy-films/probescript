@@ -61,6 +61,14 @@ class Parser {
             eat();
             std::string name = expect(Lexer::Identifier, "Expected identifier").value;
 
+            if (at().type == Lexer::Extends) {
+                eat();
+                Expr* extends = parseExpr();
+                std::vector<Stmt*> body = parseBody();
+
+                return new ProbeDeclarationType(name, body, extends);
+            }
+
             std::vector<Stmt*> body = parseBody();
 
             ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);

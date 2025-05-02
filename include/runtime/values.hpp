@@ -139,10 +139,14 @@ struct FunctionValue : public RuntimeVal {
 
 struct ProbeValue : public RuntimeVal {
     std::string name;
+    Expr* extends;
+    bool doesExtend = false;
     Env* declarationEnv;
     std::vector<Stmt*> body;
     ProbeValue (std::string name, Env* declarationEnv, std::vector<Stmt*> body) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
+    ProbeValue (std::string name, Env* declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+        : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[probe " + name + "]";
     }

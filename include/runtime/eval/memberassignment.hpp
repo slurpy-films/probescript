@@ -9,18 +9,31 @@ RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
     RuntimeVal* obj = eval(expr->object, env);
     RuntimeVal* value = eval(expr->newvalue, env);
 
-    if (obj->type != ValueType::Object) {
-        std::cerr << "Cannot find member of non object";
-        exit(1);
-    }
-
     std::string key;
 
     if (expr->computed) {
         RuntimeVal* propValue = eval(expr->property, env);
 
+        if (propValue->type == ValueType::Number) {
+            int index = std::stoi(static_cast<NumberVal*>(propValue)->number);
+
+            if (obj->type == ValueType::Array) {
+                ArrayVal* array = static_cast<ArrayVal*>(obj);
+
+                if (index >= array->items.size()) {
+                    array->items.resize(index + 1, new UndefinedVal());
+                }
+
+                array->items[index] = value;
+                return array;
+            } else {
+                std::cerr << "Cannot use numeric index on non-array object";
+                exit(1);
+            }
+        }
+
         if (propValue->type != ValueType::String) {
-            std::cerr << "Computed property must evaluate to a string";
+            std::cerr << "Computed property must evaluate to a string or number";
             exit(1);
         }
 
@@ -30,14 +43,12 @@ RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
         key = ident->symbol;
     }
 
-    ObjectVal* objectVal = static_cast<ObjectVal*>(obj);
+    if (obj->type == ValueType::Object) {
+        ObjectVal* objectVal = static_cast<ObjectVal*>(obj);
+        objectVal->properties[key] = value;
+        return objectVal;
+    }
 
-    std::string objName = static_cast<IdentifierType*>(expr->object)->symbol;
-
-    ObjectVal* object = static_cast<ObjectVal*>(env->lookupVar(objName));
-
-    
-    object->properties[key] = value;
-    
-    return env->assignVar(objName, object);
+    std::cerr << "Cannot assign member to non-object/non-array value";
+    exit(1);
 }

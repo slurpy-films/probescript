@@ -84,8 +84,11 @@ struct WhileStmtType : public Stmt {
 
 struct ProbeDeclarationType : public Stmt {
     ProbeDeclarationType(std::string name, std::vector<Stmt*> body) : Stmt(NodeType::ProbeDeclaration), name(name), body(body) {}
+    ProbeDeclarationType(std::string name, std::vector<Stmt*> body, Expr* extends) : Stmt(NodeType::ProbeDeclaration), name(name), body(body), extends(extends), doesExtend(true) {}
 
+    bool doesExtend = false;
     std::string name;
+    Expr* extends;
     std::vector<Stmt*> body;
 };
 
