@@ -2,6 +2,7 @@
 #include "ast.hpp"
 #include "runtime/values.hpp"
 #include "runtime/env.hpp"
+#include "body.hpp"
 
 RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<RuntimeVal*> args);
 
@@ -37,17 +38,11 @@ RuntimeVal* evalCall(CallExprType* call, Env* env) {
             scope->declareVar(varname, args[i], false);
         }
 
-        RuntimeVal* result = new UndefinedVal();
+        RuntimeVal* result = evalBody(func->body, scope);
 
-        for (Stmt* stmt : func->body) {
-            if (stmt->kind == NodeType::ReturnStmt) {
-                result = eval(static_cast<ReturnStmtType*>(stmt)->stmt, scope);
-            } else {
-                result = eval(stmt, scope);
-            }
-        }
+        // std::cout << (result->type == ValueType::ReturnSignal) ? static_cast<ReturnSignal*>(result)->val->toString() : result->toString();
 
-        return result;
+        return result->type == ValueType::ReturnSignal ? static_cast<ReturnSignal*>(result)->val : new UndefinedVal();
     }
 
     if (fn->type == ValueType::Probe) {

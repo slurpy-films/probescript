@@ -2,12 +2,13 @@
 #include "ast.hpp"
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
+#include "body.hpp"
 
 RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
     RuntimeVal* condition = eval(stmt->condition, baseEnv);
 
     if (condition->type != ValueType::Boolean) {
-        std::cerr << "If statement must evaluate to a boolean, got " << condition->value;
+        std::cerr << "If statement condition must evaluate to a boolean, got " << condition->value;
         exit(1);
     }
 
@@ -15,17 +16,11 @@ RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
 
     if (boolval->getValue()) {
         Env* env = new Env(baseEnv);
-
-        for (Stmt* stmt : stmt->body) {
-            eval(stmt, env);
-        }
+        return evalBody(stmt->body, env);
     } else if (stmt->hasElse) {
         Env* env = new Env(baseEnv);
-
-        for (Stmt* stmt : stmt->elseStmt) {
-            eval(stmt, env);
-        }
+        return evalBody(stmt->elseStmt, env);
     }
 
-    return new BooleanVal(boolval->value);
+    return new UndefinedVal();
 }

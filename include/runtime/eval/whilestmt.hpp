@@ -3,8 +3,10 @@
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
 #include "runtime/interpreter.hpp"
+#include "body.hpp"
 
 RuntimeVal* evalWhileStmt(WhileStmtType* stmt, Env* env) {
+    RuntimeVal* res = new UndefinedVal();
     while (true) {
         RuntimeVal* result = eval(stmt->condition, env);
         if (result->type != ValueType::Boolean) {
@@ -14,11 +16,11 @@ RuntimeVal* evalWhileStmt(WhileStmtType* stmt, Env* env) {
 
         if (static_cast<BooleanVal*>(result)->getValue()) {
             Env* scope = new Env(env);
-            for (Stmt* stmt : stmt->body) {
-                eval(stmt, scope);
-            }
+            res = evalBody(stmt->body, scope);
+            if (res->type == ValueType::ReturnSignal) break;
+
         } else break;
     }
 
-    return new UndefinedVal();
+    return res;
 }

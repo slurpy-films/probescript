@@ -3,6 +3,7 @@
 #include "values.hpp"
 #include "stdlib/console.hpp"
 #include "stdlib/datatypes.hpp"
+#include "stdlib/process.hpp"
 #include <iostream>
 
 
@@ -13,11 +14,12 @@ class Env {
             parent = parentENV;
 
             if (global) {
-                declareVar("true", new BooleanVal("true"), true);
-                declareVar("false", new BooleanVal("false"), true);
+                declareVar("true", new BooleanVal(true), true);
+                declareVar("false", new BooleanVal(false), true);
                 declareVar("num", new NativeFnValue(toNum), true);
                 declareVar("str", new NativeFnValue(toStr), true);
                 declareVar("console", new ObjectVal(console), true);
+                declareVar("process", new ObjectVal(processModule));
                 declareVar("undefined", new UndefinedVal(), true);
             }
         }

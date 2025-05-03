@@ -92,7 +92,9 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
             return evalMemberExpr(static_cast<MemberExprType*>(astNode), env);
 
         case NodeType::MemberAssignment:
-            return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);        
+            return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);
+        case NodeType::ReturnStmt:
+            return new ReturnSignal(eval(static_cast<ReturnStmtType*>(astNode)->stmt, env));
 
         default:
             std::cout << "Unexpected AST-node kind found: ";

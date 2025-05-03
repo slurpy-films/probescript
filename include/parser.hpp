@@ -218,8 +218,6 @@ class Parser {
                 }
                 return new VarDeclarationType(new UndefinedLiteralType(), ident);
             }
-
-            std::cout << "Equals!";
             
             expect(Lexer::Equals, "Expected equals token in variable declaration, revieved: ");
             VarDeclarationType* declaration = new VarDeclarationType(parseExpr(), ident);

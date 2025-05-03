@@ -21,6 +21,7 @@ namespace ValueType {
         Undefined,
         Array,
         Class,
+        ReturnSignal,
     };
 }
 
@@ -93,13 +94,23 @@ struct StringVal : public RuntimeVal {
 };
 
 struct BooleanVal : public RuntimeVal {
-    std::string value;
-    BooleanVal(std::string val) : RuntimeVal(ValueType::Boolean, val), value(val) {}
-    BooleanVal(bool val) : RuntimeVal(ValueType::Boolean), value(std::to_string(val)) {}
-    bool getValue() { return value == "true" || value == "1"; }
-    std::string toString() const override { return (value == "true" || value == "1") ? "true" : "false"; }
-    double toNum() const override { return (value == "true" || value == "1") ? 1 : 0; }
-    bool toBool() const override { return (value == "true" || value == "1"); }
+    bool value;
+
+    BooleanVal(bool val) 
+        : RuntimeVal(ValueType::Boolean), value(val) {}
+
+    bool getValue() const { return value; }
+
+    std::string toString() const override { return value ? "true" : "false"; }
+    double toNum() const override { return value ? 1 : 0; }
+    bool toBool() const override { return value; }
+};
+
+
+struct ReturnSignal : public RuntimeVal {
+    RuntimeVal* val;
+    ReturnSignal(RuntimeVal* val)
+        : val(val), RuntimeVal(ValueType::ReturnSignal) {}
 };
 
 struct ObjectVal : public RuntimeVal {
