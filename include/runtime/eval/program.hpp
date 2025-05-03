@@ -49,7 +49,11 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
 
                 ProgramType* program = parser.produceAST(file);
 
-                RuntimeVal* evaluated = eval(program, new Env(), new Config::Config(Config::Exports));
+                Config::Config* conf = new Config::Config(Config::Exports);
+
+                conf->modules = config->modules;
+
+                RuntimeVal* evaluated = eval(program, new Env(), conf);
 
                 ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
 
@@ -152,7 +156,37 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
 
                 exports[exportname] = exporting;
             } else {
-                eval(stmt, env);
+                if (stmt->kind == NodeType::ImportStmt) {
+                    ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
+                    std::string modulename = importstmt->module;
+                    if (stdlib.find(modulename) != stdlib.end()) {
+                        env->declareVar(modulename, stdlib[modulename]);
+                        continue;
+                    }
+    
+                    if (config->modules.find(modulename) == config->modules.end()) {
+                        std::cerr << "Can not find module " << modulename;
+                        exit(1);
+                    }
+    
+                    fs::path filepath = config->modules[modulename];
+    
+                    std::ifstream stream(filepath);
+    
+                    std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+    
+                    Parser parser;
+    
+                    ProgramType* program = parser.produceAST(file);
+    
+                    RuntimeVal* evaluated = eval(program, new Env(), new Config::Config(Config::Exports));
+    
+                    ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
+    
+                    env->declareVar(modulename, moduleObj, true);
+                } else {
+                    eval(stmt, env);
+                }
             }
         }
 

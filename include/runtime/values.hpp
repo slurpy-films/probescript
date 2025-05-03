@@ -82,7 +82,7 @@ struct BooleanVal : public RuntimeVal {
     std::string value;
     BooleanVal(std::string val) : RuntimeVal(ValueType::Boolean, val), value(val) {}
     bool getValue() { return value == "true" || value == "1"; }
-    std::string toString() const override { return value; }
+    std::string toString() const override { return (value == "1" || value == "true") ? "true" : "false"; }
     double toNum() const override { return value == "true" || value == "1" ? 1 : 0; }
 };
 
