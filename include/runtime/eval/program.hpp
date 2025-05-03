@@ -28,9 +28,14 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                 break;
             } else if (stmt->kind == NodeType::ImportStmt) {
                 ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
-                std::string modulename = importstmt->module;
+                std::string modulename = importstmt->name;
                 if (stdlib.find(modulename) != stdlib.end()) {
-                    env->declareVar(modulename, stdlib[modulename]);
+                    if (importstmt->hasMember) {
+                        Expr* member = importstmt->module;
+                        Env* modEnv = new Env();
+                        modEnv->declareVar(modulename, stdlib[modulename]);
+                        env->declareVar(modulename, eval(member, modEnv));
+                    } else env->declareVar(modulename, stdlib[modulename]);
                     continue;
                 }
 
@@ -57,7 +62,12 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
 
                 ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
 
-                env->declareVar(modulename, moduleObj, true);
+                if (importstmt->hasMember) {
+                    Expr* member = importstmt->module;
+                    Env* modEnv = new Env();
+                    modEnv->declareVar(modulename, moduleObj);
+                    env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
+                } else env->declareVar(modulename, moduleObj, true);
             } else {
                 switch (stmt->kind) {
                     case NodeType::VarDeclaration:
@@ -73,7 +83,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                         eval(stmt, scope);
                         break;
                     default:
-                        std::cerr << "Only variable, function, class, and probe declarations are allowed";
+                        std::cerr << "Only variable, function, class, and probe declarations are allowed in program bodies, got " << static_cast<IdentifierType*>(stmt)->symbol;
                         exit(1);
                 }
             }
@@ -158,7 +168,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
             } else {
                 if (stmt->kind == NodeType::ImportStmt) {
                     ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
-                    std::string modulename = importstmt->module;
+                    std::string modulename = importstmt->name;
                     if (stdlib.find(modulename) != stdlib.end()) {
                         env->declareVar(modulename, stdlib[modulename]);
                         continue;

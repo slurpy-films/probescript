@@ -6,7 +6,7 @@
 #include "runtime/values.hpp"
 #include "runtime/interpreter.hpp"
 
-RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv) {
+RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<RuntimeVal*> args = {}) {
     RuntimeVal* val = declarationEnv->lookupVar(probeName);
 
     if (val->type != ValueType::Probe) {
@@ -32,7 +32,6 @@ RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv) {
         }
     }
 
-    RuntimeVal* last = new UndefinedVal();
 
     RuntimeVal* runfnval = env->lookupVar("run");
 
@@ -41,11 +40,8 @@ RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv) {
         exit(1);
     }
 
-    FunctionValue* runfn = static_cast<FunctionValue*>(runfnval);
 
-    for (Stmt* stmt : runfn->body) {
-        last = eval(stmt, env);
-    }
+    evalCallWithFnVal(runfnval, args, env);
 
-    return last;
+    return new UndefinedVal();
 }

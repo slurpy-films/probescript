@@ -3,7 +3,7 @@
 #include "runtime/values.hpp"
 #include "runtime/env.hpp"
 
-RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv);
+RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<RuntimeVal*> args);
 
 #include "runprobe.hpp"
 
@@ -51,7 +51,7 @@ RuntimeVal* evalCall(CallExprType* call, Env* env) {
     }
 
     if (fn->type == ValueType::Probe) {
-        return evalProbeCall(static_cast<ProbeValue*>(fn)->name, env);
+        return evalProbeCall(static_cast<ProbeValue*>(fn)->name, env, args);
     }
 
     std::cerr << "Cannot call value that is not a function, " << fn->type;
@@ -96,7 +96,7 @@ RuntimeVal* evalCallWithFnVal(RuntimeVal* fn, std::vector<RuntimeVal*> args, Env
     }
 
     if (fn->type == ValueType::Probe) {
-        return evalProbeCall(static_cast<ProbeValue*>(fn)->name, env);
+        return evalProbeCall(static_cast<ProbeValue*>(fn)->name, env, args);
     }
 
     std::cerr << "Cannot call value that is not a function, " << fn->type;

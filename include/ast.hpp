@@ -57,11 +57,6 @@ struct ReturnStmtType : public Stmt {
         : Stmt(NodeType::ReturnStmt), stmt(stmt) {}
 };
 
-struct ImportStmtType : public Stmt {
-    ImportStmtType(std::string module) : Stmt(NodeType::ImportStmt), module(module) {}
-    std::string module;
-};
-
 struct ExportStmtType : public Stmt {
     ExportStmtType(Stmt* value) : Stmt(NodeType::ExportStmt), exporting(value) {}
     Stmt* exporting;
@@ -73,6 +68,18 @@ struct Expr : public Stmt {
     std::string toString() const override {
         return value();
     }
+};
+
+struct ImportStmtType : public Stmt {
+    ImportStmtType(std::string name, Expr* module) : Stmt(NodeType::ImportStmt), module(module), name(name), hasMember(true) {}
+    ImportStmtType(std::string name) : Stmt(NodeType::ImportStmt), name(name) {}
+    ImportStmtType(std::string name, Expr* module, std::string ident) : Stmt(NodeType::ImportStmt), module(module), name(name), hasMember(true), ident(ident), customIdent(true) {}
+    ImportStmtType(std::string name, std::string ident) : Stmt(NodeType::ImportStmt), name(name), ident(ident), customIdent(true) {}
+    Expr* module;
+    bool hasMember = false;
+    bool customIdent = false;
+    std::string name;
+    std::string ident;
 };
 
 struct WhileStmtType : public Stmt {
@@ -229,8 +236,10 @@ struct CallExprType : public Expr {
 
 struct MemberExprType : public Expr {
     MemberExprType(Expr* object = new Expr(), Expr* property = new Expr(), bool computed = false) : Expr(NodeType::MemberExpr), object(object), property(property), computed(computed) {}
+    MemberExprType(Expr* object, Expr* property, bool computed, std::string lastProp) : Expr(NodeType::MemberExpr), object(object), property(property), computed(computed), lastProp(lastProp) {}
     Expr* object;
     Expr* property;
+    std::string lastProp;
     bool computed;
 };
 

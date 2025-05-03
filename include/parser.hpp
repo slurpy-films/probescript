@@ -118,11 +118,31 @@ class Parser {
             return new WhileStmtType(condition, body);
         }
 
-        Stmt* parseImportStmt() {
+        Stmt* parseImportStmt() {   
             eat();
-            std::string module = expect(Lexer::Identifier, "Expected identifier after import statement").value;
+            std::string name = at().value;
+            if (at(1).type == Lexer::Dot) {
+                Expr* module = parseExpr();
 
-            ImportStmtType* importstmt = new ImportStmtType(module);
+                if (at().type == Lexer::As) {
+                    eat();
+                    std::string ident = expect(Lexer::Identifier, "Expected identifier after as keyword").value;
+                    ImportStmtType* importstmt = new ImportStmtType(name, module, ident);
+                    return importstmt;
+                }
+
+                ImportStmtType* importstmt = new ImportStmtType(name, module);
+                return importstmt;
+            } else eat();
+
+            if (at().type == Lexer::As) {
+                eat();
+                std::string ident = expect(Lexer::Identifier, "Expected identifier after as keyword").value;
+                ImportStmtType* importstmt = new ImportStmtType(name, ident);
+                return importstmt;
+            }
+
+            ImportStmtType* importstmt = new ImportStmtType(name);
 
             return importstmt;
         }
@@ -273,10 +293,10 @@ class Parser {
 
                 if (at().type == Lexer::Comma) {
                     eat();
-                    properties.push_back(new PropertyLiteralType(key, new NullLiteralType()));
+                    properties.push_back(new PropertyLiteralType(key, new UndefinedLiteralType()));
                     continue;
                 } else if (at().type == Lexer::ClosedBrace) {
-                    properties.push_back(new PropertyLiteralType(key, new NullLiteralType()));
+                    properties.push_back(new PropertyLiteralType(key, new UndefinedLiteralType()));
                     continue;
                 }
 
@@ -403,41 +423,51 @@ class Parser {
 
             return new NewExprType(constructor, args);
         }
-
+        
         Expr* parseMemberExpr() {
             Expr* obj = parsePrimaryExpr();
-
+        
             while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket) {
                 Lexer::Token op = eat();
                 Expr* property;
                 bool computed;
-
+                std::string lastProp;
+        
                 if (op.type == Lexer::Dot) {
                     computed = false;
                     property = parsePrimaryExpr();
-
+        
                     if (property->kind != NodeType::Identifier) {
                         std::cerr << "Cannot use dot operator without right hand side being an identifier";
                         exit(1);
                     }
+        
+                    lastProp = static_cast<IdentifierType*>(property)->symbol;
+        
                 } else {
                     computed = true;
                     property = parseExpr();
-
                     expect(Lexer::CloseBracket, "Expected closing bracket");
+        
+                    if (property->kind == NodeType::StringLiteral) {
+                        lastProp = static_cast<StringLiteralType*>(property)->strValue;
+                    }
                 }
-
+        
                 if (at().type == Lexer::Equals) {
                     eat();
                     Expr* value = parseExpr();
                     obj = new MemberAssignmentType(obj, property, value, computed);
                 } else {
-                    obj = new MemberExprType(obj, property, computed);
+                    MemberExprType* member = new MemberExprType(obj, property, computed);
+                    member->lastProp = lastProp;  // 💡 Sett lastProp her
+                    obj = member;
                 }
             }
-
+        
             return obj;
         }
+        
     
         Expr* parsePrimaryExpr() {
             Lexer::TokenType tk = at().type;

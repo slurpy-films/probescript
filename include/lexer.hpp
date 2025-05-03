@@ -46,6 +46,7 @@ enum TokenType {
     New,
     Return,
     Extends,
+    As,
 };
 
 struct Token {
@@ -86,6 +87,7 @@ std::unordered_map<std::string, TokenType> getKeyWords() {
         { "new", New },
         { "return", Return },
         { "extends", Extends },
+        { "as", As },
     };
 
     return keywords;
