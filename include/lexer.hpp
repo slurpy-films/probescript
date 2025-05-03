@@ -200,6 +200,7 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
     }
 
     tokens.push_back(token("EndOfFile", END));
+
     return tokens;
 }
 

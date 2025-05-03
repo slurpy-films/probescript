@@ -175,6 +175,7 @@ class Parser {
 
             std::vector<Stmt*> body = parseBody();
 
+
             FunctionDeclarationType* fn = new FunctionDeclarationType(params, name, body);
 
             return fn;
@@ -206,20 +207,22 @@ class Parser {
             return ifStmt;
         }
 
-        VarDecalarationType* parseVarDeclaration(bool isConstant = false) {
+        VarDeclarationType* parseVarDeclaration(bool isConstant = false) {
             eat();
             std::string ident = expect(Lexer::Identifier, "Expected identifier, recieved: ").value;
 
             if (at().type != Lexer::Equals) {
-                eat();
                 if (isConstant) {
                     std::cout << "Must assign value to constant variable";
+                    exit(1);
                 }
-                return new VarDecalarationType(new UndefinedLiteralType(), ident);
+                return new VarDeclarationType(new UndefinedLiteralType(), ident);
             }
+
+            std::cout << "Equals!";
             
             expect(Lexer::Equals, "Expected equals token in variable declaration, revieved: ");
-            VarDecalarationType* declaration = new VarDecalarationType(parseExpr(), ident);
+            VarDeclarationType* declaration = new VarDeclarationType(parseExpr(), ident);
             
             return declaration;
         }
@@ -395,7 +398,7 @@ class Parser {
         }
 
         std::vector<Expr*> parseArgList() {
-            std::vector<Expr*> args = {};
+            std::vector<Expr*> args;
 
             args.push_back(parseAssignmentExpr());
 

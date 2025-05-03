@@ -99,8 +99,8 @@ struct ProbeDeclarationType : public Stmt {
     std::vector<Stmt*> body;
 };
 
-struct VarDecalarationType : public Stmt {
-    VarDecalarationType(Expr* value, std::string ident, bool constant = false) : Stmt(NodeType::VarDeclaration), value(value), identifier(ident), constant(constant) {}
+struct VarDeclarationType : public Stmt {
+    VarDeclarationType(Expr* value, std::string ident, bool constant = false) : Stmt(NodeType::VarDeclaration), value(value), identifier(ident), constant(constant) {}
     Expr* value;
     std::string identifier;
     bool constant;

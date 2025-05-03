@@ -42,7 +42,12 @@ struct RuntimeVal {
     virtual double toNum() const {
         return 0;
     }
+
+    virtual bool toBool() const {
+        return true;
+    }
 };
+
 
 using NativeFunction = std::function<RuntimeVal*(std::vector<RuntimeVal*>, Env*)>;
 
@@ -50,25 +55,33 @@ using NativeFunction = std::function<RuntimeVal*(std::vector<RuntimeVal*>, Env*)
 struct UndefinedVal : public RuntimeVal {
     UndefinedVal() : RuntimeVal(ValueType::Undefined, "undefined") {}
     std::string toString() const override { return "undefined"; }
-
     double toNum() const override { return 0; }
+    bool toBool() const override { return false; }
 };
 
 struct NullVal : public RuntimeVal {
     NullVal() : RuntimeVal(ValueType::Null, "null") {}
     std::string toString() const override { return "null"; }
     double toNum() const override { return 0; }
+    bool toBool() const override { return false; }
 };
 
 struct NumberVal : public RuntimeVal {
-    std::string number;
-    NumberVal(std::string val) : RuntimeVal(ValueType::Number, val), number(val) {}
-    double getValue() { return stod(number); }
+    double number;
+
+    NumberVal(const std::string& val)
+        : RuntimeVal(ValueType::Number, val), number(std::stod(val)) {}
+
+    double getValue() { return number; }
+
     std::string toString() const override {
-        double num = stod(number);
-        return (std::floor(num) == num) ? std::to_string(static_cast<int>(num)) : std::to_string(num);
+        return (std::floor(number) == number)
+            ? std::to_string(static_cast<int>(number))
+            : std::to_string(number);
     }
-    double toNum() const override { return stod(number); }
+
+    double toNum() const override { return number; }
+    bool toBool() const override { return number != 0; }
 };
 
 struct StringVal : public RuntimeVal {
@@ -76,14 +89,17 @@ struct StringVal : public RuntimeVal {
     StringVal(std::string val) : RuntimeVal(ValueType::String, val), string(val) {}
     std::string toString() const override { return string; }
     double toNum() const override { return stod(string); }
+    bool toBool() const override { return !string.empty(); }
 };
 
 struct BooleanVal : public RuntimeVal {
     std::string value;
     BooleanVal(std::string val) : RuntimeVal(ValueType::Boolean, val), value(val) {}
+    BooleanVal(bool val) : RuntimeVal(ValueType::Boolean), value(std::to_string(val)) {}
     bool getValue() { return value == "true" || value == "1"; }
-    std::string toString() const override { return (value == "1" || value == "true") ? "true" : "false"; }
-    double toNum() const override { return value == "true" || value == "1" ? 1 : 0; }
+    std::string toString() const override { return (value == "true" || value == "1") ? "true" : "false"; }
+    double toNum() const override { return (value == "true" || value == "1") ? 1 : 0; }
+    bool toBool() const override { return (value == "true" || value == "1"); }
 };
 
 struct ObjectVal : public RuntimeVal {
@@ -101,6 +117,7 @@ struct ObjectVal : public RuntimeVal {
         result += " }";
         return result;
     }
+    bool toBool() const override { return true; }
 };
 
 struct ArrayVal : public RuntimeVal {
@@ -115,6 +132,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+    bool toBool() const override { return true; }
 };
 
 struct NativeFnValue : public RuntimeVal {
@@ -123,6 +141,7 @@ struct NativeFnValue : public RuntimeVal {
     std::string toString() const override {
         return "[native function]";
     }
+    bool toBool() const override { return true; }
 };
 
 struct FunctionValue : public RuntimeVal {
@@ -135,6 +154,7 @@ struct FunctionValue : public RuntimeVal {
     std::string toString() const override {
         return "[function " + name + "]";
     }
+    bool toBool() const override { return true; }
 };
 
 struct ProbeValue : public RuntimeVal {
@@ -150,6 +170,7 @@ struct ProbeValue : public RuntimeVal {
     std::string toString() const override {
         return "[probe " + name + "]";
     }
+    bool toBool() const override { return true; }
 };
 
 struct ClassVal : public RuntimeVal {
@@ -165,4 +186,5 @@ struct ClassVal : public RuntimeVal {
     std::string toString() const override {
         return "[class " + name + "]";
     }
+    bool toBool() const override { return true; }
 };

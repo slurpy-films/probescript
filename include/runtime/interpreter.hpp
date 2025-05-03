@@ -77,7 +77,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
             return evalCall(static_cast<CallExprType*>(astNode), env);
 
         case NodeType::VarDeclaration:
-            return evalVarDeclaration(static_cast<VarDecalarationType*>(astNode), env);
+            return evalVarDeclaration(static_cast<VarDeclarationType*>(astNode), env);
 
         case NodeType::IfStmt:
             return evalIfStmt(static_cast<IfStmtType*>(astNode), env);

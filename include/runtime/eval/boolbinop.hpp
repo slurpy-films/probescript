@@ -7,56 +7,32 @@ RuntimeVal* evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
     RuntimeVal* left = eval(binop->left, env);
     RuntimeVal* right = eval(binop->right, env);
 
-    if (binop->op == "&&" || binop->op == "||") {
-        bool boolean = binop->op == "&&" ? static_cast<BooleanVal*>(left)->getValue() && static_cast<BooleanVal*>(right)->getValue() : static_cast<BooleanVal*>(left)->getValue() || static_cast<BooleanVal*>(right)->getValue();
-        return new BooleanVal(std::to_string(boolean));
+    const std::string& op = binop->op;
+
+    if (op == "&&" || op == "||") {
+        bool l = left->toBool();
+        bool r = right->toBool();
+        return new BooleanVal((op == "&&") ? (l && r) : (l || r));
     }
 
-    if (binop->op == "<") {
-        double leftnum = static_cast<NumberVal*>(left)->getValue();
-        double rightnum = static_cast<NumberVal*>(right)->getValue();
-
-        return new BooleanVal(std::to_string(leftnum < rightnum));
+    if (op == "==" || op == "!=") {
+        bool result = (left->toString() == right->toString());
+        return new BooleanVal(op == "==" ? result : !result);
     }
 
-    if (binop->op == ">") {
-        double leftnum = static_cast<NumberVal*>(left)->getValue();
-        double rightnum = static_cast<NumberVal*>(right)->getValue();
+    if (op == "<" || op == ">" || op == "<=" || op == ">=") {
+        double l = left->toNum();
+        double r = right->toNum();
+        bool result = false;
 
-        return new BooleanVal(std::to_string(leftnum > rightnum));
+        if (op == "<") result = l < r;
+        else if (op == ">") result = l > r;
+        else if (op == "<=") result = l <= r;
+        else if (op == ">=") result = l >= r;
+
+        return new BooleanVal(result);
     }
 
-    if (binop->op == "<=") {
-        double leftnum = static_cast<NumberVal*>(left)->getValue();
-        double rightnum = static_cast<NumberVal*>(right)->getValue();
-
-        return new BooleanVal(std::to_string(leftnum <= rightnum));
-    }
-
-    
-    if (binop->op == ">=") {
-        double leftnum = static_cast<NumberVal*>(left)->getValue();
-        double rightnum = static_cast<NumberVal*>(right)->getValue();
-
-        return new BooleanVal(std::to_string(leftnum >= rightnum));
-    }
-
-    if (binop->op == "==") {
-        double leftnum = static_cast<NumberVal*>(left)->getValue();
-        double rightnum = static_cast<NumberVal*>(right)->getValue();
-
-        return new BooleanVal(std::to_string(leftnum == rightnum));
-    }
-
-    
-    if (binop->op == "!=") {
-        double leftnum = static_cast<NumberVal*>(left)->getValue();
-        double rightnum = static_cast<NumberVal*>(right)->getValue();
-
-        return new BooleanVal(std::to_string(leftnum != rightnum));
-    }
-
-    std::cout << "Invalid operants";
-
+    std::cerr << "Invalid binary boolean operator: " << op << "\n";
     exit(1);
 }

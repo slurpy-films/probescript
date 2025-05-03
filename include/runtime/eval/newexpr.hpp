@@ -41,7 +41,7 @@ RuntimeVal* evalNewExpr(NewExprType* newexpr, Env* env) {
                 break;
             }
             case NodeType::VarDeclaration: {
-                VarDecalarationType* var = static_cast<VarDecalarationType*>(stmt);
+                VarDeclarationType* var = static_cast<VarDeclarationType*>(stmt);
                 ObjectVal* thisobj = static_cast<ObjectVal*>(scope->lookupVar("this"));
                 thisobj->properties[var->identifier] = eval(var->value, scope);
                 scope->assignVar("this", thisobj);

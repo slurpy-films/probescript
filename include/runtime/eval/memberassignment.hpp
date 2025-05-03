@@ -15,7 +15,7 @@ RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
         RuntimeVal* propValue = eval(expr->property, env);
 
         if (propValue->type == ValueType::Number) {
-            int index = std::stoi(static_cast<NumberVal*>(propValue)->number);
+            int index = static_cast<NumberVal*>(propValue)->toNum();
 
             if (obj->type == ValueType::Array) {
                 ArrayVal* array = static_cast<ArrayVal*>(obj);

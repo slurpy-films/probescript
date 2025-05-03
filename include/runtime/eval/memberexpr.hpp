@@ -54,7 +54,7 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
 
         ArrayVal* array = static_cast<ArrayVal*>(obj);
 
-        int idx = stoi(index->number);
+        int idx = index->number;
 
         if (idx < 0 || idx >= static_cast<int>(array->items.size())) {
             return new UndefinedVal();

@@ -6,7 +6,7 @@
 #include <algorithm>
 
 std::unordered_map<std::string, RuntimeVal*> DateModule = {
-    { "now", new NativeFnValue([](std::vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
+    { "stamp", new NativeFnValue([](std::vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
         using namespace std::chrono;
 
         auto now = system_clock::now();

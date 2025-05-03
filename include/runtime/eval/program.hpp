@@ -34,8 +34,8 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                         Expr* member = importstmt->module;
                         Env* modEnv = new Env();
                         modEnv->declareVar(modulename, stdlib[modulename]);
-                        env->declareVar(modulename, eval(member, modEnv));
-                    } else env->declareVar(modulename, stdlib[modulename]);
+                        env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
+                    } else env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, stdlib[modulename]);
                     continue;
                 }
 
@@ -67,7 +67,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                     Env* modEnv = new Env();
                     modEnv->declareVar(modulename, moduleObj);
                     env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
-                } else env->declareVar(modulename, moduleObj, true);
+                } else env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, moduleObj, true);
             } else {
                 switch (stmt->kind) {
                     case NodeType::VarDeclaration:
@@ -170,7 +170,12 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                     ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
                     std::string modulename = importstmt->name;
                     if (stdlib.find(modulename) != stdlib.end()) {
-                        env->declareVar(modulename, stdlib[modulename]);
+                        if (importstmt->hasMember) {
+                            Expr* member = importstmt->module;
+                            Env* modEnv = new Env();
+                            modEnv->declareVar(modulename, stdlib[modulename]);
+                            env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
+                        } else env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, stdlib[modulename]);
                         continue;
                     }
     
@@ -193,7 +198,14 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
     
                     ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
     
-                    env->declareVar(modulename, moduleObj, true);
+                    
+                    if (importstmt->hasMember) {
+                        Expr* member = importstmt->module;
+                        Env* modEnv = new Env();
+                        modEnv->declareVar(modulename, moduleObj);
+                        env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
+                    } else env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, moduleObj, true);
+                
                 } else {
                     eval(stmt, env);
                 }
