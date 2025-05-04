@@ -3,6 +3,8 @@
 #include "ast.hpp"
 #include "runtime/values.hpp"
 #include "runtime/env.hpp"
+#include "runtime/interpreter.hpp"
+#include "memberassignment.hpp"
 
 RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
     if (assignment->assigne->kind != NodeType::Identifier) {
@@ -41,30 +43,50 @@ RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
 }
 
 RuntimeVal* evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
-    if (expr->assigne->kind != NodeType::Identifier) {
-        std::cerr << "Postfix operators only supported on identifiers" << std::endl;
-        exit(1);
+    if (expr->assigne->kind == NodeType::Identifier) {
+        std::string varName = static_cast<IdentifierType*>(expr->assigne)->symbol;
+        RuntimeVal* current = env->lookupVar(varName);
+
+        if (current->type != ValueType::Number) {
+            std::cerr << "Postfix operators only supported on numbers" << std::endl;
+            exit(1);
+        }
+
+        double value = static_cast<NumberVal*>(current)->toNum();
+        double newValue = value;
+
+        if (expr->op == "++") newValue = value + 1;
+        else if (expr->op == "--") newValue = value - 1;
+        else {
+            std::cerr << "Unknown postfix operator: " << expr->op << std::endl;
+            exit(1);
+        }
+
+        env->assignVar(varName, new NumberVal(newValue));
+
+        return new NumberVal(value);
+    } else if (expr->assigne->kind == NodeType::MemberExpr) {
+        MemberAssignmentType* member = new MemberAssignmentType(
+            static_cast<MemberExprType*>(expr->assigne)->object,
+            static_cast<MemberExprType*>(expr->assigne)->property,
+            new NumericLiteralType((expr->op == "++") ? 1 : -1),
+            static_cast<MemberExprType*>(expr->assigne)->computed
+        );
+
+        return evalMemberAssignment(member, env);
     }
 
-    std::string varName = static_cast<IdentifierType*>(expr->assigne)->symbol;
-    RuntimeVal* current = env->lookupVar(varName);
+    return new UndefinedVal();
+}
 
-    if (current->type != ValueType::Number) {
-        std::cerr << "Postfix operators only supported on numbers" << std::endl;
-        exit(1);
+
+RuntimeVal* evalUnaryPrefix(UnaryPrefixType* expr, Env* env) {
+    RuntimeVal* val = eval(expr->assigne, env);
+
+    if (expr->op == "!") {
+        return new BooleanVal(!val->toBool());
     }
 
-    double value = static_cast<NumberVal*>(current)->toNum();
-    double newValue = value;
 
-    if (expr->op == "++") newValue = value + 1;
-    else if (expr->op == "--") newValue = value - 1;
-    else {
-        std::cerr << "Unknown postfix operator: " << expr->op << std::endl;
-        exit(1);
-    }
-
-    env->assignVar(varName, new NumberVal(newValue));
-
-    return new NumberVal(value);
+    return new UndefinedVal();
 }

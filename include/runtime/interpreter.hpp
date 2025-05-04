@@ -103,6 +103,9 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
 
         case NodeType::UnaryPostFix:
             return evalUnaryPostfix(static_cast<UnaryPostFixType*>(astNode), env);
+        
+        case NodeType::UnaryPrefix:
+            return evalUnaryPrefix(static_cast<UnaryPrefixType*>(astNode), env);
 
         default:
             std::cout << "Unexpected AST-node kind found: ";

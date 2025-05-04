@@ -32,6 +32,7 @@ enum NodeType {
     ReturnStmt,
     ForStmt,
     UnaryPostFix,
+    UnaryPrefix,
 };
 
 struct Stmt {
@@ -141,6 +142,14 @@ struct UnaryPostFixType : public Expr {
 
     UnaryPostFixType(std::string op, Expr* assigne)
         : op(op), assigne(assigne), Expr(NodeType::UnaryPostFix) {}
+};
+
+struct UnaryPrefixType : public Expr {
+    std::string op;
+    Expr* assigne;
+
+    UnaryPrefixType(std::string op, Expr* assigne)
+        : op(op), assigne(assigne), Expr(NodeType::UnaryPrefix) {}
 };
 
 struct BinaryExprType : public Expr {

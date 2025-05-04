@@ -219,7 +219,7 @@ class Parser {
             
             for (Expr* arg : args) {
                 if (arg->kind != NodeType::Identifier) {
-                    std::cerr << "Expected parameter to be of type string";
+                    std::cerr << "Expected parameter to be of type identifier";
                     exit(1);
                 }
 
@@ -390,16 +390,31 @@ class Parser {
 
         Expr* parseMultiplicativeExpr() {
 
-            Expr* left = parseNewExpr();
+            Expr* left = parseUnaryExpr();
 
             while (at().value == "*" || at().value == "/" || at().value == "%") {
                 std::string op = eat().value;
-                Expr* right = parseNewExpr();
+                Expr* right = parseUnaryExpr();
                 left = new BinaryExprType(left, right, op);
             }
     
             return left;
         }
+
+        Expr* parseUnaryExpr() {
+            if (at().type == Lexer::Bang ||
+                at().type == Lexer::Increment || 
+                at().type == Lexer::Decrement
+            ) {
+        
+                std::string op = eat().value;
+                Expr* argument = parseUnaryExpr();
+                return new UnaryPrefixType(op, argument);
+            }
+        
+            return parseNewExpr();
+        }
+        
 
         Expr* parseArrayExpr() {
             if (at().type != Lexer::OpenBracket) {
@@ -520,7 +535,7 @@ class Parser {
                     obj = new MemberAssignmentType(obj, property, value, computed);
                 } else {
                     MemberExprType* member = new MemberExprType(obj, property, computed);
-                    member->lastProp = lastProp;  // 💡 Sett lastProp her
+                    member->lastProp = lastProp;
                     obj = member;
                 }
             }

@@ -50,6 +50,7 @@ enum TokenType {
     For,
     Increment,
     Decrement,
+    Bang,
 };
 
 struct Token {
@@ -111,7 +112,8 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
         { "+", BinaryOperator }, { "-", BinaryOperator },
         { "*", BinaryOperator }, { "/", BinaryOperator },
         { "%", BinaryOperator }, { "=", Equals },
-        { "<", BinaryOperator }, { ">", BinaryOperator }
+        { "<", BinaryOperator }, { ">", BinaryOperator },
+        { "!", Bang },
     };
 
     std::vector<std::pair<std::string, TokenType>> multiCharTokens = {
