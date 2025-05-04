@@ -52,6 +52,8 @@ class Parser {
                     return parseWhileStmt();
                 case Lexer::Class:
                     return parseClassDeclaration();
+                case Lexer::For:
+                    return parseForStmt();
                 default:
                     return parseExpr();
             }
@@ -75,6 +77,57 @@ class Parser {
 
             return prb;
         }
+        Stmt* parseForStmt() {
+            eat();
+            expect(Lexer::OpenParen, "Expected '(' after 'for'");
+        
+            std::vector<Stmt*> decl;
+            if (at().type == Lexer::OpenParen) {
+                eat();
+                while (at().type != Lexer::ClosedParen && at().type != Lexer::END) {
+                    decl.push_back(parseStmt());
+                    if (at().type == Lexer::Comma) eat();
+                    else break;
+                }
+                expect(Lexer::ClosedParen, "Expected ')' after initializer block");
+            } else if (at().type != Lexer::Comma) {
+                decl.push_back(parseStmt());
+            }
+            expect(Lexer::Comma, "Expected ',' after initializer in for loop");
+        
+            std::vector<Expr*> cond;
+            if (at().type == Lexer::OpenParen) {
+                eat();
+                while (at().type != Lexer::ClosedParen && at().type != Lexer::END) {
+                    cond.push_back(parseExpr());
+                    if (at().type == Lexer::Comma) eat();
+                    else break;
+                }
+                expect(Lexer::ClosedParen, "Expected ')' after condition block");
+            } else if (at().type != Lexer::Comma) {
+                cond.push_back(parseExpr());
+            }
+            expect(Lexer::Comma, "Expected ',' after condition in for loop");
+        
+            std::vector<Expr*> update;
+            if (at().type == Lexer::OpenParen) {
+                eat();
+                while (at().type != Lexer::ClosedParen && at().type != Lexer::END) {
+                    update.push_back(parseExpr());
+                    if (at().type == Lexer::Comma) eat();
+                    else break;
+                }
+                expect(Lexer::ClosedParen, "Expected ')' after update block");
+            } else if (at().type != Lexer::ClosedParen) {
+                update.push_back(parseExpr());
+            }
+        
+            expect(Lexer::ClosedParen, "Expected ')' after update in for loop");
+        
+            std::vector<Stmt*> body = parseBody();
+            return new ForStmtType(decl, cond, update, body);
+        }
+        
 
         Stmt* parseReturnStmt() {
             eat();
@@ -231,15 +284,21 @@ class Parser {
 
         Expr* parseAssignmentExpr() {
             Expr* left = parseLogicalExpr();
-
+        
+            if (at().type == Lexer::Increment || at().type == Lexer::Decrement) {
+                std::string op = eat().value;
+                return new UnaryPostFixType(op, left);
+            }
+        
             if (at().type == Lexer::Equals || at().type == Lexer::AssignmentOperator) {
                 std::string op = eat().value;
                 Expr* value = parseAssignmentExpr();
                 return new AssignmentExprType(left, value, op);
             }
-            
+        
             return left;
         }
+        
 
         Expr* parseLogicalExpr() {
             Expr* left = parseEqualityExpr();

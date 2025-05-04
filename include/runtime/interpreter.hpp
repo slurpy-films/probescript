@@ -26,6 +26,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::C
 #include "eval/memberassignment.hpp"
 #include "eval/array.hpp"
 #include "eval/whilestmt.hpp"
+#include "eval/forstmt.hpp"
 #include "eval/classdefinition.hpp"
 #include "eval/newexpr.hpp"
 
@@ -93,8 +94,15 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
 
         case NodeType::MemberAssignment:
             return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);
+
         case NodeType::ReturnStmt:
             return new ReturnSignal(eval(static_cast<ReturnStmtType*>(astNode)->stmt, env));
+
+        case NodeType::ForStmt:
+            return evalForStmt(static_cast<ForStmtType*>(astNode), env);
+
+        case NodeType::UnaryPostFix:
+            return evalUnaryPostfix(static_cast<UnaryPostFixType*>(astNode), env);
 
         default:
             std::cout << "Unexpected AST-node kind found: ";

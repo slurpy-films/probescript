@@ -30,6 +30,8 @@ enum NodeType {
     ClassDefinition,
     NewExpr,
     ReturnStmt,
+    ForStmt,
+    UnaryPostFix,
 };
 
 struct Stmt {
@@ -106,6 +108,16 @@ struct VarDeclarationType : public Stmt {
     bool constant;
 };
 
+struct ForStmtType : public Stmt {
+    std::vector<Stmt*> declarations;
+    std::vector<Expr*> conditions;
+    std::vector<Expr*> updates;
+    std::vector<Stmt*> body;
+
+    ForStmtType(std::vector<Stmt*> decl, std::vector<Expr*> cond, std::vector<Expr*> update, std::vector<Stmt*> body)
+        : declarations(decl), conditions(cond), updates(update), body(body), Stmt(NodeType::ForStmt) {}
+};
+
 struct IfStmtType : public Stmt {
     IfStmtType(Expr* condition, std::vector<Stmt*> body) : Stmt(NodeType::IfStmt), condition(condition), body(body) {}
 
@@ -121,6 +133,14 @@ struct AssignmentExprType : public Expr {
     Expr* assigne;
     Expr* value;
     std::string op;
+};
+
+struct UnaryPostFixType : public Expr {
+    std::string op;
+    Expr* assigne;
+
+    UnaryPostFixType(std::string op, Expr* assigne)
+        : op(op), assigne(assigne), Expr(NodeType::UnaryPostFix) {}
 };
 
 struct BinaryExprType : public Expr {

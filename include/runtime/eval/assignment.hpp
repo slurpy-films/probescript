@@ -6,37 +6,65 @@
 
 RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
     if (assignment->assigne->kind != NodeType::Identifier) {
-        std::cout << "Expected Identifier" << std::endl;
+        std::cerr << "Expected Identifier in assignment" << std::endl;
         exit(1);
     }
 
     std::string varName = static_cast<IdentifierType*>(assignment->assigne)->symbol;
 
+    RuntimeVal* leftVal = eval(assignment->assigne, env);
+    RuntimeVal* rightVal = eval(assignment->value, env);
+
     if (assignment->op == "=") {
-        return env->assignVar(varName, eval(assignment->value, env));
-    } else if (assignment->op == "+=") {
-        RuntimeVal* val = eval(assignment->assigne, env);
-
-        switch (val->type) {
-            case ValueType::Number:
-                return env->assignVar(varName, new NumberVal(std::to_string(static_cast<NumberVal*>(val)->toNum() + eval(assignment->value, env)->toNum())));
-            case ValueType::String:
-                return env->assignVar(varName, new StringVal(static_cast<StringVal*>(val)->toString() + eval(assignment->value, env)->toString()));
-            default:
-                std::cerr << "Cannot only use += operator on strings and numbers";
-                exit(1);
-        }
-    } else if (assignment->op == "-=") {
-        RuntimeVal* val = eval(assignment->assigne, env);
-
-        switch (val->type) {
-            case ValueType::Number:
-                return env->assignVar(varName, new NumberVal(std::to_string(static_cast<NumberVal*>(val)->toNum() - eval(assignment->value, env)->toNum())));
-            default:
-            std::cerr << "Cannot only use -= operator on numbers";
-                exit(1);
-        }
+        return env->assignVar(varName, rightVal);
     }
 
-    return new UndefinedVal();
+    if (leftVal->type != ValueType::Number || rightVal->type != ValueType::Number) {
+        std::cerr << "Assignment operator '" << assignment->op << "' requires numeric values." << std::endl;
+        exit(1);
+    }
+
+    double left = static_cast<NumberVal*>(leftVal)->toNum();
+    double right = static_cast<NumberVal*>(rightVal)->toNum();
+    double result;
+
+    if (assignment->op == "+=") result = left + right;
+    else if (assignment->op == "-=") result = left - right;
+    else if (assignment->op == "*=") result = left * right;
+    else if (assignment->op == "/=") result = left / right;
+    else {
+        std::cerr << "Unsupported assignment operator: " << assignment->op << std::endl;
+        exit(1);
+    }
+
+    return env->assignVar(varName, new NumberVal(result));
+}
+
+RuntimeVal* evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
+    if (expr->assigne->kind != NodeType::Identifier) {
+        std::cerr << "Postfix operators only supported on identifiers" << std::endl;
+        exit(1);
+    }
+
+    std::string varName = static_cast<IdentifierType*>(expr->assigne)->symbol;
+    RuntimeVal* current = env->lookupVar(varName);
+
+    if (current->type != ValueType::Number) {
+        std::cerr << "Postfix operators only supported on numbers" << std::endl;
+        exit(1);
+    }
+
+    double value = static_cast<NumberVal*>(current)->toNum();
+    double newValue = value;
+
+    if (expr->op == "++") newValue = value + 1;
+    else if (expr->op == "--") newValue = value - 1;
+    else {
+        std::cerr << "Unknown postfix operator: " << expr->op << std::endl;
+        exit(1);
+    }
+
+    env->assignVar(varName, new NumberVal(newValue));
+
+    return new NumberVal(value);
 }

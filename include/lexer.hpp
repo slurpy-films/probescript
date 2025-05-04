@@ -47,6 +47,9 @@ enum TokenType {
     Return,
     Extends,
     As,
+    For,
+    Increment,
+    Decrement,
 };
 
 struct Token {
@@ -88,6 +91,7 @@ std::unordered_map<std::string, TokenType> getKeyWords() {
         { "return", Return },
         { "extends", Extends },
         { "as", As },
+        { "for", For },
     };
 
     return keywords;
@@ -121,6 +125,8 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
         { "-=", AssignmentOperator },
         { "*=", AssignmentOperator },
         { "/=", AssignmentOperator },
+        { "++", Increment },
+        { "--", Decrement },
     };
 
     while (!src.empty()) {

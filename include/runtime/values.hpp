@@ -72,6 +72,8 @@ struct NumberVal : public RuntimeVal {
 
     NumberVal(const std::string& val)
         : RuntimeVal(ValueType::Number, val), number(std::stod(val)) {}
+    NumberVal(double val)
+        : RuntimeVal(ValueType::Number), number(val) {}
 
     double getValue() { return number; }
 
