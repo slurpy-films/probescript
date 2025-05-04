@@ -58,6 +58,7 @@ struct ReturnStmtType : public Stmt {
     Stmt* stmt;
     ReturnStmtType(Stmt* stmt)
         : Stmt(NodeType::ReturnStmt), stmt(stmt) {}
+    
 };
 
 struct ExportStmtType : public Stmt {

@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
         
         ProgramType* program = parser.produceAST(file);
         RuntimeVal* result = eval(program, env, config);
+
+        delete program;
+        delete result;
     } else {
         REPL* repl = new REPL();
 
