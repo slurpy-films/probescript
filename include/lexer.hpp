@@ -70,7 +70,7 @@ bool isInt(const std::string& str) {
 }
 
 bool isSkippable(const std::string str) {
-    return str == " " || str == "\t" || str == "\n" || str == "\r";
+    return str == " " || str == "\t" || str == "\n" || str == "\r" || str == "";
 }
 
 std::unordered_map<std::string, TokenType> getKeyWords() {
@@ -140,6 +140,13 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
             continue;
         }
 
+        if (!src.empty() && src[0] == "/" && src.size() > 1 && src[1] == "/") {
+            shift(src);
+            shift(src);
+            while (!src.empty() && src[0] != "\n") shift(src);
+            continue;
+        }        
+
         if (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1]))) {
             std::string num = "";
             while (!src.empty() && (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1])))) {
@@ -201,7 +208,7 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
             continue;
         }
 
-        std::cout << "Unrecognized character in source: " << src[0] << std::endl;
+        std::cout << "Unrecognized character in source: '" << src[0] << "'" << std::endl;
         exit(1);
     }
 

@@ -161,11 +161,11 @@ class Parser {
 
         Stmt* parseWhileStmt() {
             eat();
-            expect(Lexer::OpenParen, "Expected open parenthesis after while keyword");
+            expect(Lexer::OpenParen, "Expected open parentheses after while keyword");
 
             Expr* condition = parseExpr();
 
-            expect(Lexer::ClosedParen, "Expected closing parenthesis after while condition");
+            expect(Lexer::ClosedParen, "Expected closing parentheses after while condition");
 
             std::vector<Stmt*> body = parseBody();
             return new WhileStmtType(condition, body);
@@ -242,7 +242,7 @@ class Parser {
 
             Lexer::Token lastToken = eat();
             if (lastToken.type != Lexer::ClosedParen) {
-                std::cerr << "Expected closing parenthesis, recieved " << lastToken.value;
+                std::cerr << "Expected closing parentheses, recieved " << lastToken.value;
                 exit(1);
             }
 
@@ -442,14 +442,14 @@ class Parser {
         
 
         std::vector<Expr*> parseArgs() {
-            expect(Lexer::OpenParen, "Expected open parenthesis");
+            expect(Lexer::OpenParen, "Expected open parentheses");
 
             std::vector<Expr*> args; 
             if (at().type != Lexer::ClosedParen) {
                 args = parseArgList();
             };
 
-            expect(Lexer::ClosedParen, "Expected closing parenthesis");
+            expect(Lexer::ClosedParen, "Expected closing parentheses");
             
             return args;
         }
@@ -548,7 +548,7 @@ class Parser {
                 case Lexer::OpenParen: {
                     eat();
                     Expr* value = parseExpr();
-                    expect(Lexer::ClosedParen, "Expected closing parenthesis ");
+                    expect(Lexer::ClosedParen, "Expected closing parentheses ");
                     eat();
                     return value;
                 }
