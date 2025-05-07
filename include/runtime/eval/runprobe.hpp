@@ -6,15 +6,15 @@
 #include "runtime/values.hpp"
 #include "runtime/interpreter.hpp"
 
-RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<RuntimeVal*> args = {}) {
-    RuntimeVal* val = declarationEnv->lookupVar(probeName);
+Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> args = {}) {
+    Val val = declarationEnv->lookupVar(probeName);
 
     if (val->type != ValueType::Probe) {
         std::cerr << "Probe " << probeName << " is not of type probe";
         exit(1);
     }
 
-    ProbeValue* probe = static_cast<ProbeValue*>(val);
+    std::shared_ptr<ProbeValue> probe = std::static_pointer_cast<ProbeValue>(val);
 
     Env* env = new Env(declarationEnv);
 
@@ -33,7 +33,7 @@ RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv, std::vecto
     }
 
 
-    RuntimeVal* runfnval = env->lookupVar("run");
+    Val runfnval = env->lookupVar("run");
 
     if (runfnval->type != ValueType::Function) {
         std::cerr << "Expected run to be of type function, got " << runfnval->type;
@@ -43,5 +43,5 @@ RuntimeVal* evalProbeCall(std::string probeName, Env* declarationEnv, std::vecto
 
     evalCallWithFnVal(runfnval, args, env);
 
-    return new UndefinedVal();
+    return std::make_shared<UndefinedVal>();
 }

@@ -3,7 +3,7 @@
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
 
-StringVal* evalStringericBinExpr(StringVal* lhs, StringVal* rhs, std::string op) {
+std::shared_ptr<StringVal> evalStringericBinExpr(std::shared_ptr<StringVal> lhs, std::shared_ptr<StringVal> rhs, std::string op) {
     std::string result = "";
 
     std::string left = lhs->string;
@@ -13,5 +13,5 @@ StringVal* evalStringericBinExpr(StringVal* lhs, StringVal* rhs, std::string op)
         result = left + right;
     }
 
-    return new StringVal(result);
+    return std::make_shared<StringVal>(result);
 }

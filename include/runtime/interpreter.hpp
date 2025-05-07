@@ -3,10 +3,11 @@
 #include "../ast.hpp"
 #include <cmath>
 #include <string>
+#include <memory>
 #include "env.hpp"
 #include "config.hpp"
 
-RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config());
+Val eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config());
 
 #include "eval/program.hpp"
 #include "eval/probedeclaration.hpp"
@@ -27,25 +28,30 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config = new Config::C
 #include "eval/array.hpp"
 #include "eval/whilestmt.hpp"
 #include "eval/forstmt.hpp"
-#include "eval/classdefinition.hpp"
+#include "eval/classdeclaration.hpp"
 #include "eval/newexpr.hpp"
 
-RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
+Val eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
         case NodeType::NumericLiteral: {
             NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);
-            return new NumberVal(num->value());
+            return std::make_shared<NumberVal>(num->value());
         }
 
         case NodeType::StringLiteral: {
             StringLiteralType* str = static_cast<StringLiteralType*>(astNode);
-            return new StringVal(str->value());
+            return std::make_shared<StringVal>(str->value());
         }
 
         case NodeType::UndefinedLiteral: {
-            return new UndefinedVal();
+            return std::make_shared<UndefinedVal>();
         }
 
+        case NodeType::ReturnStmt: {
+            Val value = eval(static_cast<ReturnStmtType*>(astNode)->stmt, env);
+            return std::make_shared<ReturnSignal>(value);
+        }
+        
         case NodeType::ClassDefinition:
             return evalClassDefinition(static_cast<ClassDefinitionType*>(astNode), env);
 
@@ -63,7 +69,7 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
             return evalProgram(static_cast<ProgramType*>(astNode), env, config);
 
         case NodeType::NullLiteral:
-            return new NullVal();
+            return std::make_shared<NullVal>();
 
         case NodeType::Identifier:
             return evalIdent(static_cast<IdentifierType*>(astNode), env);
@@ -94,9 +100,6 @@ RuntimeVal* eval(Stmt* astNode, Env* env, Config::Config* config) {
 
         case NodeType::MemberAssignment:
             return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);
-
-        case NodeType::ReturnStmt:
-            return new ReturnSignal(eval(static_cast<ReturnStmtType*>(astNode)->stmt, env));
 
         case NodeType::ForStmt:
             return evalForStmt(static_cast<ForStmtType*>(astNode), env);

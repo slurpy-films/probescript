@@ -5,8 +5,9 @@
 #include <unordered_map>
 #include <algorithm>
 
-std::unordered_map<std::string, RuntimeVal*> DateModule = {
-    { "stamp", new NativeFnValue([](std::vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
+std::unordered_map<std::string, Val> getDateModule() {
+    return {
+        {"stamp", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
         using namespace std::chrono;
 
         auto now = system_clock::now();
@@ -14,7 +15,7 @@ std::unordered_map<std::string, RuntimeVal*> DateModule = {
 
         std::string unit = "sec";
         if (!args.empty() && args[0]->type == ValueType::String) {
-            unit = static_cast<StringVal*>(args[0])->value;
+            unit = std::static_pointer_cast<StringVal>(args[0])->value;
             std::transform(unit.begin(), unit.end(), unit.begin(), ::tolower);
         }
 
@@ -29,9 +30,9 @@ std::unordered_map<std::string, RuntimeVal*> DateModule = {
         } else if (unit == "hour") {
             result = duration_cast<hours>(duration).count();
         } else {
-            return new StringVal("Invalid time unit: " + unit);
+            return std::make_shared<StringVal>("Invalid time unit: " + unit);
         }
 
-        return new NumberVal(std::to_string(result));
-    })}
+        return std::make_shared<NumberVal>(std::to_string(result));
+    })}};
 };

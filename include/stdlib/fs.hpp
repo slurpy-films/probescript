@@ -8,14 +8,15 @@
 
 namespace fs = std::filesystem;
 
-std::unordered_map<std::string, RuntimeVal*> filesystemModule = {
-    { "readFile", new NativeFnValue([](std::vector<RuntimeVal*> args, Env* env) -> RuntimeVal* {
+std::unordered_map<std::string, Val> getFilesystemModule() {
+    std::unordered_map<std::string, Val> mod = {
+        {"readFile", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
         if (args.size() != 1) {
             std::cerr << "readFile: Expected one argument, file path." << std::endl;
             exit(1);
         }
 
-        std::string filePath = static_cast<StringVal*>(args[0])->string;
+        std::string filePath = std::static_pointer_cast<StringVal>(args[0])->string;
 
         if (!fs::exists(filePath)) {
             std::cerr << "File does not exist: " << filePath << std::endl;
@@ -41,6 +42,8 @@ std::unordered_map<std::string, RuntimeVal*> filesystemModule = {
 
         file.close();
 
-        return new StringVal(fileContent);
-    })}
+        return std::make_shared<StringVal>(fileContent);
+    })}};
+
+    return mod;
 };

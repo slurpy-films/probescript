@@ -8,25 +8,25 @@
 #include "fndeclaration.hpp"
 #include "assignment.hpp"
 
-void inheritClass(ClassVal* cls, Env* env, ObjectVal* thisObj, std::vector<RuntimeVal*> args);
+void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args);
 
-RuntimeVal* evalNewExpr(NewExprType* newexpr, Env* env) {
-    RuntimeVal* rawcls = eval(newexpr->constructor, env);
+Val evalNewExpr(NewExprType* newexpr, Env* env) {
+    Val rawcls = eval(newexpr->constructor, env);
 
     if (rawcls->type != ValueType::Class) {
         std::cerr << "Cannot construct non class value";
         exit(1);
     }
 
-    ClassVal* cls = static_cast<ClassVal*>(rawcls);
-    std::vector<RuntimeVal*> args;
+    std::shared_ptr<ClassVal> cls = std::static_pointer_cast<ClassVal>(rawcls);
+    std::vector<Val> args;
 
     for (Expr* expr : newexpr->args) {
         args.push_back(eval(expr, env));
     }
     
     Env* scope = new Env(env);
-    ObjectVal* thisObj = new ObjectVal();
+    std::shared_ptr<ObjectVal> thisObj = std::make_shared<ObjectVal>();
     scope->declareVar("this", thisObj);
 
     inheritClass(cls, scope, thisObj, args);
@@ -34,15 +34,15 @@ RuntimeVal* evalNewExpr(NewExprType* newexpr, Env* env) {
     for (Stmt* stmt : cls->body) {
         switch (stmt->kind) {
             case NodeType::FunctionDeclaration: {
-                FunctionValue* fnval = static_cast<FunctionValue*>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), scope, true));
-                ObjectVal* thisobj = static_cast<ObjectVal*>(scope->lookupVar("this"));
+                std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), scope, true));
+                std::shared_ptr<ObjectVal> thisobj = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"));
                 thisobj->properties[fnval->name] = fnval;
                 scope->assignVar("this", thisobj);
                 break;
             }
             case NodeType::VarDeclaration: {
                 VarDeclarationType* var = static_cast<VarDeclarationType*>(stmt);
-                ObjectVal* thisobj = static_cast<ObjectVal*>(scope->lookupVar("this"));
+                std::shared_ptr<ObjectVal> thisobj = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"));
                 thisobj->properties[var->identifier] = eval(var->value, scope);
                 scope->assignVar("this", thisobj);
                 break;
@@ -56,11 +56,11 @@ RuntimeVal* evalNewExpr(NewExprType* newexpr, Env* env) {
 
                 Env* assignEnv = new Env();
 
-                assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, new UndefinedVal());
+                assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, std::make_shared<UndefinedVal>());
 
                 evalAssignment(assign, assignEnv);
 
-                ObjectVal* thisObj = static_cast<ObjectVal*>(scope->lookupVar("this"));
+                std::shared_ptr<ObjectVal> thisObj = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"));
 
                 thisObj->properties[static_cast<IdentifierType*>(assign->assigne)->symbol] = assignEnv->variables[static_cast<IdentifierType*>(assign->assigne)->symbol];
                 scope->assignVar("this", thisObj);
@@ -74,34 +74,34 @@ RuntimeVal* evalNewExpr(NewExprType* newexpr, Env* env) {
     }
     
 
-    if (static_cast<ObjectVal*>(scope->variables["this"])->properties.find("constructor") != static_cast<ObjectVal*>(scope->variables["this"])->properties.end()) {
-        RuntimeVal* constructor = static_cast<ObjectVal*>(scope->lookupVar("this"))->properties["constructor"];
+    if (std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.find("constructor") != std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.end()) {
+        Val constructor = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"))->properties["constructor"];
         evalCallWithFnVal(constructor, args, scope);
     }
 
     return scope->lookupVar("this");
 }
 
-void inheritClass(ClassVal* cls, Env* env, ObjectVal* thisObj, std::vector<RuntimeVal*> args) {
+void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args) {
     if (!cls->doesExtend) return;
 
-    RuntimeVal* extendsVal = eval(cls->extends, cls->parentEnv);
+    Val extendsVal = eval(cls->extends, cls->parentEnv);
     if (extendsVal->type != ValueType::Class) {
         std::cerr << "Superclass must be a class.\n";
         exit(1);
     }
     Env* superScope = new Env(cls->parentEnv);
-    ClassVal* superClass = static_cast<ClassVal*>(extendsVal);
+    std::shared_ptr<ClassVal> superClass = std::static_pointer_cast<ClassVal>(extendsVal);
     superScope->declareVar("this", thisObj);
 
     inheritClass(superClass, superScope, thisObj, args);
 
-    RuntimeVal* cons;
+    Val cons;
     bool hasCons = false;
 
     for (Stmt* stmt : superClass->body) {
         if (stmt->kind == NodeType::FunctionDeclaration) {
-            FunctionValue* fnval = static_cast<FunctionValue*>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), superScope, true));
+            std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), superScope, true));
             if (fnval->name == "constructor") {
                 cons = fnval;
                 hasCons = true;
@@ -114,7 +114,7 @@ void inheritClass(ClassVal* cls, Env* env, ObjectVal* thisObj, std::vector<Runti
             }
 
             Env* assignEnv = new Env();
-            assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, new UndefinedVal());
+            assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, std::make_shared<UndefinedVal>());
             evalAssignment(assign, assignEnv);
             thisObj->properties[static_cast<IdentifierType*>(assign->assigne)->symbol] = assignEnv->variables[static_cast<IdentifierType*>(assign->assigne)->symbol];
         }

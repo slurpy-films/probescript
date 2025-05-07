@@ -3,7 +3,7 @@
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
 
-NumberVal* evalNumericBinExpr(NumberVal* lhs, NumberVal* rhs, std::string op) {
+std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, std::shared_ptr<NumberVal> rhs, std::string op) {
     double result = 0;
 
     double left = std::stod(lhs->value);
@@ -21,5 +21,5 @@ NumberVal* evalNumericBinExpr(NumberVal* lhs, NumberVal* rhs, std::string op) {
         result = fmod(left, right);
     }
 
-    return new NumberVal(std::to_string(result));
+    return std::make_shared<NumberVal>(result);
 }

@@ -3,10 +3,10 @@
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
 
-RuntimeVal* evalObject(ObjectLiteralType* obj, Env* env) {
-    ObjectVal* object = new ObjectVal();
+Val evalObject(ObjectLiteralType* obj, Env* env) {
+    std::shared_ptr<ObjectVal> object = std::make_shared<ObjectVal>();
     for (PropertyLiteralType* property : obj->properties) {
-        RuntimeVal* runtimeval = (property->val == nullptr) ? env->lookupVar(property->key) : eval(property->val, env);
+        Val runtimeval = (property->val == nullptr) ? env->lookupVar(property->key) : eval(property->val, env);
         object->properties[property->key] = runtimeval;
     }
 

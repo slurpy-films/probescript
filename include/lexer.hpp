@@ -177,7 +177,8 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
         if (matchedMulti) continue;
 
         if (singleCharTokens.find(src[0]) != singleCharTokens.end()) {
-            tokens.push_back(token(shift(src), singleCharTokens[src[0]]));
+            tokens.push_back(token(src[0], singleCharTokens[src[0]]));
+            shift(src);
             continue;
         }
 

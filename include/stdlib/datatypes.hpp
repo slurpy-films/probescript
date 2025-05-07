@@ -4,15 +4,15 @@
 #include "utils/isNum.hpp"
 #include <string>
 
-RuntimeVal* toNum(std::vector<RuntimeVal*> args, Env* env) {
+Val toNum(std::vector<Val> args, Env* env) {
     if (!isNum(args[0]->toString())) {
         std::cerr << "Cannot convert non number to number";
         exit(1);
     }
 
-    return new NumberVal(std::to_string(args[0]->toNum()));
+    return std::make_shared<NumberVal>(std::to_string(args[0]->toNum()));
 }
 
-RuntimeVal* toStr(std::vector<RuntimeVal*> args, Env* env) {
-    return new StringVal(args[0]->toString());
+Val toStr(std::vector<Val> args, Env* env) {
+    return std::make_shared<StringVal>(args[0]->toString());
 }

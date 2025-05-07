@@ -5,23 +5,23 @@
 #include "runtime/values.hpp"
 #include "runtime/interpreter.hpp"
 
-RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
-    RuntimeVal* obj = eval(expr->object, env);
-    RuntimeVal* value = eval(expr->newvalue, env);
+Val evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
+    Val obj = eval(expr->object, env);
+    Val value = eval(expr->newvalue, env);
 
     std::string key;
 
     if (expr->computed) {
-        RuntimeVal* propValue = eval(expr->property, env);
+        Val propValue = eval(expr->property, env);
 
         if (propValue->type == ValueType::Number) {
-            int index = static_cast<NumberVal*>(propValue)->toNum();
+            int index = std::static_pointer_cast<NumberVal>(propValue)->toNum();
 
             if (obj->type == ValueType::Array) {
-                ArrayVal* array = static_cast<ArrayVal*>(obj);
+                std::shared_ptr<ArrayVal> array = std::static_pointer_cast<ArrayVal>(obj);
 
                 if (index >= array->items.size()) {
-                    array->items.resize(index + 1, new UndefinedVal());
+                    array->items.resize(index + 1, std::make_shared<UndefinedVal>());
                 }
 
                 array->items[index] = value;
@@ -37,14 +37,14 @@ RuntimeVal* evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
             exit(1);
         }
 
-        key = static_cast<StringVal*>(propValue)->string;
+        key = std::static_pointer_cast<StringVal>(propValue)->string;
     } else {
         IdentifierType* ident = static_cast<IdentifierType*>(expr->property);
         key = ident->symbol;
     }
 
     if (obj->type == ValueType::Object) {
-        ObjectVal* objectVal = static_cast<ObjectVal*>(obj);
+        std::shared_ptr<ObjectVal> objectVal = std::static_pointer_cast<ObjectVal>(obj);
         objectVal->properties[key] = value;
         return objectVal;
     }

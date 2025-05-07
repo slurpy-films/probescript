@@ -14,19 +14,19 @@ class Env {
             parent = parentENV;
 
             if (global) {
-                declareVar("true", new BooleanVal(true), true);
-                declareVar("false", new BooleanVal(false), true);
-                declareVar("num", new NativeFnValue(toNum), true);
-                declareVar("str", new NativeFnValue(toStr), true);
-                declareVar("console", new ObjectVal(console), true);
-                declareVar("process", new ObjectVal(processModule));
-                declareVar("undefined", new UndefinedVal(), true);
+                declareVar("true", std::make_shared<BooleanVal>(true), true);
+                declareVar("false", std::make_shared<BooleanVal>(false), true);
+                declareVar("num", std::make_shared<NativeFnValue>(toNum), true);
+                declareVar("str", std::make_shared<NativeFnValue>(toStr), true);
+                declareVar("console", std::make_shared<ObjectVal>(getConsole()), true);
+                declareVar("process", std::make_shared<ObjectVal>(getProcessModule()));
+                declareVar("undefined", std::make_shared<UndefinedVal>(), true);
             }
         }
 
-        std::unordered_map<std::string, RuntimeVal*> variables;
+        std::unordered_map<std::string, Val> variables;
 
-        RuntimeVal* declareVar(std::string varName, RuntimeVal* value, bool constant = false) {
+        Val declareVar(std::string varName, Val value, bool constant = false) {
             if (variables.find(varName) != variables.end()) {
                 std::cout << "Variable " << varName << " is already defined" << std::endl;
                 exit(1);
@@ -37,7 +37,7 @@ class Env {
             return value;
         }
 
-        RuntimeVal* assignVar(std::string varName, RuntimeVal* value) {
+        Val assignVar(std::string varName, Val value) {
             Env* env = resolve(varName);
 
             if (env->constants.find(varName) != env->constants.end() && env->constants[varName]) {
@@ -50,7 +50,7 @@ class Env {
             return value;
         }
 
-        RuntimeVal* lookupVar(std::string varName) {
+        Val lookupVar(std::string varName) {
             Env* env = resolve(varName);
             return env->variables[varName];
         }

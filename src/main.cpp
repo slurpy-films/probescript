@@ -1,6 +1,5 @@
 #include "parser.hpp"
 #include "runtime/interpreter.hpp"
-#include "stdlib/frame/frame.hpp"
 #include "REPL.hpp"
 #include "modules.hpp"
 #include "config.hpp"
@@ -33,10 +32,9 @@ int main(int argc, char* argv[]) {
         config->modules = indexModules(arg);
         
         ProgramType* program = parser.produceAST(file);
-        RuntimeVal* result = eval(program, env, config);
+        Val result = eval(program, env, config);
 
         delete program;
-        delete result;
     } else {
         REPL* repl = new REPL();
 

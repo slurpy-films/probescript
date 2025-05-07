@@ -5,28 +5,29 @@
 #include "ast.hpp"
 #include "body.hpp"
 
-RuntimeVal* evalForStmt(ForStmtType* forstmt, Env* env) {
-    Env* scope = new Env(env);
+Val evalForStmt(ForStmtType* forstmt, Env* env) {
+    Env* parent = new Env(env);
 
     for (Stmt* stmt : forstmt->declarations) {
-        eval(stmt, scope);
+        eval(stmt, parent);
     }
 
     while (true) {
-        std::vector<RuntimeVal*> conds;
+        Env* scope = new Env(parent);
+        std::vector<Val> conds;
         for (Expr* expr : forstmt->conditions) {
             conds.push_back(eval(expr, scope));
         }
 
         bool breaking = false;
 
-        for (RuntimeVal* cond : conds) {
+        for (Val cond : conds) {
             if (cond->type != ValueType::Boolean) {
                 std::cerr << "For loop condition must evaluate to a boolean";
                 exit(1);
             }
 
-            if (!static_cast<BooleanVal*>(cond)->toBool()) {
+            if (!std::static_pointer_cast<BooleanVal>(cond)->toBool()) {
                 breaking = true;
                 break;
             }
@@ -41,7 +42,5 @@ RuntimeVal* evalForStmt(ForStmtType* forstmt, Env* env) {
         }
     }
 
-    delete scope;
-
-    return new UndefinedVal();
+    return std::make_shared<UndefinedVal>();
 }

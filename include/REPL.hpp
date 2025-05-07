@@ -22,11 +22,9 @@ class REPL {
 
                 ProgramType* program = parser.produceAST(src);
 
-                RuntimeVal* result = eval(program, env, config);
+                Val result = eval(program, env, config);
 
                 std::cout << result->toString() << "\n";
-
-                delete program;
             }
 
         }

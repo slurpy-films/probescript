@@ -5,27 +5,27 @@
 #include "runtime/values.hpp"
 #include "stdlib/array.hpp"
 
-RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
-    RuntimeVal* obj = eval(expr->object, env);
+Val evalMemberExpr(MemberExprType* expr, Env* env) {
+    Val obj = eval(expr->object, env);
     
     if (obj->type == ValueType::Object) {
         std::string key;
 
         if (expr->computed) {
-            RuntimeVal* propValue = eval(expr->property, env);
+            Val propValue = eval(expr->property, env);
     
             if (propValue->type != ValueType::String) {
                 std::cerr << "Computed property must evaluate to a string";
                 exit(1);
             }
     
-            key = static_cast<StringVal*>(propValue)->string;
+            key = std::static_pointer_cast<StringVal>(propValue)->string;
         } else {
             IdentifierType* ident = static_cast<IdentifierType*>(expr->property);
             key = ident->symbol;
         }
 
-        ObjectVal* object = static_cast<ObjectVal*>(obj);
+        std::shared_ptr<ObjectVal> object = std::static_pointer_cast<ObjectVal>(obj);
 
         if (object->properties.count(key) == 0) {
             std::cerr << "Object has no property " << key;
@@ -43,21 +43,21 @@ RuntimeVal* evalMemberExpr(MemberExprType* expr, Env* env) {
             }
         }
 
-        RuntimeVal* indexval = eval(expr->property, env);
+        Val indexval = eval(expr->property, env);
 
         if (indexval->type != ValueType::Number) {
             std::cerr << "Array index must evaluate to a number";
             exit(1);
         }
 
-        NumberVal* index = static_cast<NumberVal*>(indexval);
+        std::shared_ptr<NumberVal> index = std::static_pointer_cast<NumberVal>(indexval);
 
-        ArrayVal* array = static_cast<ArrayVal*>(obj);
+        std::shared_ptr<ArrayVal> array = std::static_pointer_cast<ArrayVal>(obj);
 
         int idx = index->number;
 
         if (idx < 0 || idx >= static_cast<int>(array->items.size())) {
-            return new UndefinedVal();
+            return std::make_shared<UndefinedVal>();
         }
 
         return array->items[idx];

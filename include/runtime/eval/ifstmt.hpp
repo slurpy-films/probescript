@@ -4,15 +4,15 @@
 #include "runtime/values.hpp"
 #include "body.hpp"
 
-RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
-    RuntimeVal* condition = eval(stmt->condition, baseEnv);
+Val evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
+    Val condition = eval(stmt->condition, baseEnv);
 
     if (condition->type != ValueType::Boolean) {
         std::cerr << "If statement condition must evaluate to a boolean, got " << condition->value;
         exit(1);
     }
 
-    BooleanVal* boolval = static_cast<BooleanVal*>(condition);
+    std::shared_ptr<BooleanVal> boolval = std::static_pointer_cast<BooleanVal>(condition);
 
     if (boolval->getValue()) {
         Env* env = new Env(baseEnv);
@@ -22,5 +22,5 @@ RuntimeVal* evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
         return evalBody(stmt->elseStmt, env);
     }
 
-    return new UndefinedVal();
+    return std::make_shared<UndefinedVal>();
 }

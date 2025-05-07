@@ -13,7 +13,7 @@
 
 namespace fs = std::filesystem;
 
-RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) {
+Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
     if (config->type == Config::Normal) {
         Env* scope = new Env(env);
         ProbeDeclarationType* probeDeclaration;
@@ -29,6 +29,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
             } else if (stmt->kind == NodeType::ImportStmt) {
                 ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
                 std::string modulename = importstmt->name;
+                std::unordered_map<std::string, std::shared_ptr<ObjectVal>> stdlib = getStdlib();
                 if (stdlib.find(modulename) != stdlib.end()) {
                     if (importstmt->hasMember) {
                         Expr* member = importstmt->module;
@@ -58,9 +59,9 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
 
                 conf->modules = config->modules;
 
-                RuntimeVal* evaluated = eval(program, new Env(), conf);
+                Val evaluated = eval(program, new Env(), conf);
 
-                ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
+                std::shared_ptr<ObjectVal> moduleObj = std::make_shared<ObjectVal>(evaluated->exports);
 
                 if (importstmt->hasMember) {
                     Expr* member = importstmt->module;
@@ -95,31 +96,31 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
         }
 
 
-        ProbeValue* probe = static_cast<ProbeValue*>(evalProbeDeclaration(probeDeclaration, scope));
+        std::shared_ptr<ProbeValue> probe = std::static_pointer_cast<ProbeValue>(evalProbeDeclaration(probeDeclaration, scope));
 
-        RuntimeVal* lastEval = evalProbeCall(probe->name, scope);
+        Val lastEval = evalProbeCall(probe->name, scope);
 
         return lastEval;
     } else if (config->type == Config::REPL) {
-        RuntimeVal* lastEval = new UndefinedVal();
+        Val lastEval = std::make_shared<UndefinedVal>();
         for (Stmt* stmt : program->body) {
             lastEval = eval(stmt, env, config);
         }
 
         return lastEval;
     } else if (config->type == Config::Exports) {
-        std::unordered_map<std::string, RuntimeVal*> exports;
+        std::unordered_map<std::string, Val> exports;
 
         Env* env = new Env();
 
-        RuntimeVal* lasteval;
+        Val lasteval;
 
         for (Stmt* stmt : program->body) {
             if (stmt->kind == NodeType::ExportStmt) {
                 ExportStmtType* exportstmt = static_cast<ExportStmtType*>(stmt);
                 
                 std::string exportname;
-                RuntimeVal* exporting;
+                Val exporting;
                 bool found = false;
 
                 switch (exportstmt->exporting->kind) {
@@ -169,6 +170,7 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
                 if (stmt->kind == NodeType::ImportStmt) {
                     ImportStmtType* importstmt = static_cast<ImportStmtType*>(stmt);
                     std::string modulename = importstmt->name;
+                    std::unordered_map<std::string, std::shared_ptr<ObjectVal>> stdlib = getStdlib();
                     if (stdlib.find(modulename) != stdlib.end()) {
                         if (importstmt->hasMember) {
                             Expr* member = importstmt->module;
@@ -194,9 +196,9 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
     
                     ProgramType* program = parser.produceAST(file);
     
-                    RuntimeVal* evaluated = eval(program, new Env(), new Config::Config(Config::Exports));
+                    Val evaluated = eval(program, new Env(), new Config::Config(Config::Exports));
     
-                    ObjectVal* moduleObj = new ObjectVal(evaluated->exports);
+                    std::shared_ptr<ObjectVal> moduleObj = std::make_shared<ObjectVal>(evaluated->exports);
     
                     
                     if (importstmt->hasMember) {
@@ -217,5 +219,5 @@ RuntimeVal* evalProgram(ProgramType* program, Env* env, Config::Config* config) 
         return lasteval;
     }
 
-    return new UndefinedVal();
+    return std::make_shared<UndefinedVal>();
 }

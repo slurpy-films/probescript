@@ -2,22 +2,21 @@
 #include "ast.hpp"
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
-
-RuntimeVal* evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
-    RuntimeVal* left = eval(binop->left, env);
-    RuntimeVal* right = eval(binop->right, env);
+Val evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
+    Val left = eval(binop->left, env);
+    Val right = eval(binop->right, env);
 
     const std::string& op = binop->op;
 
     if (op == "&&" || op == "||") {
         bool l = left->toBool();
         bool r = right->toBool();
-        return new BooleanVal((op == "&&") ? (l && r) : (l || r));
+        return std::make_shared<BooleanVal>((op == "&&") ? (l && r) : (l || r));
     }
 
     if (op == "==" || op == "!=") {
         bool result = (left->toString() == right->toString());
-        return new BooleanVal(op == "==" ? result : !result);
+        return std::make_shared<BooleanVal>(op == "==" ? result : !result);
     }
 
     if (op == "<" || op == ">" || op == "<=" || op == ">=") {
@@ -30,7 +29,7 @@ RuntimeVal* evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
         else if (op == "<=") result = l <= r;
         else if (op == ">=") result = l >= r;
 
-        return new BooleanVal(result);
+        return std::make_shared<BooleanVal>(result);
     }
 
     std::cerr << "Invalid binary boolean operator: " << op << "\n";

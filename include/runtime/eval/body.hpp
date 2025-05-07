@@ -4,8 +4,8 @@
 #include "runtime/values.hpp"
 #include "runtime/interpreter.hpp"
 
-RuntimeVal* evalBody(std::vector<Stmt*> body, Env* env) {
-    RuntimeVal* last = new UndefinedVal();
+Val evalBody(std::vector<Stmt*> body, Env* env) {
+    Val last = std::make_shared<UndefinedVal>();
     for (Stmt* stmt : body) {
         last = eval(stmt, env);
         if (last->type == ValueType::ReturnSignal) break;

@@ -25,12 +25,14 @@ namespace ValueType {
     };
 }
 
+struct RuntimeVal;
 
+using Val = std::shared_ptr<RuntimeVal>;
 
 struct RuntimeVal {
     ValueType::ValueType type;
     std::string value;
-    std::unordered_map<std::string, RuntimeVal*> exports;
+    std::unordered_map<std::string, Val> exports;
 
     RuntimeVal(ValueType::ValueType type) : type(type), value("") {}
     RuntimeVal(ValueType::ValueType type, const std::string& val) : type(type), value(val) {}
@@ -49,9 +51,7 @@ struct RuntimeVal {
     }
 };
 
-
-using NativeFunction = std::function<RuntimeVal*(std::vector<RuntimeVal*>, Env*)>;
-
+using NativeFunction = std::function<Val(std::vector<Val>, Env*)>;
 
 struct UndefinedVal : public RuntimeVal {
     UndefinedVal() : RuntimeVal(ValueType::Undefined, "undefined") {}
@@ -110,14 +110,15 @@ struct BooleanVal : public RuntimeVal {
 
 
 struct ReturnSignal : public RuntimeVal {
-    RuntimeVal* val;
-    ReturnSignal(RuntimeVal* val)
-        : val(val), RuntimeVal(ValueType::ReturnSignal) {}
+    Val val;
+    ReturnSignal(Val val)
+    : RuntimeVal(ValueType::ReturnSignal), val(val) {}
+
 };
 
 struct ObjectVal : public RuntimeVal {
-    std::unordered_map<std::string, RuntimeVal*> properties;
-    ObjectVal(std::unordered_map<std::string, RuntimeVal*> properties = {})
+    std::unordered_map<std::string, Val> properties;
+    ObjectVal(std::unordered_map<std::string, Val> properties = {})
         : RuntimeVal(ValueType::Object), properties(properties) {}
     std::string toString() const override {
         std::string result = "{ ";
@@ -134,8 +135,8 @@ struct ObjectVal : public RuntimeVal {
 };
 
 struct ArrayVal : public RuntimeVal {
-    std::vector<RuntimeVal*> items;
-    ArrayVal(std::vector<RuntimeVal*> items) : RuntimeVal(ValueType::Array), items(items) {}
+    std::vector<Val> items;
+    ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items(items) {}
     std::string toString() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {

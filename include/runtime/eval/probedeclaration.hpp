@@ -3,8 +3,8 @@
 #include "runtime/env.hpp"
 #include "runtime/values.hpp"
 
-RuntimeVal* evalProbeDeclaration(ProbeDeclarationType* probe, Env* env) {
-    ProbeValue* probeval = probe->doesExtend ? new ProbeValue(probe->name, env, probe->body, probe->extends) : new ProbeValue(probe->name, env, probe->body);
+Val evalProbeDeclaration(ProbeDeclarationType* probe, Env* env) {
+    std::shared_ptr<ProbeValue> probeval = probe->doesExtend ? std::make_shared<ProbeValue>(probe->name, env, probe->body, probe->extends) : std::make_shared<ProbeValue>(probe->name, env, probe->body);
 
     return env->declareVar(probe->name, probeval);
 }

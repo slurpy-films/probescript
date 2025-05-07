@@ -6,7 +6,7 @@
 #include "runtime/interpreter.hpp"
 #include "memberassignment.hpp"
 
-RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
+Val evalAssignment(AssignmentExprType* assignment, Env* env) {
     if (assignment->assigne->kind != NodeType::Identifier) {
         std::cerr << "Expected Identifier in assignment" << std::endl;
         exit(1);
@@ -14,8 +14,8 @@ RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
 
     std::string varName = static_cast<IdentifierType*>(assignment->assigne)->symbol;
 
-    RuntimeVal* leftVal = eval(assignment->assigne, env);
-    RuntimeVal* rightVal = eval(assignment->value, env);
+    Val leftVal = eval(assignment->assigne, env);
+    Val rightVal = eval(assignment->value, env);
 
     if (assignment->op == "=") {
         return env->assignVar(varName, rightVal);
@@ -26,8 +26,8 @@ RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
         exit(1);
     }
 
-    double left = static_cast<NumberVal*>(leftVal)->toNum();
-    double right = static_cast<NumberVal*>(rightVal)->toNum();
+    double left = std::static_pointer_cast<NumberVal>(leftVal)->toNum();
+    double right = std::static_pointer_cast<NumberVal>(rightVal)->toNum();
     double result;
 
     if (assignment->op == "+=") result = left + right;
@@ -39,20 +39,20 @@ RuntimeVal* evalAssignment(AssignmentExprType* assignment, Env* env) {
         exit(1);
     }
 
-    return env->assignVar(varName, new NumberVal(result));
+    return env->assignVar(varName, std::make_shared<NumberVal>(result));
 }
 
-RuntimeVal* evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
+Val evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
     if (expr->assigne->kind == NodeType::Identifier) {
         std::string varName = static_cast<IdentifierType*>(expr->assigne)->symbol;
-        RuntimeVal* current = env->lookupVar(varName);
+        Val current = env->lookupVar(varName);
 
         if (current->type != ValueType::Number) {
             std::cerr << "Postfix operators only supported on numbers" << std::endl;
             exit(1);
         }
 
-        double value = static_cast<NumberVal*>(current)->toNum();
+        double value = std::static_pointer_cast<NumberVal>(current)->toNum();
         double newValue = value;
 
         if (expr->op == "++") newValue = value + 1;
@@ -62,9 +62,9 @@ RuntimeVal* evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
             exit(1);
         }
 
-        env->assignVar(varName, new NumberVal(newValue));
+        env->assignVar(varName, std::make_shared<NumberVal>(newValue));
 
-        return new NumberVal(value);
+        return std::make_shared<NumberVal>(value);
     } else if (expr->assigne->kind == NodeType::MemberExpr) {
         MemberAssignmentType* member = new MemberAssignmentType(
             static_cast<MemberExprType*>(expr->assigne)->object,
@@ -76,17 +76,17 @@ RuntimeVal* evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
         return evalMemberAssignment(member, env);
     }
 
-    return new UndefinedVal();
+    return std::make_shared<UndefinedVal>();
 }
 
 
-RuntimeVal* evalUnaryPrefix(UnaryPrefixType* expr, Env* env) {
-    RuntimeVal* val = eval(expr->assigne, env);
+Val evalUnaryPrefix(UnaryPrefixType* expr, Env* env) {
+    Val val = eval(expr->assigne, env);
 
     if (expr->op == "!") {
-        return new BooleanVal(!val->toBool());
+        return std::make_shared<BooleanVal>(!val->toBool());
     }
 
 
-    return new UndefinedVal();
+    return std::make_shared<UndefinedVal>();
 }
