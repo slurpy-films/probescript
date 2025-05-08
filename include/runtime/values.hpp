@@ -34,7 +34,8 @@ struct RuntimeVal {
     ValueType::ValueType type;
     std::string value;
     std::unordered_map<std::string, Val> exports;
-
+    std::unordered_map<std::string, Val> properties;
+    RuntimeVal(ValueType::ValueType type, std::unordered_map<std::string, Val> properties) : type(type), properties(properties) {}
     RuntimeVal(ValueType::ValueType type) : type(type), value("") {}
     RuntimeVal(ValueType::ValueType type, const std::string& val) : type(type), value(val) {}
     virtual ~RuntimeVal() = default;
@@ -88,13 +89,6 @@ struct NumberVal : public RuntimeVal {
     bool toBool() const override { return number != 0; }
 };
 
-struct StringVal : public RuntimeVal {
-    std::string string;
-    StringVal(std::string val) : RuntimeVal(ValueType::String, val), string(val) {}
-    std::string toString() const override { return string; }
-    double toNum() const override { return stod(string); }
-    bool toBool() const override { return !string.empty(); }
-};
 
 struct BooleanVal : public RuntimeVal {
     bool value;
@@ -118,9 +112,8 @@ struct ReturnSignal : public RuntimeVal {
 };
 
 struct ObjectVal : public RuntimeVal {
-    std::unordered_map<std::string, Val> properties;
     ObjectVal(std::unordered_map<std::string, Val> properties = {})
-        : RuntimeVal(ValueType::Object), properties(properties) {}
+        : RuntimeVal(ValueType::Object, properties) {}
     std::string toString() const override {
         std::string result = "{ ";
         bool first = true;
@@ -209,4 +202,49 @@ struct NativeClassVal : public RuntimeVal {
     NativeFunction constructor;
     NativeClassVal(NativeFunction constructor)
         : RuntimeVal(ValueType::NativeClass), constructor(constructor) {}
+};
+
+struct StringVal : public RuntimeVal {
+    std::string string;
+    StringVal(std::string val) : RuntimeVal(ValueType::String), string(val) {
+        properties = 
+        {
+            {
+                "length",
+                std::make_shared<NativeFnValue>([this](std::vector<Val> _args, Env* _env) -> Val {
+                    return std::make_shared<NumberVal>(this->string.length());
+                })
+            },
+            {
+                "split",
+                std::make_shared<NativeFnValue>([this](std::vector<Val> args, Env* _) -> Val {
+                    if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
+                    std::string str = this->string;
+                    std::string deli = std::static_pointer_cast<StringVal>(args[0])->string;
+
+                    std::vector<Val> result;
+                    if (deli == "") {
+                        std::vector<std::string> chars = splitToChars(str);
+
+                        for (auto& c : chars) {
+                            result.push_back(std::make_shared<StringVal>(c));
+                        }
+
+                        return std::make_shared<ArrayVal>(result);
+                    }
+                    size_t pos = 0;
+                    std::string token;
+                    while ((pos = str.find(deli)) != std::string::npos) {
+                        token = str.substr(0, pos);
+                        result.push_back(std::make_shared<StringVal>(str));
+                        str.erase(0, pos + deli.length());
+                    }
+                    return std::make_shared<ArrayVal>(result);
+                })
+            }
+        };
+    }
+    std::string toString() const override { return string; }
+    double toNum() const override { return stod(string); }
+    bool toBool() const override { return !string.empty(); }
 };

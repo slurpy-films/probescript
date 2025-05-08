@@ -8,7 +8,7 @@
 Val evalMemberExpr(MemberExprType* expr, Env* env) {
     Val obj = eval(expr->object, env);
     
-    if (obj->type == ValueType::Object) {
+    if (obj->type != ValueType::Array) {
         std::string key;
 
         if (expr->computed) {
@@ -25,7 +25,7 @@ Val evalMemberExpr(MemberExprType* expr, Env* env) {
             key = ident->symbol;
         }
 
-        std::shared_ptr<ObjectVal> object = std::static_pointer_cast<ObjectVal>(obj);
+        Val object = obj;
 
         if (object->properties.count(key) == 0) {
             std::cerr << "Object has no property " << key;
