@@ -10,12 +10,13 @@ namespace fs = std::filesystem;
 std::unordered_map<std::string, fs::path> indexModules(fs::path fileName) {
     fs::path current = fs::current_path() / fileName.parent_path();
     fs::path projectFile;
-
+    bool found = false;
     for (size_t i = 0; i < 10; ++i) {
         fs::path candidate = current / "project.probe";
 
         if (fs::exists(candidate)) {
             projectFile = candidate;
+            found = true;
             break;
         }
 
@@ -28,6 +29,7 @@ std::unordered_map<std::string, fs::path> indexModules(fs::path fileName) {
     }
 
     std::unordered_map<std::string, fs::path> modules;
+    if (!found) return modules;
 
     for (const auto& entry : fs::recursive_directory_iterator(projectFile.parent_path())) {
         if (entry.is_regular_file()) {

@@ -36,7 +36,7 @@ Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
                         Env* modEnv = new Env();
                         modEnv->declareVar(modulename, stdlib[modulename]);
                         env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
-                    } else env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, stdlib[modulename]);
+                    } else env->declareVar(importstmt->customIdent ? importstmt->ident : modulename, stdlib[modulename]);
                     continue;
                 }
 
@@ -68,7 +68,7 @@ Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
                     Env* modEnv = new Env();
                     modEnv->declareVar(modulename, moduleObj);
                     env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
-                } else env->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, moduleObj, true);
+                } else env->declareVar(importstmt->customIdent ? importstmt->ident : modulename, moduleObj, true);
             } else {
                 switch (stmt->kind) {
                     case NodeType::VarDeclaration:

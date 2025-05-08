@@ -412,35 +412,9 @@ class Parser {
                 return new UnaryPrefixType(op, argument);
             }
         
-            return parseNewExpr();
+            return parseArrowFunction();
         }
-        
-
-        Expr* parseArrayExpr() {
-            if (at().type != Lexer::OpenBracket) {
-                return parseCallMemberExpr();
-            }
-
-            eat();
-
-            std::vector<Expr*> items;
-
-            if (at().type == Lexer::CloseBracket) {
-                eat();
-                return new ArrayLiteralType(items);
-            }
-            
-            items.push_back(parseExpr());
-
-            while (at().type == Lexer::Comma) {
-                eat();
-                items.push_back(parseExpr());
-            }
-
-            expect(Lexer::CloseBracket, "Expected closing bracket");
-
-            return new ArrayLiteralType(items);
-        }
+    
 
         Expr* parseCallMemberExpr() {
             Expr* member = parseMemberExpr();
@@ -454,32 +428,61 @@ class Parser {
             std::vector<Expr*> args = parseArgs();
             return new CallExprType(caller, args);
         }
-        
 
-        std::vector<Expr*> parseArgs() {
-            expect(Lexer::OpenParen, "Expected open parentheses");
-
-            std::vector<Expr*> args; 
-            if (at().type != Lexer::ClosedParen) {
-                args = parseArgList();
-            };
-
-            expect(Lexer::ClosedParen, "Expected closing parentheses");
-            
-            return args;
-        }
-
-        std::vector<Expr*> parseArgList() {
-            std::vector<Expr*> args;
-
-            args.push_back(parseAssignmentExpr());
-
-            while (notEOF() && at().type == Lexer::Comma) {
-                eat();
-                args.push_back(parseAssignmentExpr());
+        Expr* parseArrowFunction() {
+            if (at().type != Lexer::OpenParen && at().type != Lexer::Identifier) {
+                return parseNewExpr();
             }
 
-            return args;
+            std::vector<std::string> params;
+            int i = 0;
+            bool isArrow = false;
+
+            if (at().type == Lexer::Identifier && at(1).type == Lexer::Arrow) {
+                params.push_back(eat().value);
+                isArrow = true;
+            } else if (at().type == Lexer::OpenParen) {
+                i++;
+
+                while (i < tokens.size() && tokens[i].type != Lexer::ClosedParen) {
+                    if (tokens[i].type == Lexer::Identifier || tokens[i].type == Lexer::Comma) {
+                        i++;
+                    }
+                }
+
+                if (i < tokens.size() && tokens[i].type == Lexer::ClosedParen) {
+                    i++;
+
+                    if (i < tokens.size() && tokens[i].type == Lexer::Arrow) {
+                        isArrow = true;
+                    }
+                }
+            }
+
+            if (!isArrow) {
+                return parseNewExpr();
+            }
+
+            if (at().type == Lexer::OpenParen) {
+                eat();
+
+                if (at().type != Lexer::ClosedParen) {
+                    params.push_back(expect(Lexer::Identifier, "Expected identifier in arrow function parameters").value);
+
+                    while (at().type == Lexer::Comma) {
+                        eat();
+                        params.push_back(expect(Lexer::Identifier, "Trailing comma not allowed in arrow function parameters").value);
+                    }
+                }
+
+                expect(Lexer::ClosedParen, "Expected closing parentheses after arrow function parameters");
+            }
+
+            expect(Lexer::Arrow, "Expected arrow after arrow function parameters");
+
+            std::vector<Stmt*> body = parseBody();
+
+            return new ArrowFunctionType(params, body);
         }
 
         Expr* parseNewExpr() {
@@ -581,6 +584,58 @@ class Parser {
                     std::cout << "\"" << at().value << "\": " << at().type << std::endl;
                     exit(1);
             }
+        }
+        
+        Expr* parseArrayExpr() {
+            if (at().type != Lexer::OpenBracket) {
+                return parseCallMemberExpr();
+            }
+
+            eat();
+
+            std::vector<Expr*> items;
+
+            if (at().type == Lexer::CloseBracket) {
+                eat();
+                return new ArrayLiteralType(items);
+            }
+            
+            items.push_back(parseExpr());
+
+            while (at().type == Lexer::Comma) {
+                eat();
+                items.push_back(parseExpr());
+            }
+
+            expect(Lexer::CloseBracket, "Expected closing bracket");
+
+            return new ArrayLiteralType(items);
+        }
+
+        std::vector<Expr*> parseArgs() {
+            expect(Lexer::OpenParen, "Expected open parentheses");
+
+            std::vector<Expr*> args; 
+            if (at().type != Lexer::ClosedParen) {
+                args = parseArgList();
+            };
+
+            expect(Lexer::ClosedParen, "Expected closing parentheses");
+            
+            return args;
+        }
+
+        std::vector<Expr*> parseArgList() {
+            std::vector<Expr*> args;
+
+            args.push_back(parseAssignmentExpr());
+
+            while (notEOF() && at().type == Lexer::Comma) {
+                eat();
+                args.push_back(parseAssignmentExpr());
+            }
+
+            return args;
         }
     
         Lexer::Token at(int index = 0) {

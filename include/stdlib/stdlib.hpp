@@ -5,11 +5,13 @@
 #include <string>
 #include <unordered_map>
 #include "random.hpp"
+#include "http.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<ObjectVal>> getStdlib() {
     return {
-        {"Fs", std::make_shared<ObjectVal>(getFilesystemModule())},
-        {"Date", std::make_shared<ObjectVal>(getDateModule()) },
-        {"Random", std::make_shared<ObjectVal>(createRandomModule()) }
+        {"fs", std::make_shared<ObjectVal>(getFilesystemModule()) },
+        {"date", std::make_shared<ObjectVal>(getDateModule()) },
+        {"random", std::make_shared<ObjectVal>(createRandomModule()) },
+        {"http", std::make_shared<ObjectVal>(getHttpModule()) },
     };
 };

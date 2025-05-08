@@ -51,6 +51,7 @@ enum TokenType {
     Increment,
     Decrement,
     Bang,
+    Arrow,
 };
 
 struct Token {
@@ -129,6 +130,7 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
         { "/=", AssignmentOperator },
         { "++", Increment },
         { "--", Decrement },
+        { "=>", Arrow },
     };
 
     while (!src.empty()) {
@@ -182,21 +184,34 @@ std::vector<Token> tokenize(const std::string& sourceCode) {
             continue;
         }
 
-        if (src[0] == "\"") {
-            shift(src);
+        if (src[0] == "\"" || src[0] == "'") {
+            std::string quoteType = shift(src);
             std::string value = "";
-            while (!src.empty() && src[0] != "\"") {
-                if (src[0] == "\n") {
-                    std::cerr << "Expected closing quote";
-                    exit(1);
+        
+            while (!src.empty() && src[0] != quoteType) {
+                std::string val = shift(src);
+                if (val == "\\") {
+                    if (src.empty()) break;
+                    char c = shift(src)[0];
+                    if (c == 'n') value += '\n';
+                    else if (c == 't') value += '\t';
+                    else if (c == '\\') value += '\\';
+                    else if (c == '"') value += '"';
+                    else if (c == '\'') value += '\'';
+                    else if (c == 'r') value += '\r';
+                    else if (c == 'b') value += '\b';
+                    else if (c == 'f') value += '\f';
+                    else value += c;
+                } else {
+                    value += val;
                 }
-                value += shift(src);
             }
+        
             if (!src.empty()) shift(src);
             tokens.push_back(token(value, String));
             continue;
         }
-
+        
 
         if (isAlpha(src[0])) {
             std::string ident = "";

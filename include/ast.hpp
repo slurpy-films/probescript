@@ -33,7 +33,9 @@ enum NodeType {
     ForStmt,
     UnaryPostFix,
     UnaryPrefix,
+    ArrowFunction,
 };
+
 
 struct Stmt {
     NodeType kind;
@@ -249,6 +251,14 @@ struct ArrayLiteralType : public Expr {
     ArrayLiteralType(std::vector<Expr*> items) : Expr(NodeType::ArrayLiteral), items(items) {}
 
     std::vector<Expr*> items;
+};
+
+struct ArrowFunctionType : public Expr {
+    std::vector<std::string> params;
+    std::vector<Stmt*> body;
+
+    ArrowFunctionType(std::vector<std::string> params, std::vector<Stmt*> body) :
+        Expr(NodeType::ArrowFunction), params(params), body(body) {}
 };
 
 struct NewExprType : public Expr {

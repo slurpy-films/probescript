@@ -1,6 +1,6 @@
 # ProbeScript
 ![Logo](https://slurpy-films.github.io/probescript/ProbeScript.png)
-## ProbeScript is a programming language supposed to be very modular, through its core feature probes.
+## ProbeScript is a programming language designed to be very modular, through its core feature probes.
 
 ## Code Example
 

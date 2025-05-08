@@ -30,6 +30,7 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config())
 #include "eval/forstmt.hpp"
 #include "eval/classdeclaration.hpp"
 #include "eval/newexpr.hpp"
+#include "eval/arrowfunction.hpp"
 
 Val eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
@@ -109,6 +110,9 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config) {
         
         case NodeType::UnaryPrefix:
             return evalUnaryPrefix(static_cast<UnaryPrefixType*>(astNode), env);
+
+        case NodeType::ArrowFunction:
+            return evalArrowFunction(static_cast<ArrowFunctionType*>(astNode), env);
 
         default:
             std::cout << "Unexpected AST-node kind found: ";

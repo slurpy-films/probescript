@@ -6,8 +6,11 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <thread>
+#include "threads.hpp"
+#include "stdlib/http.hpp"
 
-
+std::vector<std::thread> globalThreads;
 
 int main(int argc, char* argv[]) {
     Parser parser;
@@ -42,6 +45,10 @@ int main(int argc, char* argv[]) {
 
         delete repl;
     };
+
+    for (auto& thread : getThreads()) {
+        if (thread.joinable()) thread.join();
+    }
 
     return 0;
 }

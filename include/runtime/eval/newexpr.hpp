@@ -13,6 +13,17 @@ void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<Objec
 Val evalNewExpr(NewExprType* newexpr, Env* env) {
     Val rawcls = eval(newexpr->constructor, env);
 
+    if (rawcls->type == ValueType::NativeClass) {
+        std::shared_ptr<NativeClassVal> natcls = std::static_pointer_cast<NativeClassVal>(rawcls);
+        std::vector<Val> args;
+
+        for (Expr* expr : newexpr->args) {
+            args.push_back(eval(expr, env));
+        }
+
+        return natcls->constructor(args, new Env(env));
+    }
+
     if (rawcls->type != ValueType::Class) {
         std::cerr << "Cannot construct non class value";
         exit(1);

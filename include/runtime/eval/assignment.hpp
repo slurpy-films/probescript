@@ -21,6 +21,35 @@ Val evalAssignment(AssignmentExprType* assignment, Env* env) {
         return env->assignVar(varName, rightVal);
     }
 
+    if (assignment->op == "+=") {
+        if (leftVal->type == ValueType::String && rightVal->type == ValueType::String) {
+            std::string leftStr = std::static_pointer_cast<StringVal>(leftVal)->value;
+            std::string rightStr = std::static_pointer_cast<StringVal>(rightVal)->value;
+            return env->assignVar(varName, std::make_shared<StringVal>(leftStr + rightStr));
+        }
+
+        if (leftVal->type == ValueType::String && rightVal->type == ValueType::Number) {
+            std::string leftStr = std::static_pointer_cast<StringVal>(leftVal)->value;
+            std::string rightStr = std::to_string(std::static_pointer_cast<NumberVal>(rightVal)->toNum());
+            return env->assignVar(varName, std::make_shared<StringVal>(leftStr + rightStr));
+        }
+
+        if (leftVal->type == ValueType::Number && rightVal->type == ValueType::String) {
+            std::string leftStr = std::to_string(std::static_pointer_cast<NumberVal>(leftVal)->toNum());
+            std::string rightStr = std::static_pointer_cast<StringVal>(rightVal)->value;
+            return env->assignVar(varName, std::make_shared<StringVal>(leftStr + rightStr));
+        }
+
+        if (leftVal->type == ValueType::Number && rightVal->type == ValueType::Number) {
+            double left = std::static_pointer_cast<NumberVal>(leftVal)->toNum();
+            double right = std::static_pointer_cast<NumberVal>(rightVal)->toNum();
+            return env->assignVar(varName, std::make_shared<NumberVal>(left + right));
+        }
+
+        std::cerr << "Unsupported types for += operator" << std::endl;
+        exit(1);
+    }
+
     if (leftVal->type != ValueType::Number || rightVal->type != ValueType::Number) {
         std::cerr << "Assignment operator '" << assignment->op << "' requires numeric values." << std::endl;
         exit(1);
@@ -30,8 +59,7 @@ Val evalAssignment(AssignmentExprType* assignment, Env* env) {
     double right = std::static_pointer_cast<NumberVal>(rightVal)->toNum();
     double result;
 
-    if (assignment->op == "+=") result = left + right;
-    else if (assignment->op == "-=") result = left - right;
+    if (assignment->op == "-=") result = left - right;
     else if (assignment->op == "*=") result = left * right;
     else if (assignment->op == "/=") result = left / right;
     else {

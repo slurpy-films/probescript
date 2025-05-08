@@ -22,6 +22,7 @@ namespace ValueType {
         Array,
         Class,
         ReturnSignal,
+        NativeClass,
     };
 }
 
@@ -137,6 +138,7 @@ struct ObjectVal : public RuntimeVal {
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
     ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items(items) {}
+    ArrayVal() : RuntimeVal(ValueType::Array) {}
     std::string toString() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -201,4 +203,10 @@ struct ClassVal : public RuntimeVal {
         return "[class " + name + "]";
     }
     bool toBool() const override { return true; }
+};
+
+struct NativeClassVal : public RuntimeVal {
+    NativeFunction constructor;
+    NativeClassVal(NativeFunction constructor)
+        : RuntimeVal(ValueType::NativeClass), constructor(constructor) {}
 };

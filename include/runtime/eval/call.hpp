@@ -35,7 +35,7 @@ Val evalCall(CallExprType* call, Env* env) {
 
         for (int i = 0; i < func->params.size(); i++) {
             std::string varname = func->params[i];
-            scope->declareVar(varname, args[i], false);
+            scope->declareVar(varname, i < args.size() ? args[i]: std::make_shared<UndefinedVal>(), false);
         }
 
         Val result = evalBody(func->body, scope);
