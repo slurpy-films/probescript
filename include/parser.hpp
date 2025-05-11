@@ -431,8 +431,13 @@ class Parser {
         }
 
         Expr* parseCallexpr(Expr* caller) {
-            std::vector<Expr*> args = parseArgs();
-            return new CallExprType(caller, args);
+            CallExprType* callExpr = new CallExprType(caller, parseArgs());
+            
+            if (at().type == Lexer::Dot || at().type == Lexer::OpenBracket) {
+                return parseMemberChain(callExpr);
+            }
+            
+            return callExpr;
         }
 
         Expr* parseArrowFunction() {
@@ -552,6 +557,51 @@ class Parser {
             return obj;
         }
         
+        Expr* parseMemberChain(Expr* expr) {
+            while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket) {
+                Lexer::Token op = eat();
+                Expr* property;
+                bool computed;
+                std::string lastProp;
+                
+                if (op.type == Lexer::Dot) {
+                    computed = false;
+                    property = parsePrimaryExpr();
+                    
+                    if (property->kind != NodeType::Identifier) {
+                        std::cerr << "Cannot use dot operator without right hand side being an identifier";
+                        exit(1);
+                    }
+                    
+                    lastProp = static_cast<IdentifierType*>(property)->symbol;
+                    
+                } else {
+                    computed = true;
+                    property = parseExpr();
+                    expect(Lexer::CloseBracket, "Expected closing bracket");
+                    
+                    if (property->kind == NodeType::StringLiteral) {
+                        lastProp = static_cast<StringLiteralType*>(property)->strValue;
+                    }
+                }
+                
+                if (at().type == Lexer::Equals) {
+                    eat();
+                    Expr* value = parseExpr();
+                    expr = new MemberAssignmentType(expr, property, value, computed);
+                } else {
+                    MemberExprType* member = new MemberExprType(expr, property, computed);
+                    member->lastProp = lastProp;
+                    expr = member;
+                }
+                
+                if (at().type == Lexer::OpenParen) {
+                    expr = parseCallexpr(expr);
+                }
+            }
+            
+            return expr;
+        }
     
         Expr* parsePrimaryExpr() {
             Lexer::TokenType tk = at().type;

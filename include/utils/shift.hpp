@@ -5,7 +5,8 @@
 template <typename T>
 T shift(std::vector<T>& vec) {
     if (vec.empty()) {
-        throw std::out_of_range("Kan ikke shift() fra tom vektor.");
+        std::cerr << "[EmptyVectorShiftError]: Cannot shift an empty vector";
+        exit(1);
     }
 
     T first = vec.front();

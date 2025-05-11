@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "random.hpp"
 #include "http.hpp"
+#include "json.hpp"
 
 std::unordered_map<std::string, std::shared_ptr<ObjectVal>> getStdlib() {
     return {
@@ -13,5 +14,6 @@ std::unordered_map<std::string, std::shared_ptr<ObjectVal>> getStdlib() {
         {"date", std::make_shared<ObjectVal>(getDateModule()) },
         {"random", std::make_shared<ObjectVal>(createRandomModule()) },
         {"http", std::make_shared<ObjectVal>(getHttpModule()) },
+        {"json", std::make_shared<ObjectVal>(getJsonModule())}
     };
 };

@@ -46,6 +46,10 @@ struct RuntimeVal {
         return "[object RuntimeVal]";
     }
 
+    virtual std::string toJSON() const {
+        return "null";
+    }
+
     virtual double toNum() const {
         return 0;
     }
@@ -62,6 +66,9 @@ struct UndefinedVal : public RuntimeVal {
     std::string toString() const override { return "undefined"; }
     double toNum() const override { return 0; }
     bool toBool() const override { return false; }
+    std::string toJSON() const override {
+        return "null";
+    }
 };
 
 struct NullVal : public RuntimeVal {
@@ -69,6 +76,9 @@ struct NullVal : public RuntimeVal {
     std::string toString() const override { return "null"; }
     double toNum() const override { return 0; }
     bool toBool() const override { return false; }
+    std::string toJSON() const override {
+        return "null";
+    }
 };
 
 struct NumberVal : public RuntimeVal {
@@ -87,6 +97,10 @@ struct NumberVal : public RuntimeVal {
             : std::to_string(number);
     }
 
+    std::string toJSON() const override {
+        return std::to_string(number);
+    }
+
     double toNum() const override { return number; }
     bool toBool() const override { return number != 0; }
 };
@@ -103,6 +117,9 @@ struct BooleanVal : public RuntimeVal {
     std::string toString() const override { return value ? "true" : "false"; }
     double toNum() const override { return value ? 1 : 0; }
     bool toBool() const override { return value; }
+    std::string toJSON() const override {
+        return value ? "true" : "false";
+    }
 };
 
 
@@ -110,14 +127,22 @@ struct ReturnSignal : public RuntimeVal {
     Val val;
     ReturnSignal(Val val)
     : RuntimeVal(ValueType::ReturnSignal), val(val) {}
-
+    std::string toJSON() const override {
+        return "null";
+    }
 };
 
 struct BreakSignal : public RuntimeVal {
+    std::string toJSON() const override {
+        return "null";
+    }
     BreakSignal() : RuntimeVal(ValueType::BreakSignal) {}
 };
 
 struct ContinueSignal : public RuntimeVal {
+    std::string toJSON() const override {
+        return "null";
+    }
     ContinueSignal() : RuntimeVal(ValueType::ContinueSignal) {}
 };
 
@@ -130,6 +155,17 @@ struct ObjectVal : public RuntimeVal {
         for (const auto& [key, val] : properties) {
             if (!first) result += ", ";
             result += key + ": " + val->toString();
+            first = false;
+        }
+        result += " }";
+        return result;
+    }
+    std::string toJSON() const override {
+        std::string result = "{ ";
+        bool first = true;
+        for (const auto& [key, val] : properties) {
+            if (!first) result += ", ";
+            result += "\"" + key + "\"" + ": " + val->toJSON();
             first = false;
         }
         result += " }";
@@ -151,6 +187,15 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+    std::string toJSON() const override {
+        std::string result = "[";
+        for (size_t i = 0; i < items.size(); ++i) {
+            result += items[i]->toJSON();
+            if (i < items.size() - 1) result += ", ";
+        }
+        result += "]";
+        return result;
+    }
     bool toBool() const override { return true; }
 };
 
@@ -159,6 +204,9 @@ struct NativeFnValue : public RuntimeVal {
     NativeFnValue(NativeFunction fn) : RuntimeVal(ValueType::NativeFn), call(fn) {}
     std::string toString() const override {
         return "[native function]";
+    }
+    std::string toJSON() const override {
+        return "null";
     }
     bool toBool() const override { return true; }
 };
@@ -172,6 +220,9 @@ struct FunctionValue : public RuntimeVal {
         : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body) {}
     std::string toString() const override {
         return "[function " + name + "]";
+    }
+    std::string toJSON() const override {
+        return "null";
     }
     bool toBool() const override { return true; }
 };
@@ -188,6 +239,9 @@ struct ProbeValue : public RuntimeVal {
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[probe " + name + "]";
+    }
+    std::string toJSON() const override {
+        return "null";
     }
     bool toBool() const override { return true; }
 };
@@ -255,6 +309,7 @@ struct StringVal : public RuntimeVal {
         };
     }
     std::string toString() const override { return string; }
+    std::string toJSON() const override { return "\"" + string + "\""; }
     double toNum() const override { return stod(string); }
     bool toBool() const override { return !string.empty(); }
 };
