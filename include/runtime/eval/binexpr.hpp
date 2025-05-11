@@ -22,6 +22,6 @@ Val evalBinExpr(BinaryExprType* binop, Env* env) {
         return evalStringericBinExpr(std::static_pointer_cast<StringVal>(left), std::static_pointer_cast<StringVal>(right), binop->op);
     }
 
-    std::cerr << "Invalid operants: " << left->value << " and " << right->value;
+    std::cerr << "Invalid operants: " << left->toString() << " and " << right->toString();
     exit(1);
 }

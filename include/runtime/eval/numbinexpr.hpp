@@ -6,8 +6,8 @@
 std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, std::shared_ptr<NumberVal> rhs, std::string op) {
     double result = 0;
 
-    double left = std::stod(lhs->value);
-    double right = std::stod(rhs->value);
+    double left = lhs->number;
+    double right = rhs->number;
     
     if (op == "+") {
         result = left + right;
