@@ -52,6 +52,8 @@ enum TokenType {
     Decrement,
     Bang,
     Arrow,
+    Break,
+    Continue,
 };
 
 struct Token {
@@ -94,6 +96,8 @@ std::unordered_map<std::string, TokenType> getKeyWords() {
         { "extends", Extends },
         { "as", As },
         { "for", For },
+        { "break", Break },
+        { "continue", Continue },
     };
 
     return keywords;

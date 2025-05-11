@@ -2,6 +2,43 @@
 #include "runtime/values.hpp"
 #include "runtime/env.hpp"
 #include "runtime/eval/call.hpp"
+#include "sstream"
+
+#include <unordered_map>
+#include <string>
+#include <sstream>
+#include <algorithm>
+
+std::string trim(const std::string& str) {
+    const auto start = str.find_first_not_of(" \t\r");
+    const auto end = str.find_last_not_of(" \t\r");
+    if (start == std::string::npos || end == std::string::npos)
+        return "";
+    return str.substr(start, end - start + 1);
+}
+
+std::unordered_map<std::string, std::string> parseHeaders(const std::string& req) {
+    std::unordered_map<std::string, std::string> headers;
+    std::istringstream stream(req);
+    std::string line;
+
+    std::getline(stream, line);
+
+    while (std::getline(stream, line)) {
+        if (line == "\r" || line.empty()) break;
+
+        size_t colon = line.find(':');
+        if (colon != std::string::npos) {
+            std::string key = trim(line.substr(0, colon));
+            std::string value = trim(line.substr(colon + 1));
+            headers[key] = value;
+        }
+    }
+
+    return headers;
+}
+
+
 #ifdef _WIN32
 
 #pragma comment(lib, "Ws3_32.lib")
@@ -75,6 +112,15 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 
                     std::shared_ptr<ObjectVal> req = std::make_shared<ObjectVal>();
                     req->properties["path"] = std::make_shared<StringVal>(path);
+                    req->properties["method"] = std::make_shared<StringVal>(method);
+                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, Env* env) -> Val {
+                        return std::make_shared<StringVal>(request);
+                    });
+                    auto headersMap = std::make_shared<ObjectVal>();
+                    for (const auto& [key, value] : parseHeaders(request)) {
+                        headersMap->properties[key] = std::make_shared<StringVal>(value);
+                    }
+                    req->properties["headers"] = headersMap;
 
                     std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
                     res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket](std::vector<Val> args, Env* _) -> Val {
@@ -194,8 +240,18 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                 if (handlerIt != routeMap->second.end()) {
                     Val handler = handlerIt->second;
 
+
                     std::shared_ptr<ObjectVal> req = std::make_shared<ObjectVal>();
                     req->properties["path"] = std::make_shared<StringVal>(path);
+                    req->properties["method"] = std::make_shared<StringVal>(method);
+                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, Env* env) -> Val {
+                        return std::make_shared<StringVal>(request);
+                    });
+                    std::shared_ptr<ObjectVal> headers = std::make_shared<ObjectVal>();
+                    for (auto& [key, value] : parseHeaders(request)) {
+                        headers->properties[key] = std::make_shared<StringVal>(value);
+                    }
+                    req->properties["headers"] = headers;
 
                     std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
                     res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket](std::vector<Val> args, Env* _) -> Val {
@@ -247,7 +303,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
     Env* env = new Env();
     return {
         {
-            "server",
+            "Server",
             std::make_shared<NativeClassVal>([](std::vector<Val> args, Env* env) -> Val {
 
                 std::shared_ptr<ObjectVal> t = std::make_shared<ObjectVal>();
@@ -259,7 +315,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                         std::cerr << "Usage: get('/path', handlerFn)\n";
                         exit(1);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->value;
+                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
                     (*routeHandlers)["GET"][path] = args[1];
                     return std::make_shared<UndefinedVal>();
                 });
@@ -269,7 +325,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                         std::cerr << "Usage: post('/path', handlerFn)\n";
                         exit(1);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->value;
+                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
                     (*routeHandlers)["POST"][path] = args[1];
                     return std::make_shared<UndefinedVal>();
                 });
@@ -279,7 +335,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                         std::cerr << "Usage: put('/path', handlerFn)\n";
                         exit(1);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->value;
+                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
                     (*routeHandlers)["PUT"][path] = args[1];
                     return std::make_shared<UndefinedVal>();
                 });
@@ -289,7 +345,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                         std::cerr << "Usage: delete('/path', handlerFn)\n";
                         exit(1);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->value;
+                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
                     (*routeHandlers)["DELETE"][path] = args[1];
                     return std::make_shared<UndefinedVal>();
                 });
@@ -299,7 +355,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                         std::cerr << "Usage: patch('/path', handlerFn)\n";
                         exit(1);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->value;
+                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
                     (*routeHandlers)["PATCH"][path] = args[1];
                     return std::make_shared<UndefinedVal>();
                 });
@@ -309,7 +365,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                         std::cerr << "Usage: head('/path', handlerFn)\n";
                         exit(1);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->value;
+                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
                     (*routeHandlers)["GET"][path] = args[1];
                     return std::make_shared<UndefinedVal>();
                 });
@@ -328,6 +384,10 @@ std::unordered_map<std::string, Val> getHttpModule() {
 
                     std::thread serverThread(startServer, port, routeHandlers, new Env(env));
                     registerThread(std::move(serverThread));
+
+                    if (args[1]->type == ValueType::Function) {
+                        return evalCallWithFnVal(args[1], std::vector<Val>(), env);
+                    }
 
                     return std::make_shared<UndefinedVal>();
                 });

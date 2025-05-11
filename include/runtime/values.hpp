@@ -23,6 +23,8 @@ namespace ValueType {
         Class,
         ReturnSignal,
         NativeClass,
+        BreakSignal,
+        ContinueSignal,
     };
 }
 
@@ -109,6 +111,14 @@ struct ReturnSignal : public RuntimeVal {
     ReturnSignal(Val val)
     : RuntimeVal(ValueType::ReturnSignal), val(val) {}
 
+};
+
+struct BreakSignal : public RuntimeVal {
+    BreakSignal() : RuntimeVal(ValueType::BreakSignal) {}
+};
+
+struct ContinueSignal : public RuntimeVal {
+    ContinueSignal() : RuntimeVal(ValueType::ContinueSignal) {}
 };
 
 struct ObjectVal : public RuntimeVal {

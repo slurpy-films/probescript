@@ -34,6 +34,8 @@ enum NodeType {
     UnaryPostFix,
     UnaryPrefix,
     ArrowFunction,
+    BreakStmt,
+    ContinueStmt,
 };
 
 
@@ -298,4 +300,12 @@ struct FunctionDeclarationType : public Stmt {
     std::vector<std::string> parameters;
     std::string name;
     std::vector<Stmt*> body;
+};
+
+struct BreakStmtType : public Stmt {
+    BreakStmtType() : Stmt(NodeType::BreakStmt) {}
+};
+
+struct ContinueStmtType : public Stmt {
+    ContinueStmtType() : Stmt(NodeType::ContinueStmt) {}
 };

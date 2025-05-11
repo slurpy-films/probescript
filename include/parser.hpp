@@ -54,6 +54,12 @@ class Parser {
                     return parseClassDeclaration();
                 case Lexer::For:
                     return parseForStmt();
+                case Lexer::Break:
+                    eat();
+                    return new BreakStmtType();
+                case Lexer::Continue:
+                    eat();
+                    return new ContinueStmtType();
                 default:
                     return parseExpr();
             }

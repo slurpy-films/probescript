@@ -16,8 +16,9 @@ Val evalWhileStmt(WhileStmtType* stmt, Env* env) {
 
         if (std::static_pointer_cast<BooleanVal>(result)->getValue()) {
             Env* scope = new Env(env);
-            res = evalBody(stmt->body, scope);
+            res = evalBody(stmt->body, scope, true);
             if (res->type == ValueType::ReturnSignal) break;
+            else if (res->type == ValueType::BreakSignal) break;
 
         } else break;
     }

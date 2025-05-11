@@ -114,6 +114,12 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config) {
         case NodeType::ArrowFunction:
             return evalArrowFunction(static_cast<ArrowFunctionType*>(astNode), env);
 
+        case NodeType::BreakStmt:
+            return std::make_shared<BreakSignal>();
+        
+        case NodeType::ContinueStmt:
+            return std::make_shared<ContinueSignal>();
+
         default:
             std::cout << "Unexpected AST-node kind found: ";
             std::cout << astNode->kind << std::endl;

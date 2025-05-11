@@ -12,6 +12,8 @@ Val evalForStmt(ForStmtType* forstmt, Env* env) {
         eval(stmt, parent);
     }
 
+    Val result = std::make_shared<UndefinedVal>();
+
     while (true) {
         Env* scope = new Env(parent);
         std::vector<Val> conds;
@@ -19,7 +21,7 @@ Val evalForStmt(ForStmtType* forstmt, Env* env) {
             conds.push_back(eval(expr, scope));
         }
 
-        bool breaking = false;
+        bool breaking = false;  
 
         for (Val cond : conds) {
             if (cond->type != ValueType::Boolean) {
@@ -35,12 +37,14 @@ Val evalForStmt(ForStmtType* forstmt, Env* env) {
 
         if (breaking) break;
 
-        evalBody(forstmt->body, scope);
+        result = evalBody(forstmt->body, scope, true);
+        if (result->type == ValueType::ReturnSignal) break;
+        else if (result->type == ValueType::BreakSignal) break;
 
         for (Expr* expr : forstmt->updates) {
             eval(expr, scope);
         }
     }
 
-    return std::make_shared<UndefinedVal>();
+    return result->type == ValueType::ReturnSignal ? result : std::make_shared<UndefinedVal>();
 }
