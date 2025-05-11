@@ -1,54 +1,64 @@
-#include "parser.hpp"
+#include "runtime/values.hpp"
+#include "runtime/env.hpp"
 #include "runtime/interpreter.hpp"
+#include "ast.hpp"
+#include "parser.hpp"
 #include "REPL.hpp"
-#include "modules.hpp"
 #include "config.hpp"
-#include <iostream>
-#include <string>
 #include <fstream>
-#include <thread>
-#include "threads.hpp"
-#include "stdlib/http.hpp"
+#include "modules.hpp"
+#include <filesystem>
 
-std::vector<std::thread> globalThreads;
+void showHelp(char* argv[]) {
+    std::cerr << "ProbeScript CLI\n"
+              << "Usage:\n"
+              << "  " << argv[0] << " [command] [args]\n\n"
+              << "Available Commands:"
+                << "  run     Run a ProbeScript file\n"
+                << "  repl    Start the ProbeScript REPL\n"
+                << "  help    Shows this help menu\n";
+}
 
 int main(int argc, char* argv[]) {
-    Parser parser;
-    Env* env = new Env();
-    if (argc > 1) {
-        std::string probe = "Main";
-        std::string arg;
-        for (size_t i = 0; i < argc; ++i) {
-            if (argv[i] == "-P") {
-                probe = argv[i + 1];
-            } else arg = argv[i];
-        }
-        if (arg.find(".probe") == std::string::npos) {
-            arg += ".probe";
-        }
+    if (argc < 2) {
+        showHelp(argv);
+        return 0;
+    }
 
-        std::ifstream stream(arg);
+    if (std::string(argv[1]) == "repl") {
+        REPL* repl;
+        repl->start();
+        delete repl;
+        return 0;
+    } else if (std::string(argv[1]) == "run") {
+        if (argc < 3) {
+            std::cerr << "Run command expects 1 argument, " << argc - 2 << " given";
+            exit(1);
+        }
+        std::string fileName = argv[2];
+        if (!std::filesystem::exists(fileName)) {
+            std::cerr << "Module " << fileName << " not found";
+            exit(1);
+        }
+        Parser parser;
+        Env* env = new Env();
+
+        std::ifstream stream(fileName);
         std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 
-        Config::Config* config = new Config::Config(Config::Normal, probe);
+        Config::Config* config = new Config::Config(Config::Normal, "Main");
 
-        config->modules = indexModules(arg);
+        config->modules = indexModules(fileName);
         
         ProgramType* program = parser.produceAST(file);
         Val result = eval(program, env, config);
 
         delete program;
+    } else if (std::string(argv[1]) == "help") {
+        showHelp(argv);
     } else {
-        REPL* repl = new REPL();
-
-        repl->start();
-
-        delete repl;
-    };
-
-    for (auto& thread : getThreads()) {
-        if (thread.joinable()) thread.join();
+        std::cerr << "Unknown command: " << argv[1];
+        std::cerr << "\nUse " << argv[0] << " help to see commands";
+        exit(1);
     }
-
-    return 0;
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include "../ast.hpp"
+#include "utils/split.hpp"
 
 struct Env;
 
