@@ -2,3 +2,4 @@
 .vscode
 testing/
 *.out
+src/main.o

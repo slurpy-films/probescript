@@ -28,8 +28,7 @@ Val evalMemberExpr(MemberExprType* expr, Env* env) {
         Val object = obj;
 
         if (object->properties.count(key) == 0) {
-            std::cerr << "Object has no property " << key;
-            exit(1);
+            return std::make_shared<UndefinedVal>();
         }
 
         return object->properties[key];

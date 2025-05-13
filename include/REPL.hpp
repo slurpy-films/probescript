@@ -24,7 +24,7 @@ class REPL {
 
                 Val result = eval(program, env, config);
 
-                std::cout << result->toString() << "\n";
+                std::cout << result->toConsole() << "\n";
             }
 
         }

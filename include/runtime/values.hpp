@@ -9,6 +9,23 @@
 
 struct Env;
 
+namespace ConsoleColors {
+    const std::string RESET   = "\033[0m";
+    const std::string RED     = "\033[31m";
+    const std::string GREEN   = "\033[32m";
+    const std::string YELLOW  = "\033[33m";
+    const std::string BLUE    = "\033[34m";
+    const std::string MAGENTA = "\033[35m";
+    const std::string CYAN    = "\033[36m";
+    const std::string WHITE   = "\033[37m";
+    const std::string BOLD    = "\033[1m";
+    
+    const std::string DARK_GRAY  = "\033[90m";
+    const std::string LIGHT_GRAY = "\033[37m";
+    const std::string GRAY       = "\033[2;37m";
+    const std::string DIM        = "\033[2m";
+}
+
 namespace ValueType {
     enum ValueType {
         Probe,
@@ -58,6 +75,10 @@ struct RuntimeVal {
     virtual bool toBool() const {
         return true;
     }
+
+    virtual std::string toConsole() const {
+        return toString();
+    }
 };
 
 using NativeFunction = std::function<Val(std::vector<Val>, Env*)>;
@@ -70,6 +91,9 @@ struct UndefinedVal : public RuntimeVal {
     std::string toJSON() const override {
         return "null";
     }
+    std::string toConsole() const override {
+        return ConsoleColors::GRAY + "undefined" + ConsoleColors::RESET;
+    }
 };
 
 struct NullVal : public RuntimeVal {
@@ -79,6 +103,9 @@ struct NullVal : public RuntimeVal {
     bool toBool() const override { return false; }
     std::string toJSON() const override {
         return "null";
+    }
+    std::string toConsole() const override {
+        return ConsoleColors::GRAY + "null" + ConsoleColors::RESET;
     }
 };
 
@@ -96,6 +123,12 @@ struct NumberVal : public RuntimeVal {
         return (std::floor(number) == number)
             ? std::to_string(static_cast<int>(number))
             : std::to_string(number);
+    }
+
+    std::string toConsole() const override {
+        return ConsoleColors::YELLOW + (std::floor(number) == number
+            ? std::to_string(static_cast<int>(number))
+            : std::to_string(number)) + ConsoleColors::RESET;
     }
 
     std::string toJSON() const override {
@@ -120,6 +153,10 @@ struct BooleanVal : public RuntimeVal {
     bool toBool() const override { return value; }
     std::string toJSON() const override {
         return value ? "true" : "false";
+    }
+
+    std::string toConsole() const override {
+        return ConsoleColors::YELLOW + (value ? "true" : "false") + ConsoleColors::RESET;
     }
 };
 
@@ -147,33 +184,7 @@ struct ContinueSignal : public RuntimeVal {
     ContinueSignal() : RuntimeVal(ValueType::ContinueSignal) {}
 };
 
-struct ObjectVal : public RuntimeVal {
-    ObjectVal(std::unordered_map<std::string, Val> properties = {})
-        : RuntimeVal(ValueType::Object, properties) {}
-    std::string toString() const override {
-        std::string result = "{ ";
-        bool first = true;
-        for (const auto& [key, val] : properties) {
-            if (!first) result += ", ";
-            result += key + ": " + val->toString();
-            first = false;
-        }
-        result += " }";
-        return result;
-    }
-    std::string toJSON() const override {
-        std::string result = "{ ";
-        bool first = true;
-        for (const auto& [key, val] : properties) {
-            if (!first) result += ", ";
-            result += "\"" + key + "\"" + ": " + val->toJSON();
-            first = false;
-        }
-        result += " }";
-        return result;
-    }
-    bool toBool() const override { return true; }
-};
+
 
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
@@ -197,6 +208,15 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+    std::string toConsole() const override {
+        std::string result = "[";
+        for (size_t i = 0; i < items.size(); ++i) {
+            result += items[i]->toConsole();
+            if (i < items.size() - 1) result += ", ";
+        }
+        result += "]";
+        return result;
+    }
     bool toBool() const override { return true; }
 };
 
@@ -205,9 +225,6 @@ struct NativeFnValue : public RuntimeVal {
     NativeFnValue(NativeFunction fn) : RuntimeVal(ValueType::NativeFn), call(fn) {}
     std::string toString() const override {
         return "[native function]";
-    }
-    std::string toJSON() const override {
-        return "null";
     }
     bool toBool() const override { return true; }
 };
@@ -224,6 +241,9 @@ struct FunctionValue : public RuntimeVal {
     }
     std::string toJSON() const override {
         return "null";
+    }
+    std::string toConsole() const override {
+        return ConsoleColors::CYAN + "[function " + name + "]" + ConsoleColors::RESET;
     }
     bool toBool() const override { return true; }
 };
@@ -267,6 +287,14 @@ struct NativeClassVal : public RuntimeVal {
     NativeFunction constructor;
     NativeClassVal(NativeFunction constructor)
         : RuntimeVal(ValueType::NativeClass), constructor(constructor) {}
+
+    std::string toString() const override {
+        return "[native class]";
+    }
+
+    std::string toJSON() const override {
+        return "[native class]";
+    }
 };
 
 struct StringVal : public RuntimeVal {
@@ -301,7 +329,7 @@ struct StringVal : public RuntimeVal {
                     std::string token;
                     while ((pos = str.find(deli)) != std::string::npos) {
                         token = str.substr(0, pos);
-                        result.push_back(std::make_shared<StringVal>(str));
+                        result.push_back(std::make_shared<StringVal>(token));
                         str.erase(0, pos + deli.length());
                     }
                     return std::make_shared<ArrayVal>(result);
@@ -313,4 +341,58 @@ struct StringVal : public RuntimeVal {
     std::string toJSON() const override { return "\"" + string + "\""; }
     double toNum() const override { return stod(string); }
     bool toBool() const override { return !string.empty(); }
+    std::string toConsole() const override {
+        return ConsoleColors::GREEN + "\"" + string + "\"" + ConsoleColors::RESET;
+    }
+};
+
+
+struct ObjectVal : public RuntimeVal {
+    ObjectVal(std::unordered_map<std::string, Val> properties = {})
+        : RuntimeVal(ValueType::Object, properties) {
+            properties["hasProperty"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, Env* env) -> Val {
+                if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<BooleanVal>(false);
+
+                return std::make_shared<BooleanVal>(this->hasProperty(std::static_pointer_cast<StringVal>(args[0])->string));
+            });
+        }
+
+    bool hasProperty(const std::string& prop) {
+        return (properties.find(prop) != properties.end());
+    }
+
+    std::string toString() const override {
+        std::string result = "{ ";
+        bool first = true;
+        for (const auto& [key, val] : properties) {
+            if (!first) result += ", ";
+            result += key + ": " + val->toString();
+            first = false;
+        }
+        result += " }";
+        return result;
+    }
+    std::string toJSON() const override {
+        std::string result = "{ ";
+        bool first = true;
+        for (const auto& [key, val] : properties) {
+            if (!first) result += ", ";
+            result += "\"" + key + "\"" + ": " + val->toJSON();
+            first = false;
+        }
+        result += " }";
+        return result;
+    }
+    std::string toConsole() const override {
+        std::string result = "{ ";
+        bool first = true;
+        for (const auto& [key, val] : properties) {
+            if (!first) result += ", ";
+            result += "\"" + key + "\"" + ": " + val->toConsole();
+            first = false;
+        }
+        result += " }";
+        return result;
+    }
+    bool toBool() const override { return true; }
 };

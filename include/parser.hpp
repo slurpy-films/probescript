@@ -355,7 +355,7 @@ class Parser {
             std::vector<PropertyLiteralType*> properties;
 
             while (notEOF() && at().type != Lexer::ClosedBrace) {
-                std::string key = expect(Lexer::Identifier, "Object literal key expected").value;
+                std::string key = eat().value;
 
                 if (at().type == Lexer::Comma) {
                     eat();
@@ -414,7 +414,7 @@ class Parser {
             ) {
         
                 std::string op = eat().value;
-                Expr* argument = parseUnaryExpr();
+                Expr* argument = parseExpr();
                 return new UnaryPrefixType(op, argument);
             }
         
@@ -623,7 +623,6 @@ class Parser {
                     eat();
                     Expr* value = parseExpr();
                     expect(Lexer::ClosedParen, "Expected closing parentheses ");
-                    eat();
                     return value;
                 }
 

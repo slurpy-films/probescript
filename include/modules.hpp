@@ -1,18 +1,19 @@
 #pragma once
+#include "runtime/values.hpp"
 #include <iostream>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <fstream>
-
+#include "stdlib/json.hpp"
 namespace fs = std::filesystem;
 
-std::unordered_map<std::string, fs::path> indexModules(fs::path fileName) {
+std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path fileName) {
     fs::path current = fs::current_path() / fileName.parent_path();
     fs::path projectFile;
     bool found = false;
     for (size_t i = 0; i < 10; ++i) {
-        fs::path candidate = current / "project.probe";
+        fs::path candidate = current / "project.json";
 
         if (fs::exists(candidate)) {
             projectFile = candidate;
@@ -29,7 +30,7 @@ std::unordered_map<std::string, fs::path> indexModules(fs::path fileName) {
     }
 
     std::unordered_map<std::string, fs::path> modules;
-    if (!found) return modules;
+    if (!found) return { modules, std::make_shared<ObjectVal>() };
 
     for (const auto& entry : fs::recursive_directory_iterator(projectFile.parent_path())) {
         if (entry.is_regular_file()) {
@@ -57,5 +58,9 @@ std::unordered_map<std::string, fs::path> indexModules(fs::path fileName) {
         }
     }
 
-    return modules;
+    std::ifstream stream(projectFile);
+    std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+    JSONParser::JSONParser parser(file);
+
+    return { modules, parser.parse() };
 }

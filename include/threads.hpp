@@ -1,13 +1,27 @@
 #pragma once
 #include <thread>
 #include <vector>
+#include <mutex>
 
+class ThreadManager {
+public:
+    void registerThread(std::thread t) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        threads.emplace_back(std::move(t));
+    }
 
-std::vector<std::thread> threads;
-void registerThread(std::thread thread) {
-    threads.push_back(std::move(thread));
-} 
+    ~ThreadManager() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (std::thread& t : threads) {
+            if (t.joinable()) {
+                t.join();
+            }
+        }
+    }
 
-std::vector<std::thread> getThreads() {
-    return std::move(threads);
-}
+private:
+    std::vector<std::thread> threads;
+    std::mutex mutex_;
+};
+
+inline ThreadManager threadManager;

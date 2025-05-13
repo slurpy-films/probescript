@@ -13,7 +13,7 @@ void showHelp(char* argv[]) {
     std::cerr << "ProbeScript CLI\n"
               << "Usage:\n"
               << "  " << argv[0] << " [command] [args]\n\n"
-              << "Available Commands:"
+              << "Available Commands:\n"
                 << "  run     Run a ProbeScript file\n"
                 << "  repl    Start the ProbeScript REPL\n"
                 << "  help    Shows this help menu\n";
@@ -48,7 +48,9 @@ int main(int argc, char* argv[]) {
 
         Config::Config* config = new Config::Config(Config::Normal, "Main");
 
-        config->modules = indexModules(fileName);
+        std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
+        config->modules = indexedPair.first;
+        config->project = indexedPair.second;
         
         ProgramType* program = parser.produceAST(file);
         Val result = eval(program, env, config);

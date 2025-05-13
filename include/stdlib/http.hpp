@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <regex>
 #include <algorithm>
 
 std::string trim(const std::string& str) {
@@ -72,6 +73,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
         WSACleanup();
         return;
     }
+
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
@@ -178,6 +180,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 #include <sstream>
 #include <threads.hpp>
 #include <cstring>
+#include <netdb.h>
 
 std::pair<std::string, std::string> parseMethodAndPath(const std::string& request) {
     std::istringstream stream(request);
@@ -299,6 +302,125 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 
 #endif
 
+Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf) {
+    std::string headers;
+    if (conf->hasProperty("headers") && conf->properties["headers"]->type == ValueType::Object) {
+        for (auto& [key, val] : std::static_pointer_cast<ObjectVal>(conf->properties["headers"])->properties) {
+            if (val->type == ValueType::String) {
+                headers += key + ": " + std::static_pointer_cast<StringVal>(val)->string + "\r\n";
+            }
+        }
+    }
+
+    std::string body;
+    if (conf->hasProperty("body") && conf->properties["body"]->type == ValueType::String) {
+        body = std::static_pointer_cast<StringVal>(conf->properties["body"])->string;
+    }
+
+    std::regex urlRegex(R"(^(http?://)?([^:/]+)(:(\d+))?(/.*)?$)");
+    std::smatch match;
+    if (!std::regex_match(url, match, urlRegex)) {
+        std::cerr << "Invalid URL format\n";
+        exit(1);
+    }
+
+    int port = 80;
+    if (match[4].matched) {
+        try {
+            port = stoi(match[4]);
+        } catch (...) {
+            std::cerr << "Invalid port number\n";
+            exit(1);
+        }
+    }
+
+    std::string host = match[2];
+    std::string path = match[5].matched ? match[5].str() : "/";
+    std::string req = method + " " + path + " HTTP/1.1\r\n"
+                      "Host: " + host + "\r\n"
+                      "Connection: close\r\n"
+                      "Content-length: " + std::to_string(body.length()) + "\r\n"
+                      + headers + "\r\n"
+                      + body;
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+
+    struct hostent *server = gethostbyname(host.c_str());
+    if (!server) {
+        std::cerr << "Failed to resolve host\n";
+        exit(1);
+    }
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        std::cerr << "Socket creation failed\n";
+        exit(1);
+    }
+
+    sockaddr_in serverAddr{};
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(port);
+    serverAddr.sin_addr.s_addr = *(unsigned long*)server->h_addr;
+    std::cout << "Connecting to " << host << ":" << port << "..." << std::endl;
+    if (connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+        std::cerr << "Connection failed\n";
+        exit(1);
+    }
+
+    send(sock, req.c_str(), req.size(), 0);
+
+    char buffer[4096];
+    std::string res;
+    int bytes;
+    while ((bytes = recv(sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
+        buffer[bytes] = '\0';
+        res += buffer;
+    }
+
+#ifdef _WIN32
+    closesocket(sock);
+    WSACleanup();
+#else
+    close(sock);
+#endif
+
+    size_t headerEnd = res.find("\r\n\r\n");
+    std::string headerPart = res.substr(0, headerEnd);
+    std::string bodyPart = res.substr(headerEnd + 4);
+
+    std::istringstream stream(headerPart);
+    std::string statusLine;
+    std::getline(stream, statusLine);
+    std::istringstream statusStream(statusLine);
+    std::string httpVersion, statusCodeStr, statusText;
+    statusStream >> httpVersion >> statusCodeStr;
+    std::getline(statusStream, statusText);
+    statusText = std::regex_replace(statusText, std::regex("^ +"), "");
+
+    int statusCode = std::stoi(statusCodeStr);
+
+    std::unordered_map<std::string, Val> props = {
+        {
+            "status",
+            std::make_shared<NumberVal>(statusCode)
+        },
+        {
+            "body",
+            std::make_shared<NativeFnValue>([bodyPart](std::vector<Val> _args, Env* _env) -> Val {
+                return std::make_shared<StringVal>(bodyPart);
+            })
+        }
+    };
+
+    std::shared_ptr<ObjectVal> o = std::make_shared<ObjectVal>(props);
+
+    return o;
+}
+
+
 std::unordered_map<std::string, Val> getHttpModule() {
     Env* env = new Env();
     return {
@@ -371,21 +493,30 @@ std::unordered_map<std::string, Val> getHttpModule() {
                 });
                 
                 t->properties["listen"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
-                    if (!args[0]) {
+                    if (args.empty()) {
                         std::cerr << "Argument 0 is null!";
                         exit(1);
                     }
                     if (args[0]->type != ValueType::Number) {
                         std::cerr << "Expected argument 1 to be of type number";
                         exit(1);
-                    }                    
+                    }
                     
                     const int port = std::static_pointer_cast<NumberVal>(args[0])->number;
 
-                    std::thread serverThread(startServer, port, routeHandlers, new Env(env));
-                    registerThread(std::move(serverThread));
+                    std::thread serverThread([port, routeHandlers, env]() {
+                        try {
+                            startServer(port, routeHandlers, env);
+                        } catch (const std::exception& e) {
+                            std::cerr << "Exception in server thread: " << e.what() << "\n";
+                        } catch (...) {
+                            std::cerr << "Unknown exception in server thread\n";
+                        }
+                    });
 
-                    if (args[1]->type == ValueType::Function) {
+                    threadManager.registerThread(std::move(serverThread));
+
+                    if (args.size() >= 2 && args[1]->type == ValueType::Function) {
                         return evalCallWithFnVal(args[1], std::vector<Val>(), env);
                     }
 
@@ -395,5 +526,21 @@ std::unordered_map<std::string, Val> getHttpModule() {
                 return t;
             })
         },
+        {
+            "get",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+                if (args.empty() || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return std::make_shared<UndefinedVal>();
+
+                return sendReq("GET", std::static_pointer_cast<StringVal>(args[0])->string, std::static_pointer_cast<ObjectVal>(args[1]));
+            })
+        },
+        {
+            "post",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+                if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
+
+                return sendReq("POST", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()));
+            })
+        }
     };
 };

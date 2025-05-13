@@ -152,6 +152,10 @@ private:
     Val parseObject() {
         eat();
         std::shared_ptr<ObjectVal> o = std::make_shared<ObjectVal>();
+        if (tokens[0].type == TokenType::ClosedBrace) {
+            eat();
+            return std::make_shared<ObjectVal>();
+        }
 
         if (tokens[0].type != TokenType::String) {
             std::cerr << "Expected object key to be of type string";

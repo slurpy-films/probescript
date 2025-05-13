@@ -17,7 +17,7 @@ struct Config {
     RuntimeType type;
     std::string probeName = "Main";
     std::unordered_map<std::string, std::filesystem::path> modules;
-    bool importsDone = false;
+    Val project;
 };
 
 }
