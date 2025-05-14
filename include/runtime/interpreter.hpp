@@ -31,6 +31,7 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config())
 #include "eval/classdeclaration.hpp"
 #include "eval/newexpr.hpp"
 #include "eval/arrowfunction.hpp"
+#include "eval/importstmt.hpp"
 
 Val eval(Stmt* astNode, Env* env, Config::Config* config) {
     switch (astNode->kind) {
@@ -119,6 +120,9 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config) {
         
         case NodeType::ContinueStmt:
             return std::make_shared<ContinueSignal>();
+
+        case NodeType::ImportStmt:
+            return evalImportStmt(static_cast<ImportStmtType*>(astNode), env, config);
 
         default:
             std::cout << "Unexpected AST-node kind found: ";
