@@ -1,132 +1,45 @@
 #pragma once
-#include "values.hpp"
-#include "../ast.hpp"
+#include <unordered_set>
 #include <cmath>
 #include <string>
 #include <memory>
+#include "values.hpp"
+#include "ast.hpp"
 #include "env.hpp"
 #include "config.hpp"
+#include "parser.hpp"
+#include "stdlib/stdlib.hpp"
+#include "stdlib/array.hpp"
+
+Val evalTryStmt(TryStmtType* stmt, Env* env);
+Val evalThrowStmt(ThrowStmtType* stmt, Env* env);
+Val evalArray(ArrayLiteralType* expr, Env* env);
+Val evalArrowFunction(ArrowFunctionType* fn, Env* env);
+Val evalAssignment(AssignmentExprType* assignment, Env* env);
+Val evalBinExpr(BinaryExprType* binop, Env* env);
+Val evalBody(std::vector<Stmt*> body, Env* env, bool isLoop = false);
+Val evalBooleanBinExpr(BinaryExprType* binop, Env* env);
+Val evalCall(CallExprType* call, Env* env);
+Val evalCallWithFnVal(Val fn, std::vector<Val> args, Env* env);
+Val evalClassDefinition(ClassDefinitionType* def, Env* env);
+Val evalFunctionDeclaration(FunctionDeclarationType* declaration, Env* env, bool onlyValue = false);
+Val evalForStmt(ForStmtType* forstmt, Env* env);
+Val evalIdent(IdentifierType* ident, Env* env);
+Val evalIfStmt(IfStmtType* stmt, Env* baseEnv);
+Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Config::Config* config);
+Val evalMemberAssignment(MemberAssignmentType* expr, Env* env);
+Val evalMemberExpr(MemberExprType* expr, Env* env);
+Val evalNewExpr(NewExprType* newexpr, Env* env);
+void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args);
+std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, std::shared_ptr<NumberVal> rhs, std::string op);
+Val evalObject(ObjectLiteralType* obj, Env* env);
+Val evalProbeDeclaration(ProbeDeclarationType* probe, Env* env);
+Val evalProgram(ProgramType* program, Env* env, Config::Config* config);
+Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> args = {});
+std::shared_ptr<StringVal> evalStringericBinExpr(std::shared_ptr<StringVal> lhs, std::shared_ptr<StringVal> rhs, std::string op);
+Val evalVarDeclaration(VarDeclarationType* var, Env* env, bool constant = false);
+Val evalWhileStmt(WhileStmtType* stmt, Env* env);
+Val evalUnaryPrefix(UnaryPrefixType* expr, Env* env);
+Val evalUnaryPostfix(UnaryPostFixType* expr, Env* env);
 
 Val eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config());
-
-#include "eval/program.hpp"
-#include "eval/probedeclaration.hpp"
-#include "eval/assignment.hpp"
-#include "eval/fndeclaration.hpp"
-#include "eval/numbinexpr.hpp"
-#include "eval/stringbinexpr.hpp"
-#include "eval/ifstmt.hpp"
-#include "eval/memberexpr.hpp"
-#include "eval/binexpr.hpp"
-#include "eval/identifier.hpp"
-#include "eval/object.hpp"
-#include "eval/call.hpp"
-#include "eval/vardeclaration.hpp"
-#include "eval/boolbinop.hpp"
-#include "eval/runprobe.hpp"
-#include "eval/memberassignment.hpp"
-#include "eval/array.hpp"
-#include "eval/whilestmt.hpp"
-#include "eval/forstmt.hpp"
-#include "eval/classdeclaration.hpp"
-#include "eval/newexpr.hpp"
-#include "eval/arrowfunction.hpp"
-#include "eval/importstmt.hpp"
-
-Val eval(Stmt* astNode, Env* env, Config::Config* config) {
-    switch (astNode->kind) {
-        case NodeType::NumericLiteral: {
-            NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);
-            return std::make_shared<NumberVal>(num->value());
-        }
-
-        case NodeType::StringLiteral: {
-            StringLiteralType* str = static_cast<StringLiteralType*>(astNode);
-            return std::make_shared<StringVal>(str->value());
-        }
-
-        case NodeType::UndefinedLiteral: {
-            return std::make_shared<UndefinedVal>();
-        }
-
-        case NodeType::ReturnStmt: {
-            Val value = eval(static_cast<ReturnStmtType*>(astNode)->stmt, env);
-            return std::make_shared<ReturnSignal>(value);
-        }
-        
-        case NodeType::ClassDefinition:
-            return evalClassDefinition(static_cast<ClassDefinitionType*>(astNode), env);
-
-        case NodeType::ProbeDeclaration:
-            return evalProbeDeclaration(static_cast<ProbeDeclarationType*>(astNode), env);
-        case NodeType::NewExpr:
-            return evalNewExpr(static_cast<NewExprType*>(astNode), env);
-
-        case NodeType::BinaryExpr:
-            return evalBinExpr(static_cast<BinaryExprType*>(astNode), env);
-        case NodeType::WhileStmt:
-            return evalWhileStmt(static_cast<WhileStmtType*>(astNode), env);
-
-        case NodeType::Program:
-            return evalProgram(static_cast<ProgramType*>(astNode), env, config);
-
-        case NodeType::NullLiteral:
-            return std::make_shared<NullVal>();
-
-        case NodeType::Identifier:
-            return evalIdent(static_cast<IdentifierType*>(astNode), env);
-
-        case NodeType::ObjectLiteral:
-            return evalObject(static_cast<ObjectLiteralType*>(astNode), env);
-
-        case NodeType::ArrayLiteral:
-            return evalArray(static_cast<ArrayLiteralType*>(astNode), env);
-
-        case NodeType::CallExpr:
-            return evalCall(static_cast<CallExprType*>(astNode), env);
-
-        case NodeType::VarDeclaration:
-            return evalVarDeclaration(static_cast<VarDeclarationType*>(astNode), env);
-
-        case NodeType::IfStmt:
-            return evalIfStmt(static_cast<IfStmtType*>(astNode), env);
-
-        case NodeType::FunctionDeclaration:
-            return evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(astNode), env);
-
-        case NodeType::AssignmentExpr:
-            return evalAssignment(static_cast<AssignmentExprType*>(astNode), env);
-
-        case NodeType::MemberExpr:
-            return evalMemberExpr(static_cast<MemberExprType*>(astNode), env);
-
-        case NodeType::MemberAssignment:
-            return evalMemberAssignment(static_cast<MemberAssignmentType*>(astNode), env);
-
-        case NodeType::ForStmt:
-            return evalForStmt(static_cast<ForStmtType*>(astNode), env);
-
-        case NodeType::UnaryPostFix:
-            return evalUnaryPostfix(static_cast<UnaryPostFixType*>(astNode), env);
-        
-        case NodeType::UnaryPrefix:
-            return evalUnaryPrefix(static_cast<UnaryPrefixType*>(astNode), env);
-
-        case NodeType::ArrowFunction:
-            return evalArrowFunction(static_cast<ArrowFunctionType*>(astNode), env);
-
-        case NodeType::BreakStmt:
-            return std::make_shared<BreakSignal>();
-        
-        case NodeType::ContinueStmt:
-            return std::make_shared<ContinueSignal>();
-
-        case NodeType::ImportStmt:
-            return evalImportStmt(static_cast<ImportStmtType*>(astNode), env, config);
-
-        default:
-            std::cout << "Unexpected AST-node kind found: ";
-            std::cout << astNode->kind << std::endl;
-            exit(1);
-    }
-}

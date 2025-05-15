@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <algorithm>
 
-std::unordered_map<std::string, Val> getDateModule() {
+inline std::unordered_map<std::string, Val> getDateModule() {
     return {
         {"stamp", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
         using namespace std::chrono;

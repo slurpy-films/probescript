@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 template <typename T>
-T shift(std::vector<T>& vec) {
+inline T shift(std::vector<T>& vec) {
     if (vec.empty()) {
         std::cerr << "[EmptyVectorShiftError]: Cannot shift an empty vector";
         exit(1);

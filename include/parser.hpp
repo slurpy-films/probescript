@@ -3,7 +3,7 @@
 #include "lexer.hpp"
 #include <iostream>
 #include "utils/shift.hpp"
-
+#include "errors.hpp"
 
 class Parser {
     public:
@@ -54,12 +54,16 @@ class Parser {
                     return parseClassDeclaration();
                 case Lexer::For:
                     return parseForStmt();
+                case Lexer::Throw:
+                    return parseThrowStmt();
                 case Lexer::Break:
                     eat();
                     return new BreakStmtType();
                 case Lexer::Continue:
                     eat();
                     return new ContinueStmtType();
+                case Lexer::Try:
+                    return parseTryStmt();
                 default:
                     return parseExpr();
             }
@@ -83,6 +87,28 @@ class Parser {
 
             return prb;
         }
+
+        Stmt* parseTryStmt() {
+            eat();
+            std::vector<Stmt*> body = parseBody();
+
+            expect(Lexer::Catch, "Expected catch after try body");
+            std::vector<std::string> params;
+
+            for (Expr* arg : parseArgs()) {
+                if (arg->kind != NodeType::Identifier) {
+                    std::cerr << SyntaxError("Expected parameter to be of type identifier");
+                    exit(1);
+                }
+
+                params.push_back(static_cast<IdentifierType*>(arg)->symbol);
+            }
+
+            std::vector<Stmt*> catchBody = parseBody();
+
+            return new TryStmtType(body, new FunctionDeclarationType(params, "catch", catchBody));
+        }
+
         Stmt* parseForStmt() {
             eat();
             expect(Lexer::OpenParen, "Expected '(' after 'for'");
@@ -99,6 +125,7 @@ class Parser {
             } else if (at().type != Lexer::Comma) {
                 decl.push_back(parseStmt());
             }
+
             expect(Lexer::Comma, "Expected ',' after initializer in for loop");
         
             std::vector<Expr*> cond;
@@ -134,6 +161,11 @@ class Parser {
             return new ForStmtType(decl, cond, update, body);
         }
         
+        Stmt* parseThrowStmt() {
+            eat();
+
+            return new ThrowStmtType(parseExpr());
+        }
 
         Stmt* parseReturnStmt() {
             eat();
@@ -225,7 +257,7 @@ class Parser {
             
             for (Expr* arg : args) {
                 if (arg->kind != NodeType::Identifier) {
-                    std::cerr << "Expected parameter to be of type identifier";
+                    std::cerr << SyntaxError("Expected parameter to be of type identifier");
                     exit(1);
                 }
 
@@ -248,7 +280,7 @@ class Parser {
 
             Lexer::Token lastToken = eat();
             if (lastToken.type != Lexer::ClosedParen) {
-                std::cerr << "Expected closing parentheses, recieved " << lastToken.value;
+                std::cerr << SyntaxError("Expected closing parentheses, recieved " + lastToken.value);
                 exit(1);
             }
 
@@ -272,7 +304,7 @@ class Parser {
 
             if (at().type != Lexer::Equals) {
                 if (isConstant) {
-                    std::cout << "Must assign value to constant variable";
+                    std::cout << SyntaxError("Must assign value to constant variable");
                     exit(1);
                 }
                 return new VarDeclarationType(new UndefinedLiteralType(), ident);
@@ -527,7 +559,7 @@ class Parser {
                     property = parsePrimaryExpr();
         
                     if (property->kind != NodeType::Identifier) {
-                        std::cerr << "Cannot use dot operator without right hand side being an identifier";
+                        std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier");
                         exit(1);
                     }
         
@@ -569,7 +601,7 @@ class Parser {
                     property = parsePrimaryExpr();
                     
                     if (property->kind != NodeType::Identifier) {
-                        std::cerr << "Cannot use dot operator without right hand side being an identifier";
+                        std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier");
                         exit(1);
                     }
                     
@@ -635,8 +667,7 @@ class Parser {
                     return new NullLiteralType();
     
                 default:
-                    std::cout << "Unexpected token found while parsing: ";
-                    std::cout << "\"" << at().value << "\": " << at().type << std::endl;
+                    std::cout << SyntaxError("Unexpected token found while parsing: "+ at().value);
                     exit(1);
             }
         }
@@ -709,7 +740,7 @@ class Parser {
         Lexer::Token expect(Lexer:: TokenType type, std::string err) {
             Lexer::Token prev = shift(tokens);
             if (prev.type != type) {
-                std::cerr << err;
+                std::cerr << SyntaxError(err);
                 exit(1);
             }
 

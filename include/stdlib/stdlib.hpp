@@ -8,7 +8,7 @@
 #include "http.hpp"
 #include "json.hpp"
 
-std::unordered_map<std::string, std::shared_ptr<ObjectVal>> getStdlib() {
+inline std::unordered_map<std::string, std::shared_ptr<ObjectVal>> getStdlib() {
     return {
         {"fs", std::make_shared<ObjectVal>(getFilesystemModule()) },
         {"date", std::make_shared<ObjectVal>(getDateModule()) },

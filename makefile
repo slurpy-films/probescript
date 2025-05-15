@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -Iinclude
-SRC = src/main.cpp
+SRC = $(shell find src -name "*.cpp")
 OBJ = $(SRC:.cpp=.o)
 TARGET = a.exe
 
@@ -17,6 +17,7 @@ endif
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
+	rm -f $(OBJ)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -24,5 +25,5 @@ $(TARGET): $(OBJ)
 clean:
 	rm -f $(OBJ) $(TARGET)
 
-reset: clean
+rebuild: clean
 	$(MAKE)

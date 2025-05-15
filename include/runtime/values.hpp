@@ -4,10 +4,10 @@
 #include <cmath>
 #include <vector>
 #include <functional>
-#include "../ast.hpp"
+#include "ast.hpp"
 #include "utils/split.hpp"
 
-struct Env;
+class Env;
 
 namespace ConsoleColors {
     const std::string RESET   = "\033[0m";

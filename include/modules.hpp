@@ -8,7 +8,7 @@
 #include "stdlib/json.hpp"
 namespace fs = std::filesystem;
 
-std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path fileName) {
+inline std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path fileName) {
     fs::path current = fs::current_path() / fileName.parent_path();
     fs::path projectFile;
     bool found = false;
@@ -24,8 +24,7 @@ std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path 
         if (current.has_parent_path()) {
             current = current.parent_path();
         } else {
-            std::cerr << "Could not find project file";
-            exit(1);
+            break;
         }
     }
 
@@ -60,7 +59,7 @@ std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path 
 
     std::ifstream stream(projectFile);
     std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-    JSONParser::JSONParser parser(file);
+    JSON::JSONParser parser(file);
 
     return { modules, parser.parse() };
 }

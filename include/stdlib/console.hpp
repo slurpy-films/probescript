@@ -4,7 +4,7 @@
 #include "runtime/values.hpp"
 
 
-std::unordered_map<std::string, Val> getConsole() {
+inline std::unordered_map<std::string, Val> getConsole() {
     std::unordered_map<std::string, Val> mod = {
         { "println", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
             for (Val arg : args) {

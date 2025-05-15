@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <memory>
 
-std::unordered_map<std::string, Val> getProcessModule() {
+inline std::unordered_map<std::string, Val> getProcessModule() {
     std::unordered_map<std::string, Val> promod = {
         {
             "kill",

@@ -12,7 +12,6 @@ enum NodeType {
     Identifier,
     BinaryExpr,
     FunctionDeclaration,
-    Error,
     NullLiteral,
     VarDeclaration,
     AssignmentExpr,
@@ -36,8 +35,9 @@ enum NodeType {
     ArrowFunction,
     BreakStmt,
     ContinueStmt,
+    ThrowStmt,
+    TryStmt,
 };
-
 
 struct Stmt {
     NodeType kind;
@@ -65,6 +65,14 @@ struct ReturnStmtType : public Stmt {
     
 };
 
+struct FunctionDeclarationType : public Stmt {
+    FunctionDeclarationType(std::vector<std::string> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
+
+    std::vector<std::string> parameters;
+    std::string name;
+    std::vector<Stmt*> body;
+};
+
 struct ExportStmtType : public Stmt {
     ExportStmtType(Stmt* value) : Stmt(NodeType::ExportStmt), exporting(value) {}
     Stmt* exporting;
@@ -76,6 +84,11 @@ struct Expr : public Stmt {
     std::string toString() const override {
         return value();
     }
+};
+
+struct ThrowStmtType : public Stmt {
+    ThrowStmtType(Expr* err) : Stmt(NodeType::ThrowStmt), err(err) {}
+    Expr* err;
 };
 
 struct ImportStmtType : public Stmt {
@@ -131,6 +144,13 @@ struct IfStmtType : public Stmt {
     std::vector<Stmt*> body;
     std::vector<Stmt*> elseStmt;
     bool hasElse = false;
+};
+
+struct TryStmtType : public Stmt {
+    std::vector<Stmt*> body;
+    FunctionDeclarationType* catchHandler;
+
+    TryStmtType(std::vector<Stmt*> body, FunctionDeclarationType* catchHandler) : Stmt(NodeType::TryStmt), body(body), catchHandler(catchHandler) {}
 };
 
 struct AssignmentExprType : public Expr {
@@ -294,13 +314,6 @@ struct MemberAssignmentType : public Expr {
     bool computed;
 };
 
-struct FunctionDeclarationType : public Stmt {
-    FunctionDeclarationType(std::vector<std::string> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
-
-    std::vector<std::string> parameters;
-    std::string name;
-    std::vector<Stmt*> body;
-};
 
 struct BreakStmtType : public Stmt {
     BreakStmtType() : Stmt(NodeType::BreakStmt) {}

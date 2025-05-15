@@ -5,19 +5,9 @@
 
 class ThreadManager {
 public:
-    void registerThread(std::thread t) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        threads.emplace_back(std::move(t));
-    }
+    void registerThread(std::thread t);
 
-    ~ThreadManager() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (std::thread& t : threads) {
-            if (t.joinable()) {
-                t.join();
-            }
-        }
-    }
+    ~ThreadManager();
 
 private:
     std::vector<std::thread> threads;
