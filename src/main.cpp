@@ -10,12 +10,12 @@
 #include <filesystem>
 
 void showHelp(char* argv[]) {
-    std::cerr << "ProbeScript CLI\n"
+    std::cerr << "probescript CLI\n"
               << "Usage:\n"
               << "  " << argv[0] << " [command] [args]\n\n"
               << "Available Commands:\n"
-                << "  run     Run a ProbeScript file\n"
-                << "  repl    Start the ProbeScript REPL\n"
+                << "  run     Run a probescript file\n"
+                << "  repl    Start the probescript REPL\n"
                 << "  help    Shows this help menu\n";
 }
 

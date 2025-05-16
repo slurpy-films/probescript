@@ -1,5 +1,4 @@
 *.exe
+*.out
 .vscode
 testing/
-*.out
-src/main.o

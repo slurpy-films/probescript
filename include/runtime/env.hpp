@@ -20,15 +20,16 @@ public:
 
     Env* resolve(std::string varname);
 
-    std::shared_ptr<UndefinedVal> throwErr(std::string err);
+    std::shared_ptr<ReturnSignal> throwErr(std::string err);
 
     void setCatch(Val fn);
 
+    
+    Val catcher;
+    bool hasCatch = false;
 private:
     Env* parent;
     std::unordered_map<std::string, bool> constants;
-    Val catcher;
-    bool hasCatch = false;
 };
 
 

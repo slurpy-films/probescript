@@ -45,7 +45,7 @@ Val Env::lookupVar(std::string varName) {
 }
 
 
-std::shared_ptr<UndefinedVal> Env::throwErr(std::string err) {
+std::shared_ptr<ReturnSignal> Env::throwErr(std::string err) {
     if (hasCatch) {
         evalCallWithFnVal(catcher, { std::make_shared<StringVal>(err) }, this);
     } else if (parent) {
@@ -55,7 +55,7 @@ std::shared_ptr<UndefinedVal> Env::throwErr(std::string err) {
         exit(1);
     }
 
-    return std::make_shared<UndefinedVal>();
+    return std::make_shared<ReturnSignal>(std::make_shared<UndefinedVal>());
 }
 
 Env* Env::resolve(std::string varname) {

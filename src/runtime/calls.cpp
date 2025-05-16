@@ -23,6 +23,7 @@ Val evalCall(CallExprType* call, Env* env) {
     if (fn->type == ValueType::Function) {
         std::shared_ptr<FunctionValue> func = std::static_pointer_cast<FunctionValue>(fn);
         Env* scope = new Env(func->declarationEnv);
+        if (env->hasCatch) scope->setCatch(env->catcher);
 
         for (int i = 0; i < func->params.size(); i++) {
             std::string varname = func->params[i];

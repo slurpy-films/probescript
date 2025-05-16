@@ -28,7 +28,7 @@ Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
                         eval(stmt, scope);
                         break;
                     case NodeType::ImportStmt:
-                        eval(stmt, scope);
+                        eval(stmt, scope, config);
                         break;
                     default:
                         std::cerr << "Only variable, function, class, and probe declarations are allowed in program bodies, got " << static_cast<IdentifierType*>(stmt)->symbol;
@@ -80,6 +80,18 @@ Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
                         break;
                     }
 
+                    case NodeType::AssignmentExpr: {
+                        AssignmentExprType* a = static_cast<AssignmentExprType*>(exportstmt->exporting);
+                        if (a->assigne->kind != NodeType::Identifier) {
+                            std::cerr << ManualError("Cannot export non identifier assignment", "ExportError");
+                        }
+                        exportname = static_cast<IdentifierType*>(a->assigne)->symbol;
+                        lasteval = exporting = eval(a->value, env);
+                        found = true;
+
+                        break;
+                    }
+
                     case NodeType::ProbeDeclaration: {
                         ProbeDeclarationType* probe = static_cast<ProbeDeclarationType*>(exportstmt->exporting);
                         exportname = probe->name;
@@ -108,13 +120,13 @@ Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
                     }
 
                     default:
-                        std::cerr << "Type " << exportstmt->exporting->kind << " cannot be exported";
+                        std::cerr << ManualError("Type cannot be exported", "ExportError");
                         exit(1);
                 }
 
                 exports[exportname] = exporting;
             } else {
-                eval(stmt, env);
+                eval(stmt, env, config);
             }
         }
 

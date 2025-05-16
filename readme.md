@@ -1,6 +1,6 @@
-# ProbeScript
-![Logo](https://slurpy-films.github.io/probescript/ProbeScript.png)
-## ProbeScript is a programming language designed to be very modular, through its core feature probes.
+# probescript
+![Logo](https://slurpy-films.github.io/probescript/probescript.png)
+## probescript is a programming language designed to be very modular, through its core feature probes.
 
 ## Code Example
 
@@ -12,13 +12,13 @@ probe Main {
 }
 ```
 
-A probe in ProbeScript is a modular unit similar to a class or function, and is the core building block of the language.
+A probe in probescript is a modular unit similar to a class or function, and is the core building block of the language.
 
 ## Building
 You can use make to build the project, but you can also just compile the src/main.cpp file with your own compiler. This project is built on Windows with the g++ compiler.
 
 ## Basic Syntax
-ProbeScript uses curly brace syntax and optional semicolons. It uses var for variable declarations, fn for function declarations, class for class declarations, and probe for probe declarations. If and while statments are done in the traditional way like this:
+probescript uses curly brace syntax and optional semicolons. It uses var for variable declarations, fn for function declarations, class for class declarations, and probe for probe declarations. If and while statments are done in the traditional way like this:
 ```probe
 if (condition) {
     // body
@@ -30,7 +30,7 @@ while (condition) {
 ```
 
 ## Probes
-When you make a new ProbeScript project, you should have a main file that has your probe Main. That probe will be run when you start your program. A probe is a hybrid between a function and a class, because it can be called as a function, but it can also inherit like a class (It can not inherit yet, but it will come soon). When a probe is called, either as a function or as the Main probe, it needs a run function. The run function will be called with the args that the probe is called with, or none if it is the Main probe. Example:
+When you make a new probescript project, you should have a main file that has your probe Main. That probe will be run when you start your program. A probe is a hybrid between a function and a class, because it can be called as a function, but it can also inherit like a class (It can not inherit yet, but it will come soon). When a probe is called, either as a function or as the Main probe, it needs a run function. The run function will be called with the args that the probe is called with, or none if it is the Main probe. Example:
 
 ```probe
 probe Main {
@@ -53,7 +53,7 @@ probe HelloWorld {
 ```
 
 ## Functions and Classes
-In ProbeScript, functions are created with the **fn** keyword. Example:
+In probescript, functions are created with the **fn** keyword. Example:
 ```probe
 fn add(a, b) {
     return a + b;
@@ -107,7 +107,7 @@ bob.age // 44
 ```
 
 ## For Loops
-The for loop syntax in ProbeScript is unique. You create a for loop with the for keyword. After the for keyword you need parentheses. In the for loop there are 3 sections: declarations, conditions, and updates, similar to any language with C-like syntax, but in ProbeScript, they are divided by commas instead of semicolons, since semicolons are optional in ProbeScript. If you need more than one declaration, condition or update, you can put them in parentheses and divide them with commas. Example:
+The for loop syntax in probescript is unique. You create a for loop with the for keyword. After the for keyword you need parentheses. In the for loop there are 3 sections: declarations, conditions, and updates, similar to any language with C-like syntax, but in probescript, they are divided by commas instead of semicolons, since semicolons are optional in probescript. If you need more than one declaration, condition or update, you can put them in parentheses and divide them with commas. Example:
 ```probe
 // Example with one of each
 for (var i = 0, i < 10, i++) {
@@ -124,7 +124,7 @@ Imports are done with the **import** keyword. If you want to import a user made 
 ```probe
 module MyModule;
 ```
-For ProbeScript to properly index your modules, make a project.probe file at the root of your project. The directory this file, and all children directories, will be indexed. 
+For probescript to properly index your modules, make a project.probe file at the root of your project. The directory this file, and all children directories, will be indexed. 
 
 When you want to export something from a module, use the export keyword, like this:
 ```probe
@@ -159,7 +159,7 @@ addTwoNumbers(1, 3); // 4
 ```
 
 ## Operators
-These are the operators ProbeScript supports now, as well as a brief explanation.
+These are the operators probescript supports now, as well as a brief explanation.
 
 ### Binary Operators
 These operators are used to perform operations between two values:

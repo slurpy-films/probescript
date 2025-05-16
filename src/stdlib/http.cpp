@@ -325,7 +325,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
         {
             "get",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
-                if (args.empty() || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return std::make_shared<UndefinedVal>();
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.get(\"http://example.com\", { body: \"body\", headers: {}})"));
 
                 return sendReq("GET", std::static_pointer_cast<StringVal>(args[0])->string, std::static_pointer_cast<ObjectVal>(args[1]), env);
             })
@@ -333,7 +333,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
         {
             "post",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
-                if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {}})"));
 
                 return sendReq("POST", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
             })

@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -Iinclude
 SRC = $(shell find src -name "*.cpp")
 OBJ = $(SRC:.cpp=.o)
-TARGET = a.exe
+TARGET = a
 
 UNAME_S := $(shell uname -s)
 ifeq ($(findstring MINGW,$(UNAME_S)),MINGW)
