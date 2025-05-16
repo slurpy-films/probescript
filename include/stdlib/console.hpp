@@ -8,7 +8,7 @@ inline std::unordered_map<std::string, Val> getConsole() {
     std::unordered_map<std::string, Val> mod = {
         { "println", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
             for (Val arg : args) {
-                std::cout << arg->toString() << " ";
+                std::cout << (arg->type == ValueType::Object ? arg->toConsole() : arg->toString()) << " ";
             }
 
             std::cout << std::endl;

@@ -76,12 +76,12 @@ class Parser {
             if (at().type == Lexer::Extends) {
                 eat();
                 Expr* extends = parseExpr();
-                std::vector<Stmt*> body = parseBody();
+                std::vector<Stmt*> body = parseBody(true);
 
                 return new ProbeDeclarationType(name, body, extends);
             }
 
-            std::vector<Stmt*> body = parseBody();
+            std::vector<Stmt*> body = parseBody(true);
 
             ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);
 
@@ -180,12 +180,12 @@ class Parser {
             if (at().type == Lexer::Extends) {
                 eat();
                 Expr* extends = parseExpr();
-                std::vector<Stmt*> body = parseBody();
+                std::vector<Stmt*> body = parseBody(true);
 
                 return new ClassDefinitionType(name, body, extends);
             }
 
-            std::vector<Stmt*> body = parseBody();
+            std::vector<Stmt*> body = parseBody(true);
 
             return new ClassDefinitionType(name, body);
         }
@@ -747,12 +747,45 @@ class Parser {
             return prev;
         }
 
-        std::vector<Stmt*> parseBody() {
+        std::vector<Stmt*> parseBody(bool methods = false) {
             if (at().type == Lexer::Openbrace) {
                 eat();
                 std::vector<Stmt*> body;
-                while (at().type != Lexer::ClosedBrace && at().type != Lexer::END) {
-                    body.push_back(parseStmt());
+                if (methods) {
+                    while (at().type != Lexer::ClosedBrace && at().type != Lexer::END) {
+                        if (at().type == Lexer::Identifier) {
+                            std::string name = eat().value;
+                            if (at().type == Lexer::OpenParen) {
+                                std::vector<Expr*> args = parseArgs();
+        
+                                std::vector<std::string> params;
+                                
+                                for (Expr* arg : args) {
+                                    if (arg->kind != NodeType::Identifier) {
+                                        std::cerr << SyntaxError("Expected parameter to be of type identifier");
+                                        exit(1);
+                                    }
+
+                                    params.push_back(static_cast<IdentifierType*>(arg)->symbol);
+                                }
+
+                                std::vector<Stmt*> fnbody = parseBody();
+                                body.push_back(new FunctionDeclarationType(params, name, fnbody));
+                            } else {
+                                if (at().type == Lexer::Equals) {
+                                    eat();
+                                    Expr* val = parseExpr();
+                                    body.push_back(new AssignmentExprType(new IdentifierType(name), val, "="));
+                                } else {
+                                    body.push_back(new AssignmentExprType(new IdentifierType(name), new UndefinedLiteralType(), "="));
+                                }
+                            }
+                        } else body.push_back(parseStmt());
+                    }
+                } else {
+                    while (at().type != Lexer::ClosedBrace && at().type != Lexer::END) {
+                        body.push_back(parseStmt());
+                    }
                 }
 
                 expect(Lexer::ClosedBrace, "Expected closing brace");

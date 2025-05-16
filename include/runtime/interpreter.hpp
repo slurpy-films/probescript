@@ -30,7 +30,6 @@ Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Config::Config* conf
 Val evalMemberAssignment(MemberAssignmentType* expr, Env* env);
 Val evalMemberExpr(MemberExprType* expr, Env* env);
 Val evalNewExpr(NewExprType* newexpr, Env* env);
-void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args);
 std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, std::shared_ptr<NumberVal> rhs, std::string op);
 Val evalObject(ObjectLiteralType* obj, Env* env);
 Val evalProbeDeclaration(ProbeDeclarationType* probe, Env* env);
@@ -41,5 +40,8 @@ Val evalVarDeclaration(VarDeclarationType* var, Env* env, bool constant = false)
 Val evalWhileStmt(WhileStmtType* stmt, Env* env);
 Val evalUnaryPrefix(UnaryPrefixType* expr, Env* env);
 Val evalUnaryPostfix(UnaryPostFixType* expr, Env* env);
+
+void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args);
+void inheritProbe(std::shared_ptr<ProbeValue> prb, Env* env);
 
 Val eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config());
