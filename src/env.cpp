@@ -1,10 +1,12 @@
 #include "runtime/env.hpp"
 
-Env::Env(Env* parentENV)  {
+Env::Env(Env* parentENV)
+{
     bool global = (parentENV == nullptr);
     parent = parentENV;
 
-    if (global) {
+    if (global)
+    {
         declareVar("true", std::make_shared<BooleanVal>(true), true);
         declareVar("false", std::make_shared<BooleanVal>(false), true);
         declareVar("num", std::make_shared<NativeFnValue>(toNum), true);
@@ -15,8 +17,10 @@ Env::Env(Env* parentENV)  {
     }
 }
 
-Val Env::declareVar(std::string varName, Val value, bool constant) {
-    if (variables.find(varName) != variables.end()) {
+Val Env::declareVar(std::string varName, Val value, bool constant)
+{
+    if (variables.find(varName) != variables.end())
+    {
         std::cout << "Variable " << varName << " is already defined" << std::endl;
         exit(1);
     }
@@ -26,10 +30,12 @@ Val Env::declareVar(std::string varName, Val value, bool constant) {
     return value;
 }
 
-Val Env::assignVar(std::string varName, Val value) {
+Val Env::assignVar(std::string varName, Val value)
+{
     Env* env = resolve(varName);
 
-    if (env->constants.find(varName) != env->constants.end() && env->constants[varName]) {
+    if (env->constants.find(varName) != env->constants.end() && env->constants[varName])
+    {
         std::cout << "Assignment to constant variable " << varName << std::endl;
         exit(1);
     }
@@ -39,18 +45,23 @@ Val Env::assignVar(std::string varName, Val value) {
     return value;
 }
 
-Val Env::lookupVar(std::string varName) {
+Val Env::lookupVar(std::string varName)
+{
     Env* env = resolve(varName);
     return env->variables[varName];
 }
 
 
-std::shared_ptr<ReturnSignal> Env::throwErr(std::string err) {
-    if (hasCatch) {
+std::shared_ptr<ReturnSignal> Env::throwErr(std::string err)
+{
+    if (hasCatch)
+    {
         evalCallWithFnVal(catcher, { std::make_shared<StringVal>(err) }, this);
-    } else if (parent) {
+    } else if (parent)
+    {
         return parent->throwErr(err);
-    } else {
+    } else
+    {
         std::cerr << err;
         exit(1);
     }
@@ -58,12 +69,15 @@ std::shared_ptr<ReturnSignal> Env::throwErr(std::string err) {
     return std::make_shared<ReturnSignal>(std::make_shared<UndefinedVal>());
 }
 
-Env* Env::resolve(std::string varname) {
-    if (variables.find(varname) != variables.end()) {
+Env* Env::resolve(std::string varname)
+{
+    if (variables.find(varname) != variables.end())
+    {
         return this;
     }
 
-    if (!parent) {
+    if (!parent)
+    {
         std::cout << "Cannot resolve variable " << varname << " as it does not exist";
         exit(1);
     }
@@ -71,7 +85,8 @@ Env* Env::resolve(std::string varname) {
     return parent->resolve(varname);
 }
 
-void Env::setCatch(Val fn) {
+void Env::setCatch(Val fn)
+{
     hasCatch = true;
     catcher = fn;
 }
