@@ -2,7 +2,7 @@
 
 
 std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path fileName) {
-    fs::path current = fs::current_path() / fileName.parent_path();
+    fs::path current = fs::is_directory(fileName) ? fileName : fs::current_path() / fileName.parent_path();
     fs::path projectFile;
     bool found = false;
     for (size_t i = 0; i < 10; ++i) {

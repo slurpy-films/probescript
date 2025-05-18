@@ -5,6 +5,7 @@
 #include <regex>
 #include <algorithm>
 #include "runtime/values.hpp"
+#include "utils/split.hpp"
 
 std::unordered_map<std::string, Val> getHttpModule();
 
@@ -19,18 +20,21 @@ inline std::string trim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-inline std::unordered_map<std::string, std::string> parseHeaders(const std::string& req) {
+inline std::unordered_map<std::string, std::string> parseHeaders(const std::string& req)
+{
     std::unordered_map<std::string, std::string> headers;
     std::istringstream stream(req);
     std::string line;
 
     std::getline(stream, line);
 
-    while (std::getline(stream, line)) {
+    while (std::getline(stream, line))
+    {
         if (line == "\r" || line.empty()) break;
 
         size_t colon = line.find(':');
-        if (colon != std::string::npos) {
+        if (colon != std::string::npos)
+        {
             std::string key = trim(line.substr(0, colon));
             std::string value = trim(line.substr(colon + 1));
             headers[key] = value;
@@ -40,9 +44,27 @@ inline std::unordered_map<std::string, std::string> parseHeaders(const std::stri
     return headers;
 }
 
+inline std::unordered_map<std::string, std::string> parseCookies(const std::string& c)
+{
+    std::unordered_map<std::string, std::string> cookies;
+    for (const std::string& s : split(c, ";"))
+    {
+        std::string cookie = trim(s);
+        auto parts = split(cookie, "=");
+        if (parts.size() == 2) {
+            std::string key = trim(parts[0]);
+            std::string value = trim(parts[1]);
+            cookies[key] = value;
+        }
+    }
+    return cookies;
+}
+
+
 void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, Env* env);
 
-inline std::pair<std::string, std::string> parseMethodAndPath(const std::string& request) {
+inline std::pair<std::string, std::string> parseMethodAndPath(const std::string& request)
+{
     std::istringstream stream(request);
     std::string method, path;
     stream >> method >> path;
@@ -71,11 +93,15 @@ inline std::pair<std::string, std::string> parseMethodAndPath(const std::string&
 #include <netdb.h>
 #endif
 
-inline Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, Env* env) {
+inline Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, Env* env)
+{
     std::string headers;
-    if (conf->hasProperty("headers") && conf->properties["headers"]->type == ValueType::Object) {
-        for (auto& [key, val] : std::static_pointer_cast<ObjectVal>(conf->properties["headers"])->properties) {
-            if (val->type == ValueType::String) {
+    if (conf->hasProperty("headers") && conf->properties["headers"]->type == ValueType::Object)
+    {
+        for (auto& [key, val] : std::static_pointer_cast<ObjectVal>(conf->properties["headers"])->properties)
+        {
+            if (val->type == ValueType::String)
+            {
                 headers += key + ": " + std::static_pointer_cast<StringVal>(val)->string + "\r\n";
             }
         }

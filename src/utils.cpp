@@ -26,16 +26,19 @@ bool isNum(const std::string& str)
 
 
 
-std::vector<std::string> split(const std::string& str, char delimeter) 
+std::vector<std::string> split(const std::string& str, const std::string& delimeter) 
 {
     std::vector<std::string> result;
-    std::stringstream ss(str);
-    std::string item;
+    size_t start = 0;
+    size_t end;
 
-    while (getline(ss, item, delimeter)) {
-        result.push_back(item);
+    while ((end = str.find(delimeter, start)) != std::string::npos)
+    {
+        result.push_back(str.substr(start, end - start));
+        start = end + delimeter.length();
     }
 
+    result.push_back(str.substr(start));
     return result;
 }
 

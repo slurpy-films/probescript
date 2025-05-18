@@ -530,7 +530,7 @@ Expr* Parser::parseArrowFunction()
     eat();
 
     std::vector<std::string> params;
-    
+
     for (Expr* arg : parseArgs())
     {
         if (arg->kind != NodeType::Identifier)

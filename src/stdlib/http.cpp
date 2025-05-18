@@ -62,21 +62,34 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                     req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, Env* env) -> Val {
                         return std::make_shared<StringVal>(request);
                     });
-                    auto headersMap = std::make_shared<ObjectVal>();
+                    std::shared_ptr<ObjectVal> headersMap = std::make_shared<ObjectVal>();
                     for (const auto& [key, value] : parseHeaders(request)) {
                         headersMap->properties[key] = std::make_shared<StringVal>(value);
                     }
-                    req->properties["headers"] = headersMap;
+                    req->properties["headers"] = headersMap;    
+                    if (headersMap->hasProperty("Cookie")) {
+                        std::unordered_map<std::string, std::string> raw = parseCookies(headersMap->properties["Cookie"]->toString());
+                        auto cookies = std::make_shared<ObjectVal>();
+
+                        for (auto& pair : raw) {
+                            cookies->properties[pair.first] = std::make_shared<StringVal>(pair.second);
+                        }
+
+                        req->properties["cookies"] = cookies;
+                    } else req->properties["cookies"] = std::make_shared<ObjectVal>();
+
+                    auto resheaders = std::make_shared<std::string>();
 
                     std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
-                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, Env* _) -> Val {
                         if (args.empty()) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
                         response << "HTTP/1.1 200\r\n"
                                  << "Content-Type: text/plain\r\n"
                                  << "Content-Length: " << body.size() << "\r\n"
-                                 << "Connection: close\r\n\r\n"
+                                 << "Connection: close\r\n"
+                                 << *resheaders << "\r\n"
                                  << body;
 
                         std::string resStr = response.str();
@@ -85,19 +98,28 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, Env* _) -> Val {
                         if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
                         response << "HTTP/1.1 200\r\n"
                                  << "Content-Type: text/html\r\n"
                                  << "Content-Length: " << body.size() << "\r\n"
-                                 << "Connection: close\r\n\r\n"
+                                 << "Connection: close\r\n"
+                                 << resheaders << "\r\n"
                                  << body;
 
                         std::string resStr = response.str();
                         send(clientSocket, resStr.c_str(), resStr.size(), 0);
                         closesocket(clientSocket);
+                        return std::make_shared<UndefinedVal>();
+                    });
+
+                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, Env* env) -> Val {
+                        if (args.size() < 2) return env->throwErr(ArgumentError("Usage: cookie(name, value)"));
+
+                        *resheaders += "Set-Cookie: " + args[0]->toString() + "=" + args[1]->toString() + "\r\n";
+
                         return std::make_shared<UndefinedVal>();
                     });
 
@@ -114,6 +136,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
     closesocket(serverSocket);
     WSACleanup();
 }
+
 #else
 void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, Env* env) {
     int serverSocket;
@@ -181,16 +204,29 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         headers->properties[key] = std::make_shared<StringVal>(value);
                     }
                     req->properties["headers"] = headers;
+                    if (headersMap->hasProperty("Cookie")) {
+                        std::unordered_map<std::string, std::string> raw = parseCookies(headersMap->properties["Cookie"]->toString());
+                        auto cookies = std::make_shared<ObjectVal>();
+
+                        for (auto& pair : raw) {
+                            cookies->properties[pair.first] = std::make_shared<StringVal>(pair.second);
+                        }
+
+                        req->properties["cookies"] = cookies;
+                    } else req->properties["cookies"] = std::make_shared<ObjectVal>();
+
+                    auto resheaders = std::make_shared<std::string>();
 
                     std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
-                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, Env* _) -> Val {
                         if (args.empty()) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
                         response << "HTTP/1.1 200\r\n"
                                 << "Content-Type: text/plain\r\n"
                                 << "Content-Length: " << body.size() << "\r\n"
-                                << "Connection: close\r\n\r\n"
+                                << "Connection: close\r\n"
+                                << *resheaders << "\r\n"
                                 << body;
 
                         std::string resStr = response.str();
@@ -199,19 +235,28 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, Env* _) -> Val {
                         if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
                         response << "HTTP/1.1 200\r\n"
                                 << "Content-Type: text/html\r\n"
                                 << "Content-Length: " << body.size() << "\r\n"
-                                << "Connection: close\r\n\r\n"
+                                << "Connection: close\r\n"
+                                << *resheaders << "\r\n"
                                 << body;
 
                         std::string resStr = response.str();
                         send(clientSocket, resStr.c_str(), resStr.size(), 0);
                         close(clientSocket);
+                        return std::make_shared<UndefinedVal>();
+                    });
+
+                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, Env* env) -> Val {
+                        if (args.size() < 2) return env->throwErr(ArgumentError("Usage: cookie(name, value)"));
+
+                        *resheaders += "Set-Cookie: " + args[0]->toString() + "=" + args[1]->toString() + "\r\n";
+
                         return std::make_shared<UndefinedVal>();
                     });
 
