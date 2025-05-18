@@ -124,7 +124,7 @@ Val JSONParser::parseObject() {
     Val val = parseValue();
     o->properties[key] = val;
     while (tokens[0].type != TokenType::ClosedBrace) {
-        if (!tokens[0].type == TokenType::Comma) {
+        if (tokens[0].type != TokenType::Comma) {
             return env->throwErr(ManualError("Expected comma after object property", "JsonError"));
         }
         eat();

@@ -5,7 +5,7 @@
 #include "runtime/interpreter.hpp"
 #include "ast.hpp"
 #include "parser.hpp"
-#include "REPL.hpp"
+#include "repl.hpp"
 #include "config.hpp"
 #include "modules.hpp"
 #include "init.hpp"
