@@ -46,7 +46,7 @@ Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> a
     Val runfnval = env->lookupVar("run");
 
     if (runfnval->type != ValueType::Function) {
-        std::cerr << "Expected run to be of type function, got " << runfnval->type;
+        std::cerr << "Expected run to be of type function";
         exit(1);
     }
 
@@ -56,13 +56,27 @@ Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> a
     return std::make_shared<UndefinedVal>();
 }
 
-void inheritProbe(std::shared_ptr<ProbeValue> prb, Env* env) {
+void inheritProbe(std::shared_ptr<ProbeValue> prb, Env* env)
+{
     if (!prb->doesExtend) return;
     
     Val extends = eval(prb->extends, prb->declarationEnv);
-    if (extends->type != ValueType::Probe) {
-        std::cerr << ManualError("Probes can only inherit from probes", "ProbeInheritanceError");
-        exit(1);
+    if (extends->type != ValueType::Probe)
+    {
+        if (extends->type == ValueType::NativeClass)
+        {
+            Val instance = std::static_pointer_cast<NativeClassVal>(extends)->constructor({}, env);
+            for (auto& prop : instance->properties)
+            {
+                env->variables[prop.first] = prop.second;
+            }
+
+            return;
+        } else
+        {
+            std::cerr << ManualError("Probes can only inherit from probes", "ProbeInheritanceError");
+            exit(1);
+        }
     }
     std::shared_ptr<ProbeValue> superProbe = std::static_pointer_cast<ProbeValue>(extends);
 
@@ -70,20 +84,26 @@ void inheritProbe(std::shared_ptr<ProbeValue> prb, Env* env) {
 
     bool hasRun = false;
     Val run = std::make_shared<UndefinedVal>();
-    for (Stmt* stmt : superProbe->body) {
-        if (stmt->kind == NodeType::FunctionDeclaration) {
+    for (Stmt* stmt : superProbe->body)
+    {
+        if (stmt->kind == NodeType::FunctionDeclaration)
+        {
             std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), env, true));
-            if (fn->name == "run") {
+            if (fn->name == "run")
+            {
                 hasRun = true;
                 run = fn;
             } else env->variables[fn->name] = fn;
-        } else if (stmt->kind == NodeType::AssignmentExpr) {
+        } else if (stmt->kind == NodeType::AssignmentExpr)
+        {
             AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
-            if (assign->op != "=") {
+            if (assign->op != "=")
+            {
                 env->throwErr(ManualError("Only = assignment is allowed in probe bodies", "ProbeBodyError"));
                 return;
             }
-            if (assign->assigne->kind != NodeType::Identifier) {
+            if (assign->assigne->kind != NodeType::Identifier)
+            {
                 std::cerr << ManualError("Only identifiers can be assigned to in probe bodies", "ProbeBodyError");
                 exit(1);
             }

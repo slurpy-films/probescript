@@ -132,6 +132,19 @@ Val evalBinExpr(BinaryExprType* binop, Env* env) {
     Val left = eval(binop->left, env);
     Val right = eval(binop->right, env);
 
+    std::string op = binop->op;
+    if (op == "+") {
+        return left->add(right);
+    } else if (op == "-") {
+        return left->sub(right);
+    } else if (op == "*") {
+        return left->mul(right);
+    } else if (op == "/") {
+        return left->div(right);
+    } else if (op == "%") {
+        return left->mod(right);
+    }
+
     if (left->type == ValueType::Number && right->type == ValueType::Number) {
         return evalNumericBinExpr(std::static_pointer_cast<NumberVal>(left), std::static_pointer_cast<NumberVal>(right), binop->op);
     }
@@ -163,7 +176,7 @@ Val evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
     if (op == "&&" || op == "||") {
         bool l = left->toBool();
         bool r = right->toBool();
-        return std::make_shared<BooleanVal>((op == "&&") ? (l && r) : (l || r));
+        return std::make_shared<BooleanVal>(((op == "&&") ? (l && r) : (l || r)));
     }
 
     if (op == "==" || op == "!=") {

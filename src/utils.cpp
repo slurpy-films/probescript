@@ -1,7 +1,8 @@
 #include "utils/split.hpp"
 #include "utils/isNum.hpp"
 
-bool isNum(const std::string& str) {
+bool isNum(const std::string& str)
+{
     if (str.empty()) return false;
 
     size_t i = 0;
@@ -25,7 +26,8 @@ bool isNum(const std::string& str) {
 
 
 
-std::vector<std::string> split(const std::string& str, char delimeter) {
+std::vector<std::string> split(const std::string& str, char delimeter) 
+{
     std::vector<std::string> result;
     std::stringstream ss(str);
     std::string item;
@@ -37,7 +39,8 @@ std::vector<std::string> split(const std::string& str, char delimeter) {
     return result;
 }
 
-std::vector<std::string> splitToChars(const std::string& str) {
+std::vector<std::string> splitToChars(const std::string& str)
+{
     std::vector<std::string> result;
     for (char c : str) {
         std::string s;

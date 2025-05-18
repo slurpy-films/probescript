@@ -27,3 +27,8 @@ clean:
 
 rebuild: clean
 	$(MAKE)
+
+debug: CFLAGS += -g -O0
+debug: LDFLAGS +=
+debug: clean
+	$(MAKE)

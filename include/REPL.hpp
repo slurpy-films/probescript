@@ -6,7 +6,8 @@
 #include "parser.hpp"
 #include "config.hpp"
 
-class REPL {
-    public:
-        void start();
+class REPL
+{
+public:
+    void start();
 };

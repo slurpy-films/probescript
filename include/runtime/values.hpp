@@ -26,38 +26,36 @@ namespace ConsoleColors {
     const std::string DIM        = "\033[2m";
 }
 
-namespace ValueType {
-    enum ValueType {
-        Probe,
-        Null,
-        Number,
-        Boolean,
-        Object,
-        NativeFn,
-        Function,
-        String,
-        Undefined,
-        Array,
-        Class,
-        ReturnSignal,
-        NativeClass,
-        BreakSignal,
-        ContinueSignal,
-    };
-}
+enum class ValueType {
+    Probe,
+    Null,
+    Number,
+    Boolean,
+    Object,
+    NativeFn,
+    Function,
+    String,
+    Undefined,
+    Array,
+    Class,
+    ReturnSignal,
+    NativeClass,
+    BreakSignal,
+    ContinueSignal,
+};
 
 struct RuntimeVal;
-
+struct NumberVal;
 using Val = std::shared_ptr<RuntimeVal>;
 
 struct RuntimeVal {
-    ValueType::ValueType type;
+    ValueType type;
     std::string value;
     std::unordered_map<std::string, Val> exports;
     std::unordered_map<std::string, Val> properties;
-    RuntimeVal(ValueType::ValueType type, std::unordered_map<std::string, Val> properties) : type(type), properties(properties) {}
-    RuntimeVal(ValueType::ValueType type) : type(type), value("") {}
-    RuntimeVal(ValueType::ValueType type, const std::string& val) : type(type), value(val) {}
+    RuntimeVal(ValueType type, std::unordered_map<std::string, Val> properties) : type(type), properties(properties) {}
+    RuntimeVal(ValueType type) : type(type), value("") {}
+    RuntimeVal(ValueType type, const std::string& val) : type(type), value(val) {}
     virtual ~RuntimeVal() = default;
 
     virtual std::string toString() const {
@@ -79,35 +77,15 @@ struct RuntimeVal {
     virtual std::string toConsole() const {
         return toString();
     }
+
+    virtual Val add(Val o) const;
+    virtual Val sub(Val o) const;
+    virtual Val mul(Val o) const;
+    virtual Val div(Val o) const;
+    virtual Val mod(Val o) const;
 };
 
 using NativeFunction = std::function<Val(std::vector<Val>, Env*)>;
-
-struct UndefinedVal : public RuntimeVal {
-    UndefinedVal() : RuntimeVal(ValueType::Undefined, "undefined") {}
-    std::string toString() const override { return "undefined"; }
-    double toNum() const override { return 0; }
-    bool toBool() const override { return false; }
-    std::string toJSON() const override {
-        return "null";
-    }
-    std::string toConsole() const override {
-        return ConsoleColors::GRAY + "undefined" + ConsoleColors::RESET;
-    }
-};
-
-struct NullVal : public RuntimeVal {
-    NullVal() : RuntimeVal(ValueType::Null, "null") {}
-    std::string toString() const override { return "null"; }
-    double toNum() const override { return 0; }
-    bool toBool() const override { return false; }
-    std::string toJSON() const override {
-        return "null";
-    }
-    std::string toConsole() const override {
-        return ConsoleColors::GRAY + "null" + ConsoleColors::RESET;
-    }
-};
 
 struct NumberVal : public RuntimeVal {
     double number;
@@ -137,6 +115,69 @@ struct NumberVal : public RuntimeVal {
 
     double toNum() const override { return number; }
     bool toBool() const override { return number != 0; }
+
+    Val add(Val o) const override {
+        return std::make_shared<NumberVal>(number + o->toNum());
+    }
+
+    Val sub(Val o) const override {
+        return std::make_shared<NumberVal>(number - o->toNum());
+    }
+
+    Val mul(Val o) const override {
+        return std::make_shared<NumberVal>(number * o->toNum());
+    }
+
+    Val div(Val o) const override {
+        return std::make_shared<NumberVal>(number / o->toNum());
+    }
+
+    Val mod(Val o) const override {
+        return std::make_shared<NumberVal>(fmod(number, o->toNum()));
+    }
+};
+
+struct UndefinedVal : public RuntimeVal {
+    UndefinedVal() : RuntimeVal(ValueType::Undefined, "undefined") {}
+    std::string toString() const override { return "undefined"; }
+    double toNum() const override { return 0; }
+    bool toBool() const override { return false; }
+    std::string toJSON() const override {
+        return "null";
+    }
+    std::string toConsole() const override {
+        return ConsoleColors::GRAY + "undefined" + ConsoleColors::RESET;
+    }
+
+    Val add(Val o) const override {
+        return std::make_shared<NumberVal>(0 + o->toNum());
+    }
+
+    Val sub(Val o) const override {
+        return std::make_shared<NumberVal>(0 - o->toNum());
+    }
+
+};
+
+struct NullVal : public RuntimeVal {
+    NullVal() : RuntimeVal(ValueType::Null, "null") {}
+    std::string toString() const override { return "null"; }
+    double toNum() const override { return 0; }
+    bool toBool() const override { return false; }
+    std::string toJSON() const override {
+        return "null";
+    }
+    std::string toConsole() const override {
+        return ConsoleColors::GRAY + "null" + ConsoleColors::RESET;
+    }
+
+    Val add(Val o) const override {
+        return std::make_shared<NumberVal>(0 + o->toNum());
+    }
+
+    Val sub(Val o) const override {
+        return std::make_shared<NumberVal>(0 - o->toNum());
+    }
 };
 
 
@@ -157,6 +198,26 @@ struct BooleanVal : public RuntimeVal {
 
     std::string toConsole() const override {
         return ConsoleColors::YELLOW + (value ? "true" : "false") + ConsoleColors::RESET;
+    }
+
+    Val add(Val o) const override {
+        return std::make_shared<NumberVal>((value ? 1 : 0) + o->toNum());
+    }
+
+    Val sub(Val o) const override {
+        return std::make_shared<NumberVal>((value ? 1 : 0) - o->toNum());
+    }
+
+    Val mul(Val o) const override {
+        return std::make_shared<NumberVal>((value ? 1 : 0) * o->toNum());
+    }
+
+    Val div(Val o) const override {
+        return std::make_shared<NumberVal>((value ? 1 : 0) / o->toNum());
+    }
+
+    Val mod(Val o) const override {
+        return std::make_shared<NumberVal>(fmod((value ? 1 : 0), o->toNum()));
     }
 };
 
@@ -218,6 +279,12 @@ struct ArrayVal : public RuntimeVal {
         return result;
     }
     bool toBool() const override { return true; }
+
+    Val add(Val o) const override {
+        std::vector<Val> citems(items);
+        citems.push_back(o);
+        return std::make_shared<ArrayVal>(citems);
+    }
 };
 
 struct NativeFnValue : public RuntimeVal {
@@ -343,6 +410,19 @@ struct StringVal : public RuntimeVal {
     bool toBool() const override { return !string.empty(); }
     std::string toConsole() const override {
         return ConsoleColors::GREEN + "\"" + string + "\"" + ConsoleColors::RESET;
+    }
+
+    Val add(Val o) const override {
+        return std::make_shared<StringVal>(string + o->toString());
+    }
+
+    Val mul(Val o) {
+        std::string r;
+        for (size_t i = 0; i < o->toNum() && i < 10000; i++) {
+            r += string;
+        }
+
+        return std::make_shared<StringVal>(r);
     }
 };
 

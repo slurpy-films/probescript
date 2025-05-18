@@ -3,7 +3,8 @@
 #include <vector>
 #include <mutex>
 
-class ThreadManager {
+class ThreadManager
+{
 public:
     void registerThread(std::thread t);
 
