@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Iinclude
+CFLAGS = -Iinclude -std=c++17
 SRC = $(shell find src -name "*.cpp")
 OBJ = $(SRC:.cpp=.o)
 TARGET = a
