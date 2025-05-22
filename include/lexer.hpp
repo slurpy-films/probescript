@@ -57,6 +57,8 @@ enum TokenType {
     Throw,
     Try,
     Catch,
+    Undefined,
+    Bool,
 };
 
 struct Token {
@@ -104,6 +106,9 @@ inline std::unordered_map<std::string, TokenType> getKeyWords() {
         { "throw", Throw },
         { "try", Try },
         { "catch", Catch },
+        { "undefined", Undefined },
+        { "true", Bool },
+        { "false", Bool }
     };
 
     return keywords;

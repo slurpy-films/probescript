@@ -37,6 +37,7 @@ enum NodeType {
     ContinueStmt,
     ThrowStmt,
     TryStmt,
+    BoolLiteral,
 };
 
 struct Stmt {
@@ -49,6 +50,7 @@ struct Stmt {
 
 struct ProgramType : public Stmt {
     ProgramType() : Stmt(NodeType::Program) {}
+    ProgramType(std::vector<Stmt*> body) : Stmt(NodeType::Program), body(body) {}
     std::vector<Stmt*> body;
     
     ~ProgramType() {
@@ -65,10 +67,43 @@ struct ReturnStmtType : public Stmt {
     
 };
 
-struct FunctionDeclarationType : public Stmt {
-    FunctionDeclarationType(std::vector<std::string> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
+struct Expr : public Stmt { 
+    Expr(NodeType kind = NodeType::NullLiteral) : Stmt(kind) {}
 
-    std::vector<std::string> parameters;
+    std::string toString() const override {
+        return value();
+    }
+};
+
+struct VarDeclarationType : public Stmt {
+    VarDeclarationType(Expr* value, std::string ident, bool constant = false)
+        : Stmt(NodeType::VarDeclaration),
+          value(value),
+          identifier(std::move(ident)),
+          constant(constant),
+          staticType(false),
+          type(nullptr) {}
+
+    VarDeclarationType(Expr* value, std::string ident, Expr* type)
+        : Stmt(NodeType::VarDeclaration),
+          value(value),
+          identifier(std::move(ident)),
+          constant(false),
+          staticType(true),
+          type(type) {}
+
+    Expr* value;
+    std::string identifier;
+    bool constant;
+    bool staticType;
+    Expr* type;
+};
+
+
+struct FunctionDeclarationType : public Stmt {
+    FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
+
+    std::vector<VarDeclarationType*> parameters;
     std::string name;
     std::vector<Stmt*> body;
 };
@@ -76,14 +111,6 @@ struct FunctionDeclarationType : public Stmt {
 struct ExportStmtType : public Stmt {
     ExportStmtType(Stmt* value) : Stmt(NodeType::ExportStmt), exporting(value) {}
     Stmt* exporting;
-};
-
-struct Expr : public Stmt { 
-    Expr(NodeType kind = NodeType::NullLiteral) : Stmt(kind) {}
-
-    std::string toString() const override {
-        return value();
-    }
 };
 
 struct ThrowStmtType : public Stmt {
@@ -120,12 +147,6 @@ struct ProbeDeclarationType : public Stmt {
     std::vector<Stmt*> body;
 };
 
-struct VarDeclarationType : public Stmt {
-    VarDeclarationType(Expr* value, std::string ident, bool constant = false) : Stmt(NodeType::VarDeclaration), value(value), identifier(ident), constant(constant) {}
-    Expr* value;
-    std::string identifier;
-    bool constant;
-};
 
 struct ForStmtType : public Stmt {
     std::vector<Stmt*> declarations;
@@ -240,6 +261,11 @@ struct UndefinedLiteralType : public Expr {
     };
 };
 
+struct BoolLiteralType : public Expr {
+    bool value;
+    BoolLiteralType(bool value) : Expr(NodeType::BoolLiteral), value(value) {}
+};
+
 struct ClassDefinitionType : public Stmt {
     ClassDefinitionType(std::string name, std::vector<Stmt*> body) : Stmt(NodeType::ClassDefinition), name(name), body(body) {}
     ClassDefinitionType(std::string name, std::vector<Stmt*> body, Expr* extends) : Stmt(NodeType::ClassDefinition), name(name), body(body), extends(extends), doesExtend(true) {}
@@ -276,10 +302,10 @@ struct ArrayLiteralType : public Expr {
 };
 
 struct ArrowFunctionType : public Expr {
-    std::vector<std::string> params;
+    std::vector<VarDeclarationType*> params;
     std::vector<Stmt*> body;
 
-    ArrowFunctionType(std::vector<std::string> params, std::vector<Stmt*> body) :
+    ArrowFunctionType(std::vector<VarDeclarationType*> params, std::vector<Stmt*> body) :
         Expr(NodeType::ArrowFunction), params(params), body(body) {}
 };
 

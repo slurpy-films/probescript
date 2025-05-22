@@ -26,8 +26,8 @@ Val evalCall(CallExprType* call, Env* env) {
         if (env->hasCatch) scope->setCatch(env->catcher);
 
         for (int i = 0; i < func->params.size(); i++) {
-            std::string varname = func->params[i];
-            scope->declareVar(varname, i < args.size() ? args[i]: std::make_shared<UndefinedVal>(), false);
+            std::string varname = func->params[i]->identifier;
+            scope->declareVar(varname, i < args.size() ? args[i] : eval(func->params[i]->value, env), false);
         }
 
         Val result = evalBody(func->body, scope);
@@ -60,8 +60,8 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, Env* env) {
         Env* scope = new Env(func->declarationEnv);
 
         for (int i = 0; i < func->params.size(); i++) {
-            std::string varname = func->params[i];
-            Val value = (i < args.size()) ? args[i] : std::make_shared<UndefinedVal>();
+            std::string varname = func->params[i]->identifier;
+            Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
             scope->declareVar(varname, value, false);
         }
         

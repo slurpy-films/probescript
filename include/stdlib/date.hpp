@@ -15,7 +15,7 @@ inline std::unordered_map<std::string, Val> getDateModule() {
 
         std::string unit = "sec";
         if (!args.empty() && args[0]->type == ValueType::String) {
-            unit = std::static_pointer_cast<StringVal>(args[0])->value;
+            unit = std::static_pointer_cast<StringVal>(args[0])->string;
             std::transform(unit.begin(), unit.end(), unit.begin(), ::tolower);
         }
 

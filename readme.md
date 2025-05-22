@@ -1,5 +1,7 @@
 # probescript
 ![Logo](https://slurpy-films.github.io/probescript/probescript.png)
+![C++ CI](https://github.com/slurpy-films/probescript/actions/workflows/build.yml/badge.svg)
+
 ## probescript is a programming language designed to be very modular, through its core feature probes.
 
 ## Code Example

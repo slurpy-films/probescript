@@ -4,11 +4,12 @@
 #include <iostream>
 #include "utils/shift.hpp"
 #include "errors.hpp"
+#include "typechecker.hpp"
 
 class Parser
 {
 public:
-    ProgramType* produceAST(std::string& sourceCode);
+    ProgramType* produceAST(std::string& sourceCode, TypeEnvPtr typeenv = std::make_shared<TypeEnv>());
 
 private:
     std::vector<Lexer::Token> tokens;
@@ -84,6 +85,8 @@ private:
     std::vector<Expr*> parseArgs();
 
     std::vector<Expr*> parseArgList();
+
+    std::vector<VarDeclarationType*> parseParams();
 
     Lexer::Token at(int index = 0);
 

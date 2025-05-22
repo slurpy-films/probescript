@@ -17,7 +17,6 @@ endif
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
-	rm -f $(OBJ)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -30,5 +29,5 @@ rebuild: clean
 
 debug: CFLAGS += -g -O0
 debug: LDFLAGS +=
-debug: clean
+debug:
 	$(MAKE)

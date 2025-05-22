@@ -180,6 +180,14 @@ struct NullVal : public RuntimeVal {
     }
 };
 
+struct NativeFnValue : public RuntimeVal {
+    NativeFunction call;
+    NativeFnValue(NativeFunction fn) : RuntimeVal(ValueType::NativeFn), call(fn) {}
+    std::string toString() const override {
+        return "[native function]";
+    }
+    bool toBool() const override { return true; }
+};
 
 struct BooleanVal : public RuntimeVal {
     bool value;
@@ -249,8 +257,7 @@ struct ContinueSignal : public RuntimeVal {
 
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
-    ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items(items) {}
-    ArrayVal() : RuntimeVal(ValueType::Array) {}
+    ArrayVal(std::vector<Val> items = {});
     std::string toString() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -287,21 +294,14 @@ struct ArrayVal : public RuntimeVal {
     }
 };
 
-struct NativeFnValue : public RuntimeVal {
-    NativeFunction call;
-    NativeFnValue(NativeFunction fn) : RuntimeVal(ValueType::NativeFn), call(fn) {}
-    std::string toString() const override {
-        return "[native function]";
-    }
-    bool toBool() const override { return true; }
-};
+
 
 struct FunctionValue : public RuntimeVal {
     std::string name;
-    std::vector<std::string> params;
+    std::vector<VarDeclarationType*> params;
     Env* declarationEnv;
     std::vector<Stmt*> body;
-    FunctionValue (std::string name, std::vector<std::string> params, Env* declarationEnv, std::vector<Stmt*> body) 
+    FunctionValue (std::string name, std::vector<VarDeclarationType*> params, Env* declarationEnv, std::vector<Stmt*> body) 
         : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body) {}
     std::string toString() const override {
         return "[function " + name + "]";

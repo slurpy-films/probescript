@@ -18,7 +18,7 @@ void showHelp(char* argv[]) {
                 << ConsoleColors::BLUE <<  "  run     Run a probescript file\n" << ConsoleColors::RESET
                 << ConsoleColors::GREEN << "  repl    Start the probescript REPL\n" << ConsoleColors::RESET
                 << ConsoleColors::RED <<   "  help    Shows this help menu\n" << ConsoleColors::RESET
-                << ConsoleColors::CYAN <<  "  init    Initialize a new probescript project\n" << ConsoleColors::RESET;
+                << ConsoleColors::YELLOW <<  "  init    Initialize a new probescript project\n" << ConsoleColors::RESET;
 }
 
 int main(int argc, char* argv[]) {

@@ -1,6 +1,6 @@
 #include "parser.hpp"
 
-ProgramType* Parser::produceAST(std::string& sourceCode)
+ProgramType* Parser::produceAST(std::string& sourceCode, TypeEnvPtr typeenv)
 {
     tokens = Lexer::tokenize(sourceCode);
     ProgramType* program = new ProgramType();
@@ -9,6 +9,10 @@ ProgramType* Parser::produceAST(std::string& sourceCode)
     {
         program->body.push_back(parseStmt());
     }
+
+    TC tc;
+
+    tc.checkProgram(program, typeenv);
 
     return program;
 }
@@ -87,18 +91,7 @@ Stmt* Parser::parseTryStmt()
     std::vector<Stmt*> body = parseBody();
 
     expect(Lexer::Catch, "Expected catch after try body");
-    std::vector<std::string> params;
-
-    for (Expr* arg : parseArgs())
-    {
-        if (arg->kind != NodeType::Identifier)
-        {
-            std::cerr << SyntaxError("Expected parameter to be of type identifier");
-            exit(1);
-        }
-
-        params.push_back(static_cast<IdentifierType*>(arg)->symbol);
-    }
+    std::vector<VarDeclarationType*> params = parseParams();
 
     std::vector<Stmt*> catchBody = parseBody();
 
@@ -267,20 +260,7 @@ Stmt* Parser::parseFunctionDeclaration()
     eat();
     std::string name = (at().type == Lexer::Identifier ? eat().value : "anonymous");
 
-    std::vector<Expr*> args = parseArgs();
-
-    std::vector<std::string> params;
-    
-    for (Expr* arg : args)
-    {
-        if (arg->kind != NodeType::Identifier)
-        {
-            std::cerr << SyntaxError("Expected parameter to be of type identifier");
-            exit(1);
-        }
-
-        params.push_back(static_cast<IdentifierType*>(arg)->symbol);
-    }
+    std::vector<VarDeclarationType*> params = parseParams();
 
     std::vector<Stmt*> body = parseBody();
 
@@ -324,6 +304,16 @@ VarDeclarationType* Parser::parseVarDeclaration(bool isConstant)
     eat();
     std::string ident = expect(Lexer::Identifier, "Expected identifier, recieved: ").value;
 
+    bool hasType = false;
+    Expr* type;
+
+    if (at().type == Lexer::Colon)
+    {
+        eat();
+        type = parseLogicalExpr();
+        hasType = true;
+    }
+
     if (at().type != Lexer::Equals)
     {
         if (isConstant)
@@ -331,13 +321,19 @@ VarDeclarationType* Parser::parseVarDeclaration(bool isConstant)
             std::cout << SyntaxError("Must assign value to constant variable");
             exit(1);
         }
-        return new VarDeclarationType(new UndefinedLiteralType(), ident);
+
+        if (!hasType)
+            return new VarDeclarationType(new UndefinedLiteralType(), ident);
+        else
+            return new VarDeclarationType(new UndefinedLiteralType(), ident, type);
     }
+
     
-    expect(Lexer::Equals, "Expected equals token in variable declaration, revieved: ");
-    VarDeclarationType* declaration = new VarDeclarationType(parseExpr(), ident);
-    
-    return declaration;
+    eat();
+    if (!hasType)
+        return new VarDeclarationType(parseExpr(), ident);
+    else
+        return new VarDeclarationType(parseExpr(), ident, type);
 }
 
 Expr* Parser::parseExpr()
@@ -358,7 +354,7 @@ Expr* Parser::parseAssignmentExpr()
     if (at().type == Lexer::Equals || at().type == Lexer::AssignmentOperator)
     {
         std::string op = eat().value;
-        Expr* value = parseAssignmentExpr();
+        Expr* value = parseExpr();
         return new AssignmentExprType(left, value, op);
     }
 
@@ -529,18 +525,7 @@ Expr* Parser::parseArrowFunction()
 
     eat();
 
-    std::vector<std::string> params;
-
-    for (Expr* arg : parseArgs())
-    {
-        if (arg->kind != NodeType::Identifier)
-        {
-            std::cerr << SyntaxError("Expected parameter to be of type identifier");
-            exit(1);
-        }
-
-        params.push_back(static_cast<IdentifierType*>(arg)->symbol);
-    }
+    std::vector<VarDeclarationType*> params = parseParams();
 
     expect(Lexer::Arrow, "Expected arrow after arrow function parameters");
 
@@ -702,6 +687,13 @@ Expr* Parser::parsePrimaryExpr()
             return value;
         }
 
+        case Lexer::Bool:
+            return new BoolLiteralType(eat().value == "true");
+
+        case Lexer::Undefined:
+            eat();
+            return new UndefinedLiteralType();
+
         case Lexer::Null:
             eat();
             return new NullLiteralType();
@@ -776,6 +768,73 @@ std::vector<Expr*> Parser::parseArgList()
     return args;
 }
 
+std::vector<VarDeclarationType*> Parser::parseParams()
+{
+    expect(Lexer::OpenParen, "Expected parenteses before parameters");
+    std::vector<VarDeclarationType*> params;
+    if (at().type == Lexer::ClosedParen)
+    {
+        eat();
+        return params;
+    }
+
+    std::string ident = expect(Lexer::Identifier, "Expected identifier").value;
+
+    if (at().type == Lexer::Colon)
+    {
+        eat();
+        Expr* type = parseExpr();
+
+        if (at().type == Lexer::Equals)
+        {
+            eat();
+            Expr* value = parseExpr();
+            params.push_back(new VarDeclarationType(value, ident, type));
+        } else params.push_back(new VarDeclarationType(new UndefinedLiteralType(), ident));
+    } else
+    {
+        if (at().type == Lexer::Equals)
+        {
+            eat();
+            Expr* value = parseExpr();
+            params.push_back(new VarDeclarationType(value, ident));
+        } else params.push_back(new VarDeclarationType(new UndefinedLiteralType(), ident));
+    }
+
+    while (at().type == Lexer::Comma)
+    {
+        eat();
+
+        std::string ident = expect(Lexer::Identifier, "Expected identifier").value;
+
+        if (at().type == Lexer::Colon)
+        {
+            eat();
+            Expr* type = parseExpr();
+
+            if (at().type == Lexer::Equals)
+            {
+                eat();
+                Expr* value = parseExpr();
+                params.push_back(new VarDeclarationType(value, ident, type));
+            }
+                else params.push_back(new VarDeclarationType(new UndefinedLiteralType(), ident));
+        } else
+        {
+            if (at().type == Lexer::Equals)
+            {
+                eat();
+                Expr* value = parseExpr();
+                params.push_back(new VarDeclarationType(value, ident));
+            }
+                else params.push_back(new VarDeclarationType(new UndefinedLiteralType(), ident));
+        }
+    }
+
+    expect(Lexer::ClosedParen, "Expected closing parenteses after parameters");
+    return params;
+}
+
 std::vector<Stmt*> Parser::parseBody(bool methods)
 {
     if (at().type == Lexer::Openbrace)
@@ -791,20 +850,7 @@ std::vector<Stmt*> Parser::parseBody(bool methods)
                     std::string name = eat().value;
                     if (at().type == Lexer::OpenParen)
                     {
-                        std::vector<Expr*> args = parseArgs();
-
-                        std::vector<std::string> params;
-                        
-                        for (Expr* arg : args)
-                        {
-                            if (arg->kind != NodeType::Identifier)
-                            {
-                                std::cerr << SyntaxError("Expected parameter to be of type identifier");
-                                exit(1);
-                            }
-
-                            params.push_back(static_cast<IdentifierType*>(arg)->symbol);
-                        }
+                        std::vector<VarDeclarationType*> params = parseParams();
 
                         std::vector<Stmt*> fnbody = parseBody();
                         body.push_back(new FunctionDeclarationType(params, name, fnbody));

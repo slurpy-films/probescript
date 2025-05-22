@@ -324,7 +324,7 @@ Val evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
 Val evalMemberExpr(MemberExprType* expr, Env* env) {
     Val obj = eval(expr->object, env);
     
-    if (obj->type != ValueType::Array) {
+    if (obj->type != ValueType::Array || !expr->computed) {
         std::string key;
 
         if (expr->computed) {
@@ -347,16 +347,7 @@ Val evalMemberExpr(MemberExprType* expr, Env* env) {
         }
 
         return object->properties[key];
-    } else if (obj->type == ValueType::Array) {
-        if (!expr->computed) {
-            IdentifierType* ident = static_cast<IdentifierType*>(expr->property);
-            if (ident->symbol == "size") {
-                return arraySize(static_cast<IdentifierType*>(expr->object)->symbol);
-            } else if (ident->symbol == "push") {
-                return arrayPush(static_cast<IdentifierType*>(expr->object)->symbol);
-            }
-        }
-
+    } else {
         Val indexval = eval(expr->property, env);
 
         if (indexval->type != ValueType::Number) {
@@ -374,8 +365,6 @@ Val evalMemberExpr(MemberExprType* expr, Env* env) {
         }
 
         return array->items[idx];
-    } else {
-        return env->throwErr(ManualError("Cannot evaluate member expression of type " + std::to_string(static_cast<int>(obj->type)), "TypeError"));
     }
 }
 
@@ -456,6 +445,9 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config) {
         case NodeType::UndefinedLiteral: {
             return std::make_shared<UndefinedVal>();
         }
+
+        case NodeType::BoolLiteral:
+            return std::make_shared<BooleanVal>(static_cast<BoolLiteralType*>(astNode)->value);
 
         case NodeType::TryStmt:
             return evalTryStmt(static_cast<TryStmtType*>(astNode), env);
