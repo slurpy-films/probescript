@@ -105,7 +105,6 @@ Type TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
         }
     }
 
-
     env->declareVar(decl->identifier, decl->staticType ? getType(decl->type) : Type(TypeKind::Any, "any"));
 
     return Type(TypeKind::Any, "any");
