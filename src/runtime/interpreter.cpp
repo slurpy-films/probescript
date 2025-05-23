@@ -231,7 +231,7 @@ Val evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
     return std::make_shared<UndefinedVal>();
 }
 
-Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Config::Config* config) {
+Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Context* config) {
     std::string modulename = importstmt->name;
     std::unordered_map<std::string, std::shared_ptr<ObjectVal>> stdlib = getStdlib();
     if (stdlib.find(modulename) != stdlib.end()) {
@@ -258,7 +258,7 @@ Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Config::Config* conf
 
     ProgramType* program = parser.produceAST(file);
 
-    Config::Config* conf = new Config::Config(Config::Exports);
+    Context* conf = new Context(RuntimeType::Exports);
 
     conf->modules = config->modules;
 
@@ -389,7 +389,7 @@ std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, st
     return std::make_shared<NumberVal>(result);
 }
 
-Val evalObject(ObjectLiteralType* obj, Env* env) {
+Val evalObject(MapLiteralType* obj, Env* env) {
     std::shared_ptr<ObjectVal> object = std::make_shared<ObjectVal>();
     for (PropertyLiteralType* property : obj->properties) {
         Val runtimeval = (property->val == nullptr) ? env->lookupVar(property->key) : eval(property->val, env);
@@ -430,7 +430,7 @@ Val evalTryStmt(TryStmtType* stmt, Env* env) {
     return std::make_shared<UndefinedVal>();
 }
 
-Val eval(Stmt* astNode, Env* env, Config::Config* config) {
+Val eval(Stmt* astNode, Env* env, Context* config) {
     switch (astNode->kind) {
         case NodeType::NumericLiteral: {
             NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);
@@ -484,8 +484,8 @@ Val eval(Stmt* astNode, Env* env, Config::Config* config) {
         case NodeType::Identifier:
             return evalIdent(static_cast<IdentifierType*>(astNode), env);
 
-        case NodeType::ObjectLiteral:
-            return evalObject(static_cast<ObjectLiteralType*>(astNode), env);
+        case NodeType::MapLiteral:
+            return evalObject(static_cast<MapLiteralType*>(astNode), env);
 
         case NodeType::ArrayLiteral:
             return evalArray(static_cast<ArrayLiteralType*>(astNode), env);

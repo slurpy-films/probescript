@@ -21,23 +21,13 @@ TypeEnv::TypeEnv(std::shared_ptr<TypeEnv> parent)
         {
             "console",
             Type(TypeKind::Object, "Object")
-        },
-        {
-            "undefined",
-            Type(TypeKind::Undefined, "undefined")
-        },
-        {
-            "true",
-            Type(TypeKind::Bool, "bool")
-        },
-        {
-            "false",
-            Type(TypeKind::Bool, "bool")
-        },
+        }
     };
+
+    m_variables = constants;
 }
 
-void TypeEnv::declareVar(std::string name, Type type)
+Type TypeEnv::declareVar(std::string name, Type type)
 {
     if (m_variables.find(name) != m_variables.end())
     {
@@ -46,6 +36,8 @@ void TypeEnv::declareVar(std::string name, Type type)
     }
 
     m_variables[name] = type;
+
+    return type;
 }
 
 Type TypeEnv::lookUp(std::string name)
@@ -61,15 +53,15 @@ Type TypeEnv::lookUp(std::string name)
     }
 }
 
-void TC::checkProgram(ProgramType* program, TypeEnvPtr env)
+void TC::checkProgram(ProgramType* program, TypeEnvPtr env, Context* ctx)
 {
     for (Stmt* stmt : program->body)
     {
-        check(stmt, env);
+        check(stmt, env, ctx);
     }
 }
 
-Type TC::check(Stmt* node, TypeEnvPtr env)
+Type TC::check(Stmt* node, TypeEnvPtr env, Context* ctx)
 {
     switch (node->kind)
     {
@@ -87,9 +79,37 @@ Type TC::check(Stmt* node, TypeEnvPtr env)
             return checkFunction(static_cast<FunctionDeclarationType*>(node), env);
         case NodeType::ProbeDeclaration:
             return checkProbe(static_cast<ProbeDeclarationType*>(node), env);
+        case NodeType::CallExpr:
+            return checkCall(static_cast<CallExprType*>(node), env);
+        case NodeType::MapLiteral:
+            return checkObjectExpr(static_cast<MapLiteralType*>(node), env);
+        case NodeType::MemberExpr:
+            return checkMemberExpr(static_cast<MemberExprType*>(node), env);
+        case NodeType::ImportStmt:
+            return checkIimportStmt(static_cast<ImportStmtType*>(node), env, ctx);
+        case NodeType::ExportStmt:
+            return checkExportStmt(static_cast<ExportStmtType*>(node)->exporting, env, ctx);
         default:
             return Type(TypeKind::Any, "any");
     }
+}
+
+Type TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, Context* ctx)
+{
+    if (stmt->kind == NodeType::AssignmentExpr)
+    {
+        AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
+
+        if (assign->assigne->kind != NodeType::Identifier)
+        {
+            std::cerr << TypeError("Identifier exporting can only be used on identifiers");
+            exit(1);
+        }
+
+        return check(new VarDeclarationType(assign->value, static_cast<IdentifierType*>(assign->assigne)->symbol), env, ctx);
+    }
+
+    return check(stmt, env, ctx);
 }
 
 Type TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
@@ -105,6 +125,7 @@ Type TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
         }
     }
 
+    check(decl->value, env);
     env->declareVar(decl->identifier, decl->staticType ? getType(decl->type) : Type(TypeKind::Any, "any"));
 
     return Type(TypeKind::Any, "any");
@@ -156,7 +177,92 @@ Type TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
         check(stmt, scope);
     }
 
+    env->declareVar(fn->name, Type(TypeKind::Function, "function", TypeVal(fn->parameters)));
     return Type(TypeKind::Any, "any");
+}
+
+Type TC::checkCall(CallExprType* call, TypeEnvPtr env)
+{
+    if (call->calee->kind == NodeType::Identifier)
+    {
+        Type fn = env->lookUp(static_cast<IdentifierType*>(call->calee)->symbol);
+
+        if (fn.type != TypeKind::Function && fn.type != TypeKind::Any)
+        {
+            std::cerr << TypeError("Cannot call value that is not a function: " + static_cast<IdentifierType*>(call->calee)->symbol);
+            exit(1);
+        }
+
+        for (size_t i = 0; i < call->args.size(); i++)
+        {
+            Type type = check(call->args[i], env);
+
+            if (
+                fn.val.params.size() < i || type.type == TypeKind::Any || getType(fn.val.params[i]->type).type == TypeKind::Any
+            ) continue;
+
+            if (!compare(type, getType(fn.val.params[i]->type)))
+            {
+                std::cerr
+                    << TypeError("Function " + static_cast<IdentifierType*>(call->calee)->symbol + " parameter " + std::to_string(i) + " expects " + getType(fn.val.params[i]->type).name + ". " + type.name + " given");
+                exit(1);
+            }
+        }
+    }
+
+    return Type(TypeKind::Any, "any");
+}
+
+Type TC::checkObjectExpr(MapLiteralType* obj, TypeEnvPtr env)
+{
+    return Type(TypeKind::Object, "map");
+}
+
+Type TC::checkMemberExpr(MemberExprType* expr, TypeEnvPtr env)
+{
+    Type obj = check(expr->object, env);
+
+    return Type(TypeKind::Any, "any");
+}
+
+Type TC::checkIimportStmt(ImportStmtType* stmt, TypeEnvPtr env, Context* ctx)
+{
+    if (stmt->name == "http" || stmt->name == "random" || stmt->name == "json" || stmt->name == "fs")
+    {        
+        if (!stmt->hasMember || stmt->customIdent)
+        {
+            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, Type(TypeKind::Any, "native module"));
+        }
+
+        return env->declareVar(static_cast<MemberExprType*>(stmt->module)->lastProp, Type(TypeKind::Any, "native module"));
+    } else
+    {
+        if (ctx->modules.find(stmt->name) == ctx->modules.end())
+        {
+            std::cerr << ManualError("Module " + stmt->name + " not found", "ImportError");
+            exit(1);
+        }
+
+        fs::path path = ctx->modules[stmt->name];
+
+        std::ifstream stream(path);
+        std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+        Parser parser;
+        
+        ProgramType* program = parser.produceAST(file);
+        TC tc;
+        tc.checkProgram(program, std::make_shared<TypeEnv>());
+
+        if (!stmt->hasMember || stmt->customIdent)
+        {
+            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, Type(TypeKind::Any, "module"));
+        }
+
+
+        return env->declareVar(static_cast<MemberExprType*>(stmt->module)->lastProp, Type(TypeKind::Any, "module"));
+    }
+
+    return Type(TypeKind::Any, "module");
 }
 
 Type TC::getType(Expr* name)
@@ -173,6 +279,8 @@ Type TC::getType(Expr* name)
             return Type(TypeKind::Number, "number");
         else if (ident->symbol == "bool")
             return Type(TypeKind::Bool, "bool");
+        else if (ident->symbol == "map")
+            return Type(TypeKind::Object, "map");
         else
             return Type();
     } else return Type();

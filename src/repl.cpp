@@ -4,7 +4,7 @@ void REPL::start() {
     std::cout << "REPL v1.0\n";
     Env* env = new Env();
     TypeEnvPtr typeenv = std::make_shared<TypeEnv>();
-    Config::Config* config = new Config::Config(Config::REPL);
+    Context* config = new Context(RuntimeType::REPL);
     while (true) {
         std::cout << "> ";
         Parser parser;
@@ -13,7 +13,10 @@ void REPL::start() {
 
         if (src.find("exit") == 0) break;
 
-        ProgramType* program = parser.produceAST(src, typeenv);
+        ProgramType* program = parser.produceAST(src);
+
+        TC tc;
+        tc.checkProgram(program, typeenv);
 
         Val result = eval(program, env, config);
 

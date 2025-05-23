@@ -1,6 +1,6 @@
 #include "parser.hpp"
 
-ProgramType* Parser::produceAST(std::string& sourceCode, TypeEnvPtr typeenv)
+ProgramType* Parser::produceAST(std::string& sourceCode)
 {
     tokens = Lexer::tokenize(sourceCode);
     ProgramType* program = new ProgramType();
@@ -10,9 +10,6 @@ ProgramType* Parser::produceAST(std::string& sourceCode, TypeEnvPtr typeenv)
         program->body.push_back(parseStmt());
     }
 
-    TC tc;
-
-    tc.checkProgram(program, typeenv);
 
     return program;
 }
@@ -447,7 +444,7 @@ Expr* Parser::parseObjectExpr()
 
     expect(Lexer::ClosedBrace, "Object literal missing closing bracket");
 
-    return new ObjectLiteralType(properties);
+    return new MapLiteralType(properties);
 }
 
 Expr* Parser::parseAdditiveExpr()

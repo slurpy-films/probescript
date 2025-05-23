@@ -1,7 +1,7 @@
 #include "runtime/interpreter.hpp"
 
-Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
-    if (config->type == Config::Normal) {
+Val evalProgram(ProgramType* program, Env* env, Context* config) {
+    if (config->type == RuntimeType::Normal) {
         Env* scope = new Env(env);
         ProbeDeclarationType* probeDeclaration;
         bool foundProbe = false;
@@ -48,14 +48,14 @@ Val evalProgram(ProgramType* program, Env* env, Config::Config* config) {
         Val lastEval = evalProbeCall(probe->name, scope);
 
         return lastEval;
-    } else if (config->type == Config::REPL) {
+    } else if (config->type == RuntimeType::REPL) {
         Val lastEval = std::make_shared<UndefinedVal>();
         for (Stmt* stmt : program->body) {
             lastEval = eval(stmt, env, config);
         }
 
         return lastEval;
-    } else if (config->type == Config::Exports) {
+    } else if (config->type == RuntimeType::Exports) {
         std::unordered_map<std::string, Val> exports;
 
         Env* env = new Env();

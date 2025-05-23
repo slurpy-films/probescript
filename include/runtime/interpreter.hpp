@@ -26,14 +26,14 @@ Val evalFunctionDeclaration(FunctionDeclarationType* declaration, Env* env, bool
 Val evalForStmt(ForStmtType* forstmt, Env* env);
 Val evalIdent(IdentifierType* ident, Env* env);
 Val evalIfStmt(IfStmtType* stmt, Env* baseEnv);
-Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Config::Config* config);
+Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Context* config);
 Val evalMemberAssignment(MemberAssignmentType* expr, Env* env);
 Val evalMemberExpr(MemberExprType* expr, Env* env);
 Val evalNewExpr(NewExprType* newexpr, Env* env);
 std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, std::shared_ptr<NumberVal> rhs, std::string op);
-Val evalObject(ObjectLiteralType* obj, Env* env);
+Val evalObject(MapLiteralType* obj, Env* env);
 Val evalProbeDeclaration(ProbeDeclarationType* probe, Env* env);
-Val evalProgram(ProgramType* program, Env* env, Config::Config* config);
+Val evalProgram(ProgramType* program, Env* env, Context* config);
 Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> args = {});
 std::shared_ptr<StringVal> evalStringericBinExpr(std::shared_ptr<StringVal> lhs, std::shared_ptr<StringVal> rhs, std::string op);
 Val evalVarDeclaration(VarDeclarationType* var, Env* env, bool constant = false);
@@ -44,4 +44,4 @@ Val evalUnaryPostfix(UnaryPostFixType* expr, Env* env);
 void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args);
 void inheritProbe(std::shared_ptr<ProbeValue> prb, Env* env);
 
-Val eval(Stmt* astNode, Env* env, Config::Config* config = new Config::Config());
+Val eval(Stmt* astNode, Env* env, Context* config = new Context());

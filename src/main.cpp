@@ -9,6 +9,7 @@
 #include "config.hpp"
 #include "modules.hpp"
 #include "init.hpp"
+#include "typechecker.hpp"
 
 void showHelp(char* argv[]) {
     std::cerr << ConsoleColors::CYAN << "Probescript CLI\n" << ConsoleColors::RESET
@@ -52,12 +53,16 @@ int main(int argc, char* argv[]) {
         std::ifstream stream(fileName);
         std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 
-        Config::Config* config = new Config::Config(Config::Normal, "Main");
+        Context* config = new Context(RuntimeType::Normal, "Main");
 
         config->modules = indexedPair.first;
         config->project = indexedPair.second;
         
         ProgramType* program = parser.produceAST(file);
+
+        TC tc;
+        tc.checkProgram(program, std::make_shared<TypeEnv>(), config);
+
         Val result = eval(program, env, config);
 
         delete program;

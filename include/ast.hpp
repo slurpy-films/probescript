@@ -16,7 +16,7 @@ enum NodeType {
     VarDeclaration,
     AssignmentExpr,
     PropertyLiteral,
-    ObjectLiteral,
+    MapLiteral,
     ArrayLiteral,
     MemberExpr,
     MemberAssignment,
@@ -286,8 +286,8 @@ struct PropertyLiteralType : public Expr {
 
 };
 
-struct ObjectLiteralType : public Expr {
-    ObjectLiteralType(std::vector<PropertyLiteralType*> properties) : Expr(NodeType::ObjectLiteral), properties(properties) {}
+struct MapLiteralType : public Expr {
+    MapLiteralType(std::vector<PropertyLiteralType*> properties) : Expr(NodeType::MapLiteral), properties(properties) {}
     std::string value() const override {
         return "null";
     };
