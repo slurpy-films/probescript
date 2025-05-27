@@ -4,7 +4,7 @@ using namespace JSON;
 
 Val JSONParser::parse() {
     if (tokenize()) return std::make_shared<UndefinedVal>();
-    return parseTokens();   
+    return parseTokens();
 }
 
 bool JSONParser::tokenize() {
@@ -97,7 +97,7 @@ Val JSONParser::parseValue() {
         case TokenType::Number:
             return std::make_shared<NumberVal>(eat().val);
         case TokenType::OpenBrace:
-            return MapLiteral();
+            return parseObject();
         case TokenType::Boolean:
             return std::make_shared<BooleanVal>(eat().val == "true");
         case TokenType::OpenBracket:
@@ -107,7 +107,7 @@ Val JSONParser::parseValue() {
     }
 }
 
-Val JSONParser::MapLiteral() {
+Val JSONParser::parseObject() {
     eat();
     std::shared_ptr<ObjectVal> o = std::make_shared<ObjectVal>();
     if (tokens[0].type == TokenType::ClosedBrace) {

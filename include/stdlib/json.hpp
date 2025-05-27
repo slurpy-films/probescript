@@ -52,7 +52,7 @@ private:
     
     Val parseValue();
     
-    Val MapLiteral();
+    Val parseObject();
 
     Val parseArray();
 

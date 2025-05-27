@@ -64,10 +64,17 @@ enum TokenType {
 struct Token {
     std::string value;
     TokenType type;
+
+    int line;
+    int col;
+    std::string file;
 };
 
-inline Token token(const std::string& value, const TokenType type) {
-    return { value, type };
+inline Token token(const std::string& value, const TokenType type, const std::pair<int, int> pos) {
+    int line = pos.first;
+    int col = pos.second;
+    
+    return { value, type, line, col };
 }
 
 inline bool isAlpha(const std::string& str) {
@@ -79,7 +86,7 @@ inline bool isInt(const std::string& str) {
 }
 
 inline bool isSkippable(const std::string str) {
-    return str == " " || str == "\t" || str == "\n" || str == "\r" || str == "";
+    return str == " " || str == "\t" || str == "\r" || str == "";
 }
 
 inline std::unordered_map<std::string, TokenType> getKeyWords() {

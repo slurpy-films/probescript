@@ -99,10 +99,19 @@ struct VarDeclarationType : public Stmt {
     Expr* type;
 };
 
+struct UndefinedLiteralType : public Expr {
+    UndefinedLiteralType() : Expr(NodeType::UndefinedLiteral) {}
+    std::string value() const override {
+        return "undefined";
+    };
+};
 
 struct FunctionDeclarationType : public Stmt {
     FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
+    FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body, Expr* rettype) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body), rettype(rettype), staticRet(true) {}
 
+    bool staticRet = false;
+    Expr* rettype = new UndefinedLiteralType();
     std::vector<VarDeclarationType*> parameters;
     std::string name;
     std::vector<Stmt*> body;
@@ -254,13 +263,6 @@ struct NullLiteralType : public Expr {
     };
 };
 
-struct UndefinedLiteralType : public Expr {
-    UndefinedLiteralType() : Expr(NodeType::UndefinedLiteral) {}
-    std::string value() const override {
-        return "undefined";
-    };
-};
-
 struct BoolLiteralType : public Expr {
     bool value;
     BoolLiteralType(bool value) : Expr(NodeType::BoolLiteral), value(value) {}
@@ -283,7 +285,6 @@ struct PropertyLiteralType : public Expr {
 
     std::string key;
     Expr* val;
-
 };
 
 struct MapLiteralType : public Expr {

@@ -6,7 +6,7 @@
 #include "values.hpp"
 #include "ast.hpp"
 #include "env.hpp"
-#include "config.hpp"
+#include "context.hpp"
 #include "parser.hpp"
 #include "stdlib/stdlib.hpp"
 #include "stdlib/array.hpp"

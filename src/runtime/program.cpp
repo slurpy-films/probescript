@@ -31,7 +31,7 @@ Val evalProgram(ProgramType* program, Env* env, Context* config) {
                         eval(stmt, scope, config);
                         break;
                     default:
-                        std::cerr << "Only variable, function, class, and probe declarations are allowed in program bodies, got " << static_cast<IdentifierType*>(stmt)->symbol;
+                        std::cerr << "Only variable, function, class, and probe declarations are allowed in program bodies";
                         exit(1);
                 }
             }

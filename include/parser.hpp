@@ -3,15 +3,19 @@
 #include "lexer.hpp"
 #include <iostream>
 #include "utils/shift.hpp"
+#include "utils/split.hpp"
 #include "errors.hpp"
+#include "context.hpp"
 
 class Parser
 {
 public:
-    ProgramType* produceAST(std::string& sourceCode);
+    ProgramType* produceAST(std::string& sourceCode, Context* ctx = new Context());
 
 private:
     std::vector<Lexer::Token> tokens;
+    std::string file;
+    Context* context;
 
     // Statment methods
 
@@ -96,6 +100,7 @@ private:
     Lexer::Token expect(Lexer:: TokenType type, std::string err);
 
     bool notEOF();
+    std::string getCurrentLine(Lexer::Token at);
 
-    std::vector<Stmt*> parseBody(bool methods = false);
+    std::vector<Stmt*> parseBody(bool methods = false, std::string prbname = "");
 };

@@ -4,7 +4,7 @@
 #include <iostream>
 #include "runtime/interpreter.hpp"
 #include "parser.hpp"
-#include "config.hpp"
+#include "context.hpp"
 #include "typechecker.hpp"
 
 class REPL

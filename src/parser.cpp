@@ -1,15 +1,16 @@
 #include "parser.hpp"
 
-ProgramType* Parser::produceAST(std::string& sourceCode)
+ProgramType* Parser::produceAST(std::string& sourceCode, Context* ctx)
 {
     tokens = Lexer::tokenize(sourceCode);
+    file = sourceCode;
+    context = ctx;
     ProgramType* program = new ProgramType();
 
     while (notEOF())
     {
         program->body.push_back(parseStmt());
     }
-
 
     return program;
 }
@@ -75,7 +76,7 @@ Stmt* Parser::parseProbeDeclaration()
         return new ProbeDeclarationType(name, body, extends);
     }
 
-    std::vector<Stmt*> body = parseBody(true);
+    std::vector<Stmt*> body = parseBody(true, name);
 
     ProbeDeclarationType* prb = new ProbeDeclarationType(name, body);
 
@@ -259,10 +260,19 @@ Stmt* Parser::parseFunctionDeclaration()
 
     std::vector<VarDeclarationType*> params = parseParams();
 
+    Expr* type = nullptr;
+
+    if (at().type == Lexer::Colon)
+    {
+        eat();
+
+        type = parseExpr();
+    }
+
     std::vector<Stmt*> body = parseBody();
 
 
-    FunctionDeclarationType* fn = new FunctionDeclarationType(params, name, body);
+    FunctionDeclarationType* fn = (type ? new FunctionDeclarationType(params, name, body, type) : new FunctionDeclarationType(params, name, body));
 
     return fn;
 }
@@ -277,7 +287,7 @@ Stmt* Parser::parseIfStmt()
     Lexer::Token lastToken = eat();
     if (lastToken.type != Lexer::ClosedParen)
     {
-        std::cerr << SyntaxError("Expected closing parentheses, recieved " + lastToken.value);
+        std::cerr << SyntaxError("Expected closing parentheses, recieved " + lastToken.value, lastToken, context);
         exit(1);
     }
 
@@ -315,7 +325,7 @@ VarDeclarationType* Parser::parseVarDeclaration(bool isConstant)
     {
         if (isConstant)
         {
-            std::cout << SyntaxError("Must assign value to constant variable");
+            std::cout << SyntaxError("Must assign value to constant variable", at(), context);
             exit(1);
         }
 
@@ -569,7 +579,7 @@ Expr* Parser::parseMemberExpr()
 
             if (property->kind != NodeType::Identifier)
             {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier");
+                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
                 exit(1);
             }
 
@@ -619,7 +629,7 @@ Expr* Parser::parseMemberChain(Expr* expr)
             
             if (property->kind != NodeType::Identifier)
             {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier");
+                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
                 exit(1);
             }
             
@@ -700,7 +710,7 @@ Expr* Parser::parsePrimaryExpr()
             return new UndefinedLiteralType();
 
         default:
-            std::cout << SyntaxError("Unexpected token found while parsing: "+ at().value);
+            std::cout << SyntaxError("Unexpected token found while parsing: " + at().value, at(), context);
             exit(1);
     }
 }
@@ -787,7 +797,7 @@ std::vector<VarDeclarationType*> Parser::parseParams()
             eat();
             Expr* value = parseExpr();
             params.push_back(new VarDeclarationType(value, ident, type));
-        } else params.push_back(new VarDeclarationType(new UndefinedLiteralType(), ident));
+        } else params.push_back(new VarDeclarationType(new UndefinedLiteralType(), ident, type));
     } else
     {
         if (at().type == Lexer::Equals)
@@ -832,7 +842,7 @@ std::vector<VarDeclarationType*> Parser::parseParams()
     return params;
 }
 
-std::vector<Stmt*> Parser::parseBody(bool methods)
+std::vector<Stmt*> Parser::parseBody(bool methods, std::string prbname)
 {
     if (at().type == Lexer::Openbrace)
     {
@@ -849,8 +859,17 @@ std::vector<Stmt*> Parser::parseBody(bool methods)
                     {
                         std::vector<VarDeclarationType*> params = parseParams();
 
-                        std::vector<Stmt*> fnbody = parseBody();
-                        body.push_back(new FunctionDeclarationType(params, name, fnbody));
+                        if (at().type == Lexer::Colon)
+                        {
+                            eat();
+                            Expr* type = parseExpr();
+                            std::vector<Stmt*> fnbody = parseBody();
+
+                            body.push_back(new FunctionDeclarationType(params, (name == prbname ? "run" : name), fnbody));
+                        } else {
+                            std::vector<Stmt*> fnbody = parseBody();
+                            body.push_back(new FunctionDeclarationType(params, (name == prbname ? "run" : name), fnbody));
+                        }
                     } else
                     {
                         if (at().type == Lexer::Equals)
@@ -899,16 +918,21 @@ Lexer::Token Parser::eat()
     return prev;
 }
 
-Lexer::Token Parser::expect(Lexer:: TokenType type, std::string err)
+Lexer::Token Parser::expect(Lexer::TokenType type, std::string err)
 {
     Lexer::Token prev = shift(tokens);
     if (prev.type != type)
     {
-        std::cerr << SyntaxError(err);
+        std::cerr << SyntaxError(err, prev, context);
         exit(1);
     }
 
     return prev;
+}
+
+std::string Parser::getCurrentLine(Lexer::Token at)
+{
+    return split(file, "\n")[at.line - 1];
 }
 
 bool Parser::notEOF() {

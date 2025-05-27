@@ -253,8 +253,6 @@ struct ContinueSignal : public RuntimeVal {
     ContinueSignal() : RuntimeVal(ValueType::ContinueSignal) {}
 };
 
-
-
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
     ArrayVal(std::vector<Val> items = {});
@@ -406,7 +404,18 @@ struct StringVal : public RuntimeVal {
     }
     std::string toString() const override { return string; }
     std::string toJSON() const override { return "\"" + string + "\""; }
-    double toNum() const override { return stod(string); }
+    double toNum() const override
+    {
+        double val;
+        try
+        {
+            val = stod(string);
+        } catch (...)
+        {
+            val = 0;
+        }
+        return val;
+    }
     bool toBool() const override { return !string.empty(); }
     std::string toConsole() const override {
         return ConsoleColors::GREEN + "\"" + string + "\"" + ConsoleColors::RESET;
