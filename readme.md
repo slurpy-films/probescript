@@ -9,7 +9,7 @@
 
 ```probe
 probe Main {
-    run() {
+    Main() {
         console.println("Hello, World!");
     }
 }
@@ -37,14 +37,14 @@ When you make a new probescript project, you should have a main file that has yo
 
 ```probe
 probe Main {
-    run() {
+    Main() {
         // This code will run when your program starts
         HelloWorld(); // This will call the run function in the HelloWorld probe
     }
 }
 
 probe HelloWorld {
-    run() {
+    HelloWorld() {
         print("Hello, World"); // This will call the print function created below
     }
 

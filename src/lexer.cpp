@@ -58,7 +58,7 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
         if (src[0] == ";")
         {
             col++;
-            shift(src);
+            tokens.push_back(token(shift(src), Semicolon, { line, col }));
             continue;
         }
 

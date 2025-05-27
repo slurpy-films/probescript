@@ -210,10 +210,21 @@ Type TC::checkProbe(ProbeDeclarationType* prb, TypeEnvPtr env)
 
     for (Stmt* stmt : prb->body)
     {
-        check(stmt, scope);
+        if (stmt->kind == NodeType::AssignmentExpr)
+        {
+            AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
+            if (assign->assigne->kind != NodeType::Identifier)
+            {
+                std::cerr << TypeError("Only identifier members are allowed in classes");
+                exit(1);
+            }
+
+            scope->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, check(assign->value, scope));
+        } else
+            check(stmt, scope);
     }
 
-    return Type(TypeKind::Probe, "probe");
+    return env->declareVar(prb->name, Type(TypeKind::Probe, "probe", TypeVal(scope->getVars())));
 }
 
 Type TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
@@ -237,34 +248,73 @@ Type TC::checkCall(CallExprType* call, TypeEnvPtr env)
 {
     Type fn = check(call->calee, env);
 
-    if (fn.type != TypeKind::Function && fn.type != TypeKind::Any)
+    if (fn.type == TypeKind::Any) return Type(TypeKind::Any, "any");
+
+    if (fn.type == TypeKind::Function)
     {
-        std::cerr << TypeError("Cannot call value that is not a function");
-        exit(1);
-    }
-
-    for (size_t i = 0; i < call->args.size(); i++)
-    {
-        Type type = check(call->args[i], env);
-
-        if (
-            fn.val.params.size() <= i || type.type == TypeKind::Any || getType(fn.val.params[i]->type, env).type == TypeKind::Any
-        ) continue;
-
-        if (!compare(type, getType(fn.val.params[i]->type, env), env))
+        for (size_t i = 0; i < call->args.size(); i++)
         {
-            std::cerr
-                << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(fn.val.params[i]->type, env).name + ", but got " + type.name + "\n");
+            Type type = check(call->args[i], env);
+
+            if (
+                fn.val.params.size() <= i || type.type == TypeKind::Any || getType(fn.val.params[i]->type, env).type == TypeKind::Any
+            ) continue;
+
+            if (!compare(type, getType(fn.val.params[i]->type, env), env))
+            {
+                std::cerr
+                    << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(fn.val.params[i]->type, env).name + ", but got " + type.name + "\n");
+                exit(1);
+            }
+        }
+
+        return Type(TypeKind::Any, "any");
+    }
+    else if (fn.type == TypeKind::Probe)
+    {
+        if (fn.val.props.find("run") == fn.val.props.end() || fn.val.props["run"].type != TypeKind::Function)
+        {
+            std::cerr << TypeError("Probe has no 'run' method or it is not of type function");
             exit(1);
         }
-    }
 
-    return Type(TypeKind::Any, "any");
+        Type run = fn.val.props["run"];
+
+        for (size_t i = 0; i < call->args.size(); i++)
+        {
+            Type type = check(call->args[i], env);
+
+            if (
+                run.val.params.size() <= i || type.type == TypeKind::Any || getType(run.val.params[i]->type, env).type == TypeKind::Any
+            ) continue;
+
+            if (!compare(type, getType(run.val.params[i]->type, env), env))
+            {
+                std::cerr
+                    << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(run.val.params[i]->type, env).name + ", but got " + type.name + "\n");
+                exit(1);
+            }
+        }
+
+        return Type(TypeKind::Any, "any");
+    }
+    else
+    {
+        std::cerr << TypeError("Only function and probes can be called " + fn.name);
+        exit(1);
+    }
 }
 
 Type TC::checkObjectExpr(MapLiteralType* obj, TypeEnvPtr env)
 {
-    return Type(TypeKind::Object, "map");
+    std::unordered_map<std::string, Type> props;
+
+    for (PropertyLiteralType* prop : obj->properties)
+    {
+        props[prop->key] = check(prop->val, env);
+    }
+
+    return Type(TypeKind::Object, "map", props);
 }
 
 Type TC::checkMemberExpr(MemberExprType* expr, TypeEnvPtr env)

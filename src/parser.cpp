@@ -17,48 +17,65 @@ ProgramType* Parser::produceAST(std::string& sourceCode, Context* ctx)
 
 Stmt* Parser::parseStmt()
 {
+    Stmt* stmt;
     switch (at().type)
     {
         case Lexer::Probe:
-            return parseProbeDeclaration();
+            stmt = parseProbeDeclaration();
+            break;
         case Lexer::Var:
-            return parseVarDeclaration();
+            stmt = parseVarDeclaration();
+            break;
         case Lexer::Const:
-            return parseVarDeclaration(true);
+            stmt = parseVarDeclaration(true);
+            break;
         case Lexer::Function:
-            return parseFunctionDeclaration();
-        case Lexer::Semicolon:
-            eat();
-            return parseStmt();
+            stmt = parseFunctionDeclaration();
+            break;
         case Lexer::Module:
-            return parseModuleDeclaration();
+            stmt = parseModuleDeclaration();
+            break;
         case Lexer::If:
-            return parseIfStmt();
+            stmt = parseIfStmt();
+            break;
         case Lexer::Import:
-            return parseImportStmt();
+            stmt = parseImportStmt();
+            break;
         case Lexer::Return:
-            return parseReturnStmt();
+            stmt = parseReturnStmt();
+            break;
         case Lexer::Export:
-            return parseExportStmt();
+            stmt = parseExportStmt();
+            break;
         case Lexer::While:
-            return parseWhileStmt();
+            stmt = parseWhileStmt();
+            break;
         case Lexer::Class:
-            return parseClassDeclaration();
+            stmt = parseClassDeclaration();
+            break;
         case Lexer::For:
-            return parseForStmt();
+            stmt = parseForStmt();
+            break;
         case Lexer::Throw:
-            return parseThrowStmt();
+            stmt = parseThrowStmt();
+            break;
         case Lexer::Break:
             eat();
-            return new BreakStmtType();
+            stmt = new BreakStmtType();
+            break;
         case Lexer::Continue:
             eat();
-            return new ContinueStmtType();
+            stmt = new ContinueStmtType();
+            break;
         case Lexer::Try:
-            return parseTryStmt();
+            stmt = parseTryStmt();
+            break;
         default:
-            return parseExpr();
+            stmt = parseExpr();
     }
+
+    expect(Lexer::Semicolon, "Expected semicolon after statment");
+    return stmt;
 }
 
 
@@ -167,7 +184,7 @@ Stmt* Parser::parseThrowStmt()
 Stmt* Parser::parseReturnStmt()
 {
     eat();
-    return new ReturnStmtType(parseStmt());
+    return new ReturnStmtType(parseExpr());
 }
 
 Stmt* Parser::parseClassDeclaration()
@@ -350,7 +367,7 @@ Expr* Parser::parseExpr()
 
 Expr* Parser::parseAssignmentExpr()
 {
-    Expr* left = parseLogicalExpr();
+    Expr* left = parseCallMemberExpr();
 
     if (at().type == Lexer::Increment || at().type == Lexer::Decrement)
     {
@@ -366,6 +383,69 @@ Expr* Parser::parseAssignmentExpr()
     }
 
     return left;
+}
+
+
+Expr* Parser::parseCallMemberExpr()
+{
+    Expr* member = parseMemberExpr();
+
+    if (at().type == Lexer::OpenParen)
+    {
+        return parseCallexpr(member);
+    } else return member;
+}
+
+Expr* Parser::parseMemberExpr()
+{
+    Expr* obj = parseLogicalExpr();
+
+    while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
+    {
+        Lexer::Token op = eat();
+        Expr* property;
+        bool computed;
+        std::string lastProp;
+
+        if (op.type == Lexer::Dot)
+        {
+            computed = false;
+            property = parsePrimaryExpr();
+
+            if (property->kind != NodeType::Identifier)
+            {
+                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
+                exit(1);
+            }
+
+            lastProp = static_cast<IdentifierType*>(property)->symbol;
+
+        } else
+        {
+            computed = true;
+            property = parseExpr();
+            expect(Lexer::CloseBracket, "Expected closing bracket");
+
+            if (property->kind == NodeType::StringLiteral)
+            {
+                lastProp = static_cast<StringLiteralType*>(property)->strValue;
+            }
+        }
+
+        if (at().type == Lexer::Equals)
+        {
+            eat();
+            Expr* value = parseExpr();
+            obj = new MemberAssignmentType(obj, property, value, computed);
+        } else
+        {
+            MemberExprType* member = new MemberExprType(obj, property, computed);
+            member->lastProp = lastProp;
+            obj = member;
+        }
+    }
+
+    return obj;
 }
 
 Expr* Parser::parseLogicalExpr()
@@ -443,7 +523,6 @@ Expr* Parser::parseObjectExpr()
 
         Expr* value = parseExpr();
 
-
         properties.push_back(new PropertyLiteralType(key, value));
 
         if (at().type != Lexer::ClosedBrace)
@@ -472,7 +551,6 @@ Expr* Parser::parseAdditiveExpr()
 
 Expr* Parser::parseMultiplicativeExpr()
 {
-
     Expr* left = parseUnaryExpr();
 
     while (at().value == "*" || at().value == "/" || at().value == "%")
@@ -501,19 +579,11 @@ Expr* Parser::parseUnaryExpr()
     return parseArrowFunction();
 }
 
-Expr* Parser::parseCallMemberExpr()
-{
-    Expr* member = parseMemberExpr();
-
-    if (at().type == Lexer::OpenParen)
-    {
-        return parseCallexpr(member);
-    } else return member;
-}
 
 Expr* Parser::parseCallexpr(Expr* caller)
 {
     CallExprType* callExpr = new CallExprType(caller, parseArgs());
+    if (at().type == Lexer::OpenParen) return parseCallexpr(callExpr);
     
     if (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
     {
@@ -545,7 +615,7 @@ Expr* Parser::parseNewExpr()
 {
     if (at().type != Lexer::New)
     {
-        return parseCallMemberExpr();
+        return parsePrimaryExpr();
     }
 
     eat();
@@ -559,58 +629,6 @@ Expr* Parser::parseNewExpr()
     }
 
     return new NewExprType(constructor, args);
-}
-
-Expr* Parser::parseMemberExpr()
-{
-    Expr* obj = parsePrimaryExpr();
-
-    while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
-    {
-        Lexer::Token op = eat();
-        Expr* property;
-        bool computed;
-        std::string lastProp;
-
-        if (op.type == Lexer::Dot)
-        {
-            computed = false;
-            property = parsePrimaryExpr();
-
-            if (property->kind != NodeType::Identifier)
-            {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
-                exit(1);
-            }
-
-            lastProp = static_cast<IdentifierType*>(property)->symbol;
-
-        } else
-        {
-            computed = true;
-            property = parseExpr();
-            expect(Lexer::CloseBracket, "Expected closing bracket");
-
-            if (property->kind == NodeType::StringLiteral)
-            {
-                lastProp = static_cast<StringLiteralType*>(property)->strValue;
-            }
-        }
-
-        if (at().type == Lexer::Equals)
-        {
-            eat();
-            Expr* value = parseExpr();
-            obj = new MemberAssignmentType(obj, property, value, computed);
-        } else
-        {
-            MemberExprType* member = new MemberExprType(obj, property, computed);
-            member->lastProp = lastProp;
-            obj = member;
-        }
-    }
-
-    return obj;
 }
 
 Expr* Parser::parseMemberChain(Expr* expr)
