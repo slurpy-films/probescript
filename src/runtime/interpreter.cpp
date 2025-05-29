@@ -1,6 +1,6 @@
 #include "runtime/interpreter.hpp"
 
-Val evalArray(ArrayLiteralType* expr, Env* env) {
+Val evalArray(ArrayLiteralType* expr, EnvPtr env) {
     std::vector<Val> items;
 
     for (Expr* item : expr->items) {
@@ -10,11 +10,11 @@ Val evalArray(ArrayLiteralType* expr, Env* env) {
     return std::make_shared<ArrayVal>(items);
 }
 
-Val evalArrowFunction(ArrowFunctionType* fn, Env* env) {
+Val evalArrowFunction(ArrowFunctionType* fn, EnvPtr env) {
     return std::make_shared<FunctionValue>("arrow", fn->params, env, fn->body);
 }
 
-Val evalAssignment(AssignmentExprType* assignment, Env* env) {
+Val evalAssignment(AssignmentExprType* assignment, EnvPtr env) {
     if (assignment->assigne->kind != NodeType::Identifier) {
         return env->throwErr(ManualError("Expected Identifier in assignment", "AssignmentError"));
     }
@@ -74,7 +74,7 @@ Val evalAssignment(AssignmentExprType* assignment, Env* env) {
     return env->assignVar(varName, std::make_shared<NumberVal>(result));
 }
 
-Val evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
+Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env) {
     if (expr->assigne->kind == NodeType::Identifier) {
         std::string varName = static_cast<IdentifierType*>(expr->assigne)->symbol;
         Val current = env->lookupVar(varName);
@@ -110,7 +110,7 @@ Val evalUnaryPostfix(UnaryPostFixType* expr, Env* env) {
 }
 
 
-Val evalUnaryPrefix(UnaryPrefixType* expr, Env* env) {
+Val evalUnaryPrefix(UnaryPrefixType* expr, EnvPtr env) {
     Val val = eval(expr->assigne, env);
 
     if (expr->op == "!") {
@@ -124,7 +124,7 @@ Val evalUnaryPrefix(UnaryPrefixType* expr, Env* env) {
 
 std::unordered_set<std::string> booleanOperators = { "&&", "||", ">=", "<=", "<", ">", "!=", "==" };
 
-Val evalBinExpr(BinaryExprType* binop, Env* env) {
+Val evalBinExpr(BinaryExprType* binop, EnvPtr env) {
     if (booleanOperators.count(binop->op)) {
         return evalBooleanBinExpr(binop, env);
     }
@@ -156,7 +156,7 @@ Val evalBinExpr(BinaryExprType* binop, Env* env) {
     return env->throwErr(ManualError("Invalid operants: " + left->toString() + " and " + right->toString(), "OperatorError"));
 }
 
-Val evalBody(std::vector<Stmt*> body, Env* env, bool isLoop) {
+Val evalBody(std::vector<Stmt*> body, EnvPtr env, bool isLoop) {
     Val last = std::make_shared<UndefinedVal>();
     for (Stmt* stmt : body) {
         last = eval(stmt, env);
@@ -167,7 +167,7 @@ Val evalBody(std::vector<Stmt*> body, Env* env, bool isLoop) {
     return last;
 }
 
-Val evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
+Val evalBooleanBinExpr(BinaryExprType* binop, EnvPtr env) {
     Val left = eval(binop->left, env);
     Val right = eval(binop->right, env);
 
@@ -200,18 +200,18 @@ Val evalBooleanBinExpr(BinaryExprType* binop, Env* env) {
     return env->throwErr(ManualError("Invalid binary boolean operator: " + op, "OperatorError"));
 }
 
-Val evalFunctionDeclaration(FunctionDeclarationType* declaration, Env* env, bool onlyValue) {
+Val evalFunctionDeclaration(FunctionDeclarationType* declaration, EnvPtr env, bool onlyValue) {
     std::shared_ptr<FunctionValue> fn = std::make_shared<FunctionValue>(declaration->name, declaration->parameters, env, declaration->body);
 
     return onlyValue ? fn : env->declareVar(declaration->name, fn, true);
 }
 
-Val evalIdent(IdentifierType* ident, Env* env) {
+Val evalIdent(IdentifierType* ident, EnvPtr env) {
     Val value = env->lookupVar(ident->symbol);
     return value;
 }
 
-Val evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
+Val evalIfStmt(IfStmtType* stmt, EnvPtr baseEnv) {
     Val condition = eval(stmt->condition, baseEnv);
 
     if (condition->type != ValueType::Boolean) {
@@ -221,23 +221,23 @@ Val evalIfStmt(IfStmtType* stmt, Env* baseEnv) {
     std::shared_ptr<BooleanVal> boolval = std::static_pointer_cast<BooleanVal>(condition);
 
     if (boolval->getValue()) {
-        Env* env = new Env(baseEnv);
+        EnvPtr env = std::make_shared<Env>(baseEnv);
         return evalBody(stmt->body, env);
     } else if (stmt->hasElse) {
-        Env* env = new Env(baseEnv);
+        EnvPtr env = std::make_shared<Env>(baseEnv);
         return evalBody(stmt->elseStmt, env);
     }
 
     return std::make_shared<UndefinedVal>();
 }
 
-Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Context* config) {
+Val evalImportStmt(ImportStmtType* importstmt, EnvPtr envptr, Context* config) {
     std::string modulename = importstmt->name;
     std::unordered_map<std::string, std::shared_ptr<ObjectVal>> stdlib = getStdlib();
     if (stdlib.find(modulename) != stdlib.end()) {
         if (importstmt->hasMember) {
             Expr* member = importstmt->module;
-            Env* modEnv = new Env();
+            EnvPtr modEnv = std::make_shared<Env>();
             modEnv->declareVar(modulename, stdlib[modulename]);
             envptr->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
         } else envptr->declareVar(importstmt->customIdent ? importstmt->ident : modulename, stdlib[modulename]);
@@ -262,13 +262,13 @@ Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Context* config) {
 
     conf->modules = config->modules;
 
-    Val evaluated = eval(program, new Env(), conf);
+    Val evaluated = eval(program, std::make_shared<Env>(), conf);
 
     std::shared_ptr<ObjectVal> moduleObj = std::make_shared<ObjectVal>(evaluated->exports);
 
     if (importstmt->hasMember) {
         Expr* member = importstmt->module;
-        Env* modEnv = new Env();
+        EnvPtr modEnv = std::make_shared<Env>();
         modEnv->declareVar(modulename, moduleObj);
         envptr->declareVar(importstmt->customIdent ? importstmt->ident : static_cast<MemberExprType*>(importstmt->module)->lastProp, eval(member, modEnv));
     } else envptr->declareVar(importstmt->customIdent ? importstmt->ident : modulename, moduleObj, true);
@@ -276,7 +276,7 @@ Val evalImportStmt(ImportStmtType* importstmt, Env* envptr, Context* config) {
     return std::make_shared<UndefinedVal>();
 }
 
-Val evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
+Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env) {
     Val obj = eval(expr->object, env);
     Val value = eval(expr->newvalue, env);
 
@@ -321,7 +321,7 @@ Val evalMemberAssignment(MemberAssignmentType* expr, Env* env) {
     return env->throwErr(ManualError("Cannot assign member to non-object/non-array value", "TypeError"));
 }
 
-Val evalMemberExpr(MemberExprType* expr, Env* env) {
+Val evalMemberExpr(MemberExprType* expr, EnvPtr env) {
     Val obj = eval(expr->object, env);
     
     if (obj->type != ValueType::Array || !expr->computed) {
@@ -389,7 +389,7 @@ std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, st
     return std::make_shared<NumberVal>(result);
 }
 
-Val evalObject(MapLiteralType* obj, Env* env) {
+Val evalObject(MapLiteralType* obj, EnvPtr env) {
     std::shared_ptr<ObjectVal> object = std::make_shared<ObjectVal>();
     for (PropertyLiteralType* property : obj->properties) {
         Val runtimeval = (property->val == nullptr) ? env->lookupVar(property->key) : eval(property->val, env);
@@ -412,25 +412,25 @@ std::shared_ptr<StringVal> evalStringericBinExpr(std::shared_ptr<StringVal> lhs,
     return std::make_shared<StringVal>(result);
 }
 
-Val evalVarDeclaration(VarDeclarationType* var, Env* env, bool constant) {
+Val evalVarDeclaration(VarDeclarationType* var, EnvPtr env, bool constant) {
     Val value = var->value != nullptr ? eval(var->value, env) : std::make_shared<UndefinedVal>();
     return env->declareVar(var->identifier, value, constant);
 }
 
-Val evalThrowStmt(ThrowStmtType* stmt, Env* env) {
+Val evalThrowStmt(ThrowStmtType* stmt, EnvPtr env) {
     return env->throwErr(eval(stmt->err, env)->toString());
 }
 
-Val evalTryStmt(TryStmtType* stmt, Env* env) {
+Val evalTryStmt(TryStmtType* stmt, EnvPtr env) {
     std::shared_ptr<FunctionValue> fn = std::make_shared<FunctionValue>("catch", stmt->catchHandler->parameters, env, stmt->catchHandler->body);
-    Env* tryEnv = new Env(env);
+    EnvPtr tryEnv = std::make_shared<Env>(env);
     tryEnv->setCatch(fn);
 
     evalBody(stmt->body, tryEnv);
     return std::make_shared<UndefinedVal>();
 }
 
-Val eval(Stmt* astNode, Env* env, Context* config) {
+Val eval(Stmt* astNode, EnvPtr env, Context* config) {
     switch (astNode->kind) {
         case NodeType::NumericLiteral: {
             NumericLiteralType* num = static_cast<NumericLiteralType*>(astNode);

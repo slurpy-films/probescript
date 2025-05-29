@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
         }
         Parser parser;
         std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
-        Env* env = new Env();
+        EnvPtr env = std::make_shared<Env>();
 
         if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
         {

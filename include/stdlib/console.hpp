@@ -6,7 +6,7 @@
 
 inline std::unordered_map<std::string, Val> getConsole() {
     std::unordered_map<std::string, Val> mod = {
-        { "println", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        { "println", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             for (Val arg : args) {
                 std::cout << (arg->type == ValueType::Object ? arg->toConsole() : arg->toString()) << " ";
             }
@@ -14,7 +14,7 @@ inline std::unordered_map<std::string, Val> getConsole() {
             std::cout << std::endl;
             return std::make_shared<UndefinedVal>();
         }) },
-        {"prompt", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"prompt", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             for (Val arg : args) {
                 std::cout << arg->toString();
             }

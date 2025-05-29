@@ -1,10 +1,10 @@
 #include "runtime/interpreter.hpp"
 
-Val evalClassDefinition(ClassDefinitionType* def, Env* env) {
+Val evalClassDefinition(ClassDefinitionType* def, EnvPtr env) {
     return env->declareVar(def->name, def->doesExtend ? std::make_shared<ClassVal>(def->name, env, def->body, def->extends) : std::make_shared<ClassVal>(def->name, env, def->body));
 }
 
-Val evalNewExpr(NewExprType* newexpr, Env* env) {
+Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
     Val rawcls = eval(newexpr->constructor, env);
 
     if (rawcls->type == ValueType::NativeClass) {
@@ -15,7 +15,7 @@ Val evalNewExpr(NewExprType* newexpr, Env* env) {
             args.push_back(eval(expr, env));
         }
 
-        return natcls->constructor(args, new Env(env));
+        return natcls->constructor(args, std::make_shared<Env>(env));
     }
 
     if (rawcls->type != ValueType::Class) {
@@ -29,7 +29,7 @@ Val evalNewExpr(NewExprType* newexpr, Env* env) {
         args.push_back(eval(expr, env));
     }
     
-    Env* scope = new Env(env);
+    EnvPtr scope = std::make_shared<Env>(env);
     std::shared_ptr<ObjectVal> thisObj = std::make_shared<ObjectVal>();
     scope->declareVar("this", thisObj);
 
@@ -57,7 +57,7 @@ Val evalNewExpr(NewExprType* newexpr, Env* env) {
                     return env->throwErr(ManualError("Only = assignment is allowed in class bodies", "ClassBodyError"));
                 }
 
-                Env* assignEnv = new Env();
+                EnvPtr assignEnv = std::make_shared<Env>();
 
                 assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, std::make_shared<UndefinedVal>());
 
@@ -84,7 +84,7 @@ Val evalNewExpr(NewExprType* newexpr, Env* env) {
     return scope->lookupVar("this");
 }
 
-void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args) {
+void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args) {
     if (!cls->doesExtend) return;
 
     Val extendsVal = eval(cls->extends, cls->parentEnv);
@@ -92,7 +92,7 @@ void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<Objec
         env->throwErr(ManualError("Superclass must be a class", "ClassInheritanceError"));
         return;
     }
-    Env* superScope = new Env(cls->parentEnv);
+    EnvPtr superScope = std::make_shared<Env>(cls->parentEnv);
     std::shared_ptr<ClassVal> superClass = std::static_pointer_cast<ClassVal>(extendsVal);
     superScope->declareVar("this", thisObj);
 
@@ -115,7 +115,7 @@ void inheritClass(std::shared_ptr<ClassVal> cls, Env* env, std::shared_ptr<Objec
                 return;
             }
 
-            Env* assignEnv = new Env();
+            EnvPtr assignEnv = std::make_shared<Env>();
             assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, std::make_shared<UndefinedVal>());
             evalAssignment(assign, assignEnv);
             thisObj->properties[static_cast<IdentifierType*>(assign->assigne)->symbol] = assignEnv->variables[static_cast<IdentifierType*>(assign->assigne)->symbol];

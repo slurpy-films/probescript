@@ -7,7 +7,7 @@
 
 inline std::unordered_map<std::string, Val> getDateModule() {
     return {
-        {"stamp", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"stamp", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
         using namespace std::chrono;
 
         auto now = system_clock::now();

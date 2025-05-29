@@ -1,12 +1,12 @@
 #include "runtime/interpreter.hpp"
 
-Val evalProbeDeclaration(ProbeDeclarationType* probe, Env* env) {
+Val evalProbeDeclaration(ProbeDeclarationType* probe, EnvPtr env) {
     std::shared_ptr<ProbeValue> probeval = probe->doesExtend ? std::make_shared<ProbeValue>(probe->name, env, probe->body, probe->extends) : std::make_shared<ProbeValue>(probe->name, env, probe->body);
 
     return env->declareVar(probe->name, probeval);
 }
 
-Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> args) {
+Val evalProbeCall(std::string probeName, EnvPtr declarationEnv, std::vector<Val> args) {
     Val val = declarationEnv->lookupVar(probeName);
 
     if (val->type != ValueType::Probe) {
@@ -15,7 +15,7 @@ Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> a
 
     std::shared_ptr<ProbeValue> probe = std::static_pointer_cast<ProbeValue>(val);
 
-    Env* env = new Env(declarationEnv);
+    EnvPtr env = std::make_shared<Env>(declarationEnv);
 
     inheritProbe(probe, env);
 
@@ -56,7 +56,7 @@ Val evalProbeCall(std::string probeName, Env* declarationEnv, std::vector<Val> a
     return std::make_shared<UndefinedVal>();
 }
 
-void inheritProbe(std::shared_ptr<ProbeValue> prb, Env* env)
+void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env)
 {
     if (!prb->doesExtend) return;
     

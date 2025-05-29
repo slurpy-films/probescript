@@ -61,7 +61,7 @@ inline std::unordered_map<std::string, std::string> parseCookies(const std::stri
 }
 
 
-void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, Env* env);
+void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, EnvPtr env);
 
 inline std::pair<std::string, std::string> parseMethodAndPath(const std::string& request)
 {
@@ -93,4 +93,4 @@ inline std::pair<std::string, std::string> parseMethodAndPath(const std::string&
 #include <netdb.h>
 #endif
 
-Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, Env* env);
+Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, EnvPtr env);

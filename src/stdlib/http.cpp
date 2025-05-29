@@ -1,7 +1,7 @@
 #include "stdlib/http.hpp"
 
 #ifdef _WIN32
-void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, Env* env) {
+void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, EnvPtr env) {
     WSADATA wsaData;
     SOCKET serverSocket;
     sockaddr_in serverAddr;
@@ -59,7 +59,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                     std::shared_ptr<ObjectVal> req = std::make_shared<ObjectVal>();
                     req->properties["path"] = std::make_shared<StringVal>(path);
                     req->properties["method"] = std::make_shared<StringVal>(method);
-                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, Env* env) -> Val {
+                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, EnvPtr env) -> Val {
                         return std::make_shared<StringVal>(request);
                     });
                     std::shared_ptr<ObjectVal> headersMap = std::make_shared<ObjectVal>();
@@ -82,14 +82,14 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                     auto contype = std::make_shared<std::string>("text/plain");
 
                     std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
-                    res->properties["contentType"] = std::make_shared<NativeFnValue>([contype](std::vector<Val> args, Env* env) -> Val {
+                    res->properties["contentType"] = std::make_shared<NativeFnValue>([contype](std::vector<Val> args, EnvPtr env) -> Val {
                         if (args.empty()) return env->throwErr(ArgumentError("Usage: res.contentType(type)"));
                         (*contype) = args[0]->toString();
                         
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders, contype](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders, contype](std::vector<Val> args, EnvPtr _) -> Val {
                         if (args.empty()) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
@@ -106,7 +106,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, EnvPtr _) -> Val {
                         if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
@@ -123,7 +123,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, Env* env) -> Val {
+                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, EnvPtr env) -> Val {
                         if (args.size() < 2) return env->throwErr(ArgumentError("Usage: cookie(name, value)"));
 
                         *resheaders += "Set-Cookie: " + args[0]->toString() + "=" + args[1]->toString() + "\r\n";
@@ -146,7 +146,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 }
 
 #else
-void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, Env* env) {
+void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, EnvPtr env) {
     int serverSocket;
     struct sockaddr_in serverAddr;
 
@@ -204,7 +204,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                     std::shared_ptr<ObjectVal> req = std::make_shared<ObjectVal>();
                     req->properties["path"] = std::make_shared<StringVal>(path);
                     req->properties["method"] = std::make_shared<StringVal>(method);
-                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, Env* env) -> Val {
+                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, EnvPtr env) -> Val {
                         return std::make_shared<StringVal>(request);
                     });
                     std::shared_ptr<ObjectVal> headers = std::make_shared<ObjectVal>();
@@ -227,14 +227,14 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                     auto contype = std::make_shared<std::string>("text/plain");
 
                     std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
-                    res->properties["contentType"] = std::make_shared<NativeFnValue>([contype](std::vector<Val> args, Env* env) -> Val {
+                    res->properties["contentType"] = std::make_shared<NativeFnValue>([contype](std::vector<Val> args, EnvPtr env) -> Val {
                         if (args.empty()) return env->throwErr(ArgumentError("Usage: res.contentType(type)"));
                         (*contype) = args[0]->toString();
 
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders, contype](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders, contype](std::vector<Val> args, EnvPtr _) -> Val {
                         if (args.empty()) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
@@ -251,7 +251,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, Env* _) -> Val {
+                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, EnvPtr _) -> Val {
                         if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
                         std::string body = args[0]->toString();
                         std::ostringstream response;
@@ -268,7 +268,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         return std::make_shared<UndefinedVal>();
                     });
 
-                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, Env* env) -> Val {
+                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, EnvPtr env) -> Val {
                         if (args.size() < 2) return env->throwErr(ArgumentError("Usage: cookie(name, value)"));
 
                         *resheaders += "Set-Cookie: " + args[0]->toString() + "=" + args[1]->toString() + "\r\n";
@@ -288,7 +288,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 }
 #endif
 
-Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, Env* env)
+Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, EnvPtr env)
 {
     std::string headers;
     if (conf->hasProperty("headers") && conf->properties["headers"]->type == ValueType::Object)
@@ -398,7 +398,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
 
     std::unordered_map<std::string, Val> props = {
         { "status", std::make_shared<NumberVal>(statusCode) },
-        { "body", std::make_shared<NativeFnValue>([bodyPart](std::vector<Val>, Env*) -> Val {
+        { "body", std::make_shared<NativeFnValue>([bodyPart](std::vector<Val>, EnvPtr) -> Val {
             return std::make_shared<StringVal>(bodyPart);
         }) }
     };
@@ -407,17 +407,17 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
 }
 
 std::unordered_map<std::string, Val> getHttpModule() {
-    Env* env = new Env();
+    EnvPtr env = std::make_shared<Env>();
     return {
         {
             "Server",
-            std::make_shared<NativeClassVal>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
 
                 std::shared_ptr<ObjectVal> t = std::make_shared<ObjectVal>();
 
                 auto routeHandlers = std::make_shared<std::unordered_map<std::string, std::unordered_map<std::string, Val>>>();
 
-                t->properties["get"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["get"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
                         return env->throwErr(ArgumentError("Usage: get('/path', handlerFn)"));
                     }
@@ -426,7 +426,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                     return std::make_shared<UndefinedVal>();
                 });
                 
-                t->properties["post"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["post"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
                         return env->throwErr(ArgumentError("Usage: post('/path', handlerFn)"));
                     }
@@ -435,7 +435,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                     return std::make_shared<UndefinedVal>();
                 });
 
-                t->properties["put"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["put"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
                         return env->throwErr(ArgumentError("Usage: put('/path', handlerFn)"));
                     }
@@ -444,7 +444,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                     return std::make_shared<UndefinedVal>();
                 });
 
-                t->properties["delete"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["delete"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
                         return env->throwErr(ArgumentError("Usage: delete('/path', handlerFn)"));
                     }
@@ -453,7 +453,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                     return std::make_shared<UndefinedVal>();
                 });
 
-                t->properties["patch"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["patch"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
                         return env->throwErr(ArgumentError("Usage: patch('/path', handlerFn)"));
                     }
@@ -462,7 +462,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                     return std::make_shared<UndefinedVal>();
                 });
 
-                t->properties["head"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["head"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
                         return env->throwErr(ArgumentError("Usage: head('/path', handlerFn)"));
                     }
@@ -471,7 +471,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
                     return std::make_shared<UndefinedVal>();
                 });
                 
-                t->properties["listen"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, Env* env) -> Val {
+                t->properties["listen"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
                     if (args.empty()) {
                         return env->throwErr(ArgumentError("Usage: listen(port, callback (optional))"));
                     }
@@ -503,7 +503,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
         },
         {
             "get",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.get(\"http://example.com\", { body: \"body\", headers: {}})"));
 
                 return sendReq("GET", std::static_pointer_cast<StringVal>(args[0])->string, std::static_pointer_cast<ObjectVal>(args[1]), env);
@@ -511,7 +511,7 @@ std::unordered_map<std::string, Val> getHttpModule() {
         },
         {
             "post",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {}})"));
 
                 return sendReq("POST", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);

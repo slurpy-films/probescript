@@ -29,11 +29,11 @@ struct Token {
 
 class JSONParser {
 public:
-    JSONParser(std::string& file, Env* env = new Env()) : file(file), env(env) {}
+    JSONParser(std::string& file, EnvPtr env = std::make_shared<Env>()) : file(file), env(env) {}
     Val parse();
 
 private:
-    Env* env;
+    EnvPtr env;
     std::string& file;
     std::vector<Token> tokens;
     bool tokenize();
@@ -61,7 +61,7 @@ private:
     }
 };
 
-} // namespace JSONParser
+} // namespace JSON
 
 
 std::unordered_map<std::string, Val> getJsonModule();

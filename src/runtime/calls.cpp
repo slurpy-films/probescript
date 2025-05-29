@@ -1,6 +1,6 @@
 #include "runtime/interpreter.hpp"
 
-Val evalCall(CallExprType* call, Env* env) {
+Val evalCall(CallExprType* call, EnvPtr env) {
     std::vector<Val> args;
 
     for (Expr* arg : call->args) {
@@ -22,7 +22,7 @@ Val evalCall(CallExprType* call, Env* env) {
 
     if (fn->type == ValueType::Function) {
         std::shared_ptr<FunctionValue> func = std::static_pointer_cast<FunctionValue>(fn);
-        Env* scope = new Env(func->declarationEnv);
+        EnvPtr scope = std::make_shared<Env>(func->declarationEnv);
         if (env->hasCatch) scope->setCatch(env->catcher);
 
         for (int i = 0; i < func->params.size(); i++) {
@@ -42,7 +42,7 @@ Val evalCall(CallExprType* call, Env* env) {
     return env->throwErr(ManualError("Cannot call value that is not a function", "FunctionCallError"));
 }
 
-Val evalCallWithFnVal(Val fn, std::vector<Val> args, Env* env) {
+Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
 
     if (fn == nullptr) {
         return env->throwErr(ManualError("Function call target is null", "FunctionCallError"));
@@ -57,7 +57,7 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, Env* env) {
 
     if (fn->type == ValueType::Function) {
         std::shared_ptr<FunctionValue> func = std::static_pointer_cast<FunctionValue>(fn);
-        Env* scope = new Env(func->declarationEnv);
+        EnvPtr scope = std::make_shared<Env>(func->declarationEnv);
 
         for (int i = 0; i < func->params.size(); i++) {
             std::string varname = func->params[i]->identifier;

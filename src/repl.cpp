@@ -2,7 +2,7 @@
 
 void REPL::start() {
     std::cout << "REPL v1.0\n";
-    Env* env = new Env();
+    EnvPtr env = std::make_shared<Env>();
     TypeEnvPtr typeenv = std::make_shared<TypeEnv>();
     Context* config = new Context(RuntimeType::REPL);
     while (true) {

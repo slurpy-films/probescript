@@ -12,7 +12,7 @@ inline std::unordered_map<std::string, Val> createRandomModule() {
     return {
         {
             "randInt",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.size() < 2) {
                     return env->throwErr(ArgumentError("randInt expects two arguments"));
                 }
@@ -23,7 +23,7 @@ inline std::unordered_map<std::string, Val> createRandomModule() {
         },
         {
             "rand",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 std::uniform_real_distribution<double> distrib(0.0, 1.0);
                 return std::make_shared<NumberVal>(distrib(gen));
             })

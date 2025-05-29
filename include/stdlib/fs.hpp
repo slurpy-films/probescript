@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 inline std::unordered_map<std::string, Val> getFilesystemModule() {
     std::unordered_map<std::string, Val> mod = {
-        {"readFile", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"readFile", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             if (args.size() != 1 || args[0]->type != ValueType::String) {
                 return env->throwErr(ArgumentError("readFile: Expected one string argument (file path)"));
             }
@@ -40,7 +40,7 @@ inline std::unordered_map<std::string, Val> getFilesystemModule() {
             return std::make_shared<StringVal>(fileContent);
         })},
 
-        {"writeFile", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"writeFile", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             if (args.size() != 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::String) {
                 return env->throwErr(ArgumentError("writeFile: Expected two string arguments (path, content)"));
             }
@@ -59,7 +59,7 @@ inline std::unordered_map<std::string, Val> getFilesystemModule() {
             return std::make_shared<UndefinedVal>();
         })},
 
-        {"exists", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"exists", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             if (args.size() != 1 || args[0]->type != ValueType::String) {
                 return env->throwErr(ArgumentError("exists: Expected one string argument (path)"));
             }
@@ -68,7 +68,7 @@ inline std::unordered_map<std::string, Val> getFilesystemModule() {
             return std::make_shared<BooleanVal>(fs::exists(path));
         })},
 
-        {"isDirectory", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"isDirectory", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             if (args.size() != 1 || args[0]->type != ValueType::String) {
                 return env->throwErr(ArgumentError("isDirectory: Expected one string argument (path)"));
             }
@@ -77,7 +77,7 @@ inline std::unordered_map<std::string, Val> getFilesystemModule() {
             return std::make_shared<BooleanVal>(fs::is_directory(path));
         })},
 
-        {"listDir", std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+        {"listDir", std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
             if (args.size() != 1 || args[0]->type != ValueType::String) {
                 return env->throwErr(ArgumentError("listDir: Expected one string argument (path)"));
             }

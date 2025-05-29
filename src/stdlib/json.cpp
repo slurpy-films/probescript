@@ -162,7 +162,7 @@ std::unordered_map<std::string, Val> getJsonModule() {
     return {
         {
             "parse",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.empty() || args[0]->type != ValueType::String) return env->throwErr(ArgumentError("Expected argument 1 to be of type string"));
 
                 JSON::JSONParser parser(std::static_pointer_cast<StringVal>(args[0])->string, env);
@@ -171,7 +171,7 @@ std::unordered_map<std::string, Val> getJsonModule() {
         },
         {
             "stringify",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, Env* env) -> Val {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.empty() || args[0]->type != ValueType::Object) return env->throwErr(ArgumentError("Expected argument 1 to be of type object"));
                 return std::make_shared<StringVal>(args[0]->toJSON());
             })

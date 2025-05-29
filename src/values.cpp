@@ -28,12 +28,12 @@ Val RuntimeVal::mod(Val o) const
 
 ArrayVal::ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items(items)
 {
-    properties["size"] = std::make_shared<NativeFnValue>([this](std::vector<Val> _args, Env* _env) -> Val
+    properties["size"] = std::make_shared<NativeFnValue>([this](std::vector<Val> _args, EnvPtr _env) -> Val
     {
         return std::make_shared<NumberVal>(this->items.size());
     });
 
-    properties["push"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, Env* _env) -> Val
+    properties["push"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _env) -> Val
     {
         for (Val arg : args)
         {
@@ -43,7 +43,7 @@ ArrayVal::ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items
         return std::make_shared<UndefinedVal>();
     });
 
-    properties["join"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, Env* env) -> Val
+    properties["join"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr env) -> Val
     {
         std::string seperator = (args.empty() ? "," : args[0]->toString());
 

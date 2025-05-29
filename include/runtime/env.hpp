@@ -1,14 +1,19 @@
 #pragma once
 #include <unordered_map>
-
 #include <iostream>
+#include <memory>
+
+class Env;
+using EnvPtr = std::shared_ptr<Env>;
+
 #include "runtime/values.hpp"
 
-Val evalCallWithFnVal(Val fn, std::vector<Val> args, Env* env);
+Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env);
 
-class Env {
+class Env : public std::enable_shared_from_this<Env>
+{
 public:
-    Env(Env* parentENV = nullptr);
+    Env(EnvPtr parentENV = nullptr);
 
     std::unordered_map<std::string, Val> variables;
 
@@ -18,18 +23,20 @@ public:
 
     Val lookupVar(std::string varName);
 
-    Env* resolve(std::string varname);
+    EnvPtr resolve(std::string varname);
 
     std::shared_ptr<ReturnSignal> throwErr(std::string err);
 
     void setCatch(Val fn);
 
-    
     Val catcher;
     bool hasCatch = false;
 private:
-    Env* parent;
+    EnvPtr parent;
     std::unordered_map<std::string, bool> constants;
+    bool m_ready = false;
+
+    void init();
 };
 
 

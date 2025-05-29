@@ -8,6 +8,7 @@
 #include "utils/split.hpp"
 
 class Env;
+using EnvPtr = std::shared_ptr<Env>;
 
 namespace ConsoleColors {
     const std::string RESET   = "\033[0m";
@@ -85,7 +86,7 @@ struct RuntimeVal {
     virtual Val mod(Val o) const;
 };
 
-using NativeFunction = std::function<Val(std::vector<Val>, Env*)>;
+using NativeFunction = std::function<Val(std::vector<Val>, EnvPtr)>;
 
 struct NumberVal : public RuntimeVal {
     double number;
@@ -297,9 +298,9 @@ struct ArrayVal : public RuntimeVal {
 struct FunctionValue : public RuntimeVal {
     std::string name;
     std::vector<VarDeclarationType*> params;
-    Env* declarationEnv;
+    EnvPtr declarationEnv;
     std::vector<Stmt*> body;
-    FunctionValue (std::string name, std::vector<VarDeclarationType*> params, Env* declarationEnv, std::vector<Stmt*> body) 
+    FunctionValue (std::string name, std::vector<VarDeclarationType*> params, EnvPtr declarationEnv, std::vector<Stmt*> body) 
         : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body) {}
     std::string toString() const override {
         return "[function " + name + "]";
@@ -317,11 +318,11 @@ struct ProbeValue : public RuntimeVal {
     std::string name;
     Expr* extends;
     bool doesExtend = false;
-    Env* declarationEnv;
+    EnvPtr declarationEnv;
     std::vector<Stmt*> body;
-    ProbeValue (std::string name, Env* declarationEnv, std::vector<Stmt*> body) 
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
-    ProbeValue (std::string name, Env* declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body, Expr* extends) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[probe " + name + "]";
@@ -334,13 +335,13 @@ struct ProbeValue : public RuntimeVal {
 
 struct ClassVal : public RuntimeVal {
     std::string name;
-    Env* parentEnv;
+    EnvPtr parentEnv;
     std::vector<Stmt*> body;
     Expr* extends;
     bool doesExtend = false;
-    ClassVal(std::string name, Env* declarationEnv, std::vector<Stmt*> body) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body) {}
-    ClassVal(std::string name, Env* declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body, Expr* extends) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[class " + name + "]";
@@ -369,13 +370,13 @@ struct StringVal : public RuntimeVal {
         {
             {
                 "length",
-                std::make_shared<NativeFnValue>([this](std::vector<Val> _args, Env* _env) -> Val {
+                std::make_shared<NativeFnValue>([this](std::vector<Val> _args, EnvPtr _env) -> Val {
                     return std::make_shared<NumberVal>(this->string.length());
                 })
             },
             {
                 "split",
-                std::make_shared<NativeFnValue>([this](std::vector<Val> args, Env* _) -> Val {
+                std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _) -> Val {
                     if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
                     std::string str = this->string;
                     std::string deli = std::static_pointer_cast<StringVal>(args[0])->string;
@@ -439,7 +440,7 @@ struct StringVal : public RuntimeVal {
 struct ObjectVal : public RuntimeVal {
     ObjectVal(std::unordered_map<std::string, Val> properties = {})
         : RuntimeVal(ValueType::Object, properties) {
-            properties["hasProperty"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, Env* env) -> Val {
+            properties["hasProperty"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<BooleanVal>(false);
 
                 return std::make_shared<BooleanVal>(this->hasProperty(std::static_pointer_cast<StringVal>(args[0])->string));
