@@ -4,35 +4,35 @@ TypeEnv::TypeEnv(std::shared_ptr<TypeEnv> parent)
 {
     if (parent) m_parent = parent;
 
-    std::unordered_map<std::string, Type> constants = 
+    std::unordered_map<std::string, TypePtr> constants = 
     {
         {
             "process",
-            Type(TypeKind::Module, "object")
+            std::make_shared<Type>(TypeKind::Module, "object")
         },
         {
             "num",
-            Type(TypeKind::Function, "native function")
+            std::make_shared<Type>(TypeKind::Function, "native function")
         },
         {
             "str",
-            Type(TypeKind::Function, "native function")
+            std::make_shared<Type>(TypeKind::Function, "native function")
         },
         {
             "console",
-            Type(TypeKind::Module, "module", TypeVal({ { "println", Type(TypeKind::Function, "native function") }, { "prompt", Type(TypeKind::Function, "native function")} }))
+            std::make_shared<Type>(TypeKind::Module, "module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({ { "println", std::make_shared<Type>(TypeKind::Function, "native function") }, { "prompt", std::make_shared<Type>(TypeKind::Function, "native function")} })))
         }
     };
 
     m_variables = constants;
 }
 
-std::unordered_map<std::string, Type> TypeEnv::getVars()
+std::unordered_map<std::string, TypePtr> TypeEnv::getVars()
 {
     return m_variables;
 }
 
-Type TypeEnv::declareVar(std::string name, Type type)
+TypePtr TypeEnv::declareVar(std::string name, TypePtr type)
 {
     if (m_variables.find(name) != m_variables.end())
     {
@@ -45,7 +45,7 @@ Type TypeEnv::declareVar(std::string name, Type type)
     return type;
 }
 
-Type TypeEnv::lookUp(std::string name)
+TypePtr TypeEnv::lookUp(std::string name)
 {
     if (m_variables.find(name) != m_variables.end())
         return m_variables[name];
@@ -66,16 +66,16 @@ void TC::checkProgram(ProgramType* program, TypeEnvPtr env, Context* ctx)
     }
 }
 
-Type TC::check(Stmt* node, TypeEnvPtr env, Context* ctx)
+TypePtr TC::check(Stmt* node, TypeEnvPtr env, Context* ctx)
 {
     switch (node->kind)
     {
         case NodeType::NumericLiteral:
-            return Type(TypeKind::Number, "number");
+            return std::make_shared<Type>(TypeKind::Number, "number");
         case NodeType::StringLiteral:
-            return Type(TypeKind::String, "string");
+            return std::make_shared<Type>(TypeKind::String, "string");
         case NodeType::BoolLiteral:
-            return Type(TypeKind::Bool, "bool");
+            return std::make_shared<Type>(TypeKind::Bool, "bool");
         case NodeType::VarDeclaration:
             return checkVarDecl(static_cast<VarDeclarationType*>(node), env);
         case NodeType::AssignmentExpr:
@@ -102,12 +102,65 @@ Type TC::check(Stmt* node, TypeEnvPtr env, Context* ctx)
             return checkClassDeclaration(static_cast<ClassDefinitionType*>(node), env);
         case NodeType::NewExpr:
             return checkNewExpr(static_cast<NewExprType*>(node), env);
+        case NodeType::IfStmt:
+            return checkIfStmt(static_cast<IfStmtType*>(node), env);
+        case NodeType::ForStmt:
+            return checkForStmt(static_cast<ForStmtType*>(node), env);
+        case NodeType::MemberAssignment:
+            return checkMemberAssign(static_cast<MemberAssignmentType*>(node), env);
         default:
-            return Type(TypeKind::Any, "any");
+            return std::make_shared<Type>(TypeKind::Any, "any");
     }
 }
 
-Type TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, Context* ctx)
+TypePtr TC::checkForStmt(ForStmtType* forstmt, TypeEnvPtr env)
+{
+    TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
+
+    for (Stmt* decl : forstmt->declarations)
+        check(decl, scope);
+
+    for (Expr* cond : forstmt->conditions)
+        check(cond, scope);
+
+    for (Expr* update : forstmt->updates)
+        check(update, scope);
+    
+    for (Stmt* stmt : forstmt->body)
+        check(stmt, scope);
+
+    return std::make_shared<Type>(TypeKind::Any, "any");
+}
+
+TypePtr TC::checkIfStmt(IfStmtType* stmt, TypeEnvPtr env)
+{
+    check(stmt->condition, env);
+
+    TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
+
+    for (Stmt* stmt : stmt->body)
+    {
+        check(stmt, scope);
+    }
+
+    return std::make_shared<Type>(TypeKind::Any, "any");
+}
+
+TypePtr TC::checkMemberAssign(MemberAssignmentType* assign, TypeEnvPtr env)
+{
+    TypePtr obj = check(assign->object, env);
+    
+    std::string key;
+    if (!assign->computed)
+    {
+        key = static_cast<IdentifierType*>(assign->property)->symbol;
+    }
+
+    if (key.empty()) return std::make_shared<Type>(TypeKind::Any, "any");
+    return obj->val->props[key] = check(assign->newvalue, env);
+}
+
+TypePtr TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, Context* ctx)
 {
     if (stmt->kind == NodeType::AssignmentExpr)
     {
@@ -125,13 +178,13 @@ Type TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, Context* ctx)
     return check(stmt, env, ctx);
 }
 
-Type TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
+TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 {
     TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
 
-    scope->declareVar("this", Type(TypeKind::Object, "this"));
+    scope->declareVar("this", std::make_shared<Type>(TypeKind::Object, "this"));
     
-    if (cls->doesExtend) scope->declareVar("super", Type(TypeKind::Any, "any"));
+    if (cls->doesExtend) scope->declareVar("super", std::make_shared<Type>(TypeKind::Any, "any"));
 
     for (Stmt* stmt : cls->body)
     {
@@ -149,62 +202,62 @@ Type TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
             check(stmt, scope);
     }
 
-    Type type = Type(TypeKind::Class, "class", TypeVal(scope->getVars()));
-    type.typeID = m_typeId++;
-    type.typeName = cls->name;
+    TypePtr type = std::make_shared<Type>(TypeKind::Class, "class", std::make_shared<TypeVal>(scope->getVars()));
+    type->typeID = m_typeId++;
+    type->typeName = cls->name;
     return env->declareVar(cls->name, type);
 }
 
-Type TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
+TypePtr TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
 {
     if (decl->staticType && decl->value->kind != NodeType::UndefinedLiteral)
     {
-        Type vartype = getType(decl->type, env);
-        Type assigntype = check(decl->value, env);
+        TypePtr vartype = getType(decl->type, env);
+        TypePtr assigntype = check(decl->value, env);
 
         if (!compare(vartype, assigntype, env))
         {
-            std::cerr << TypeError("Cannot convert " + assigntype.name + " to " + vartype.name);
+            std::cerr << TypeError("Cannot convert " + assigntype->name + " to " + vartype->name);
             exit(1);
         }
     }
 
     check(decl->value, env);
-    env->declareVar(decl->identifier, decl->staticType ? getType(decl->type, env) : Type(TypeKind::Any, "any"));
+    env->declareVar(decl->identifier, decl->staticType ? getType(decl->type, env) : std::make_shared<Type>(TypeKind::Any, "any"));
 
-    return Type(TypeKind::Any, "any");
+    return std::make_shared<Type>(TypeKind::Any, "any");
 }
 
-Type TC::checkIdent(IdentifierType* ident, TypeEnvPtr env)
+TypePtr TC::checkIdent(IdentifierType* ident, TypeEnvPtr env)
 {
     return env->lookUp(ident->symbol);
 }
 
-Type TC::checkBinExpr(BinaryExprType* expr, TypeEnvPtr env)
+TypePtr TC::checkBinExpr(BinaryExprType* expr, TypeEnvPtr env)
 {
     if (boolOps.count(expr->op))
     {
-        return Type(TypeKind::Bool, "bool");
+        return std::make_shared<Type>(TypeKind::Bool, "bool");
     }
 
     return check(expr->left, env);
 }
 
-Type TC::checkAssign(AssignmentExprType* assign, TypeEnvPtr env)
+TypePtr TC::checkAssign(AssignmentExprType* assign, TypeEnvPtr env)
 {
-    Type assigne = check(assign->assigne, env);
-    Type value = check(assign->value, env);
+    TypePtr assigne = check(assign->assigne, env);
+    TypePtr value = check(assign->value, env);
 
     if (!compare(assigne, value, env))
     {
-        std::cerr << TypeError("Cannot convert " + value.name + " to " + assigne.name);
+        std::cerr << TypeError("Cannot convert " + value->name + " to " + assigne->name);
         exit(1);
     }
 
     return value;
 }
 
-Type TC::checkProbe(ProbeDeclarationType* prb, TypeEnvPtr env)
+TypePtr TC::checkProbe(ProbeDeclarationType* prb, TypeEnvPtr env)
 {
     TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
 
@@ -224,16 +277,16 @@ Type TC::checkProbe(ProbeDeclarationType* prb, TypeEnvPtr env)
             check(stmt, scope);
     }
 
-    return env->declareVar(prb->name, Type(TypeKind::Probe, "probe", TypeVal(scope->getVars())));
+    return env->declareVar(prb->name, std::make_shared<Type>(TypeKind::Probe, "probe", std::make_shared<TypeVal>(scope->getVars())));
 }
 
-Type TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
+TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
 {
     TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
 
     for (VarDeclarationType* param : fn->parameters)
     {
-        scope->declareVar(param->identifier, param->staticType ? getType(param->type, env) : Type(TypeKind::Any, "any"));
+        scope->declareVar(param->identifier, param->staticType ? getType(param->type, env) : std::make_shared<Type>(TypeKind::Any, "any"));
     }
 
     for (Stmt* stmt : fn->body)
@@ -241,115 +294,115 @@ Type TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
         check(stmt, scope);
     }
 
-    return env->declareVar(fn->name, Type(TypeKind::Function, "function", TypeVal(fn->parameters)));
+    return env->declareVar(fn->name, std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters)));
 }
 
-Type TC::checkCall(CallExprType* call, TypeEnvPtr env)
+TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
 {
-    Type fn = check(call->calee, env);
+    TypePtr fn = check(call->calee, env);
 
-    if (fn.type == TypeKind::Any) return Type(TypeKind::Any, "any");
+    if (fn->type == TypeKind::Any) return std::make_shared<Type>(TypeKind::Any, "any");
 
-    if (fn.type == TypeKind::Function)
+    if (fn->type == TypeKind::Function)
     {
         for (size_t i = 0; i < call->args.size(); i++)
         {
-            Type type = check(call->args[i], env);
+            TypePtr type = check(call->args[i], env);
 
             if (
-                fn.val.params.size() <= i || type.type == TypeKind::Any || getType(fn.val.params[i]->type, env).type == TypeKind::Any
+                fn->val->params.size() <= i || type->type == TypeKind::Any || getType(fn->val->params[i]->type, env)->type == TypeKind::Any
             ) continue;
 
-            if (!compare(type, getType(fn.val.params[i]->type, env), env))
+            if (!compare(type, getType(fn->val->params[i]->type, env), env))
             {
                 std::cerr
-                    << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(fn.val.params[i]->type, env).name + ", but got " + type.name + "\n");
+                    << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(fn->val->params[i]->type, env)->name + ", but got " + type->name + "\n");
                 exit(1);
             }
         }
 
-        return Type(TypeKind::Any, "any");
+        return std::make_shared<Type>(TypeKind::Any, "any");
     }
-    else if (fn.type == TypeKind::Probe)
+    else if (fn->type == TypeKind::Probe)
     {
-        if (fn.val.props.find("run") == fn.val.props.end() || fn.val.props["run"].type != TypeKind::Function)
+        if (fn->val->props.find("run") == fn->val->props.end() || fn->val->props["run"]->type != TypeKind::Function)
         {
             std::cerr << TypeError("Probe has no 'run' method or it is not of type function");
             exit(1);
         }
 
-        Type run = fn.val.props["run"];
+        TypePtr run = fn->val->props["run"];
 
         for (size_t i = 0; i < call->args.size(); i++)
         {
-            Type type = check(call->args[i], env);
+            TypePtr type = check(call->args[i], env);
 
             if (
-                run.val.params.size() <= i || type.type == TypeKind::Any || getType(run.val.params[i]->type, env).type == TypeKind::Any
+                run->val->params.size() <= i || type->type == TypeKind::Any || getType(run->val->params[i]->type, env)->type == TypeKind::Any
             ) continue;
 
-            if (!compare(type, getType(run.val.params[i]->type, env), env))
+            if (!compare(type, getType(run->val->params[i]->type, env), env))
             {
                 std::cerr
-                    << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(run.val.params[i]->type, env).name + ", but got " + type.name + "\n");
+                    << TypeError("Function parameter " + std::to_string(i) + " expects " + getType(run->val->params[i]->type, env)->name + ", but got " + type->name + "\n");
                 exit(1);
             }
         }
 
-        return Type(TypeKind::Any, "any");
+        return std::make_shared<Type>(TypeKind::Any, "any");
     }
     else
     {
-        std::cerr << TypeError("Only function and probes can be called " + fn.name);
+        std::cerr << TypeError("Only function and probes can be called " + fn->name);
         exit(1);
     }
 }
 
-Type TC::checkObjectExpr(MapLiteralType* obj, TypeEnvPtr env)
+TypePtr TC::checkObjectExpr(MapLiteralType* obj, TypeEnvPtr env)
 {
-    std::unordered_map<std::string, Type> props;
+    std::unordered_map<std::string, TypePtr> props;
 
     for (PropertyLiteralType* prop : obj->properties)
     {
         props[prop->key] = check(prop->val, env);
     }
 
-    return Type(TypeKind::Object, "map", props);
+    return std::make_shared<Type>(TypeKind::Object, "map", std::make_shared<TypeVal>(props));
 }
 
-Type TC::checkMemberExpr(MemberExprType* expr, TypeEnvPtr env)
+TypePtr TC::checkMemberExpr(MemberExprType* expr, TypeEnvPtr env)
 {
-    Type obj = check(expr->object, env);
+    TypePtr obj = check(expr->object, env);
     if (expr->property->kind == NodeType::Identifier)
     {
         IdentifierType* ident = static_cast<IdentifierType*>(expr->property);
 
-        if (obj.val.props.find(ident->symbol) != obj.val.props.end())
+        if (obj->val->props.find(ident->symbol) != obj->val->props.end())
         {
-            return obj.val.props[ident->symbol];
+            return obj->val->props[ident->symbol];
         }
 
-        if (obj.type == TypeKind::Module)
+        if (obj->type == TypeKind::Module)
         {
             std::cerr << TypeError("Object does not have property " + ident->symbol);
             exit(1);
         }
     }
 
-    if (obj.type == TypeKind::Module)
+    if (obj->type == TypeKind::Module)
     {
         std::cerr << TypeError("Object does not have that property");
         exit(1);
     }
 
-    return Type(TypeKind::Any, "any");
+    return std::make_shared<Type>(TypeKind::Any, "any");
 }
 
-Type TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, Context* ctx)
+TypePtr TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, Context* ctx)
 {
     if (getTypedStdlib().find(stmt->name) != getTypedStdlib().end())
     {
-        Type lib = getTypedStdlib()[stmt->name];
+        TypePtr lib = getTypedStdlib()[stmt->name];
         if (!stmt->hasMember)
         {
             return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, lib);
@@ -357,7 +410,7 @@ Type TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, Context* ctx)
 
         TypeEnvPtr mockenv = std::make_shared<TypeEnv>();
         mockenv->declareVar(stmt->name, lib);
-        Type member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), mockenv);
+        TypePtr member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), mockenv);
 
         return env->declareVar(stmt->customIdent ? stmt->ident : static_cast<MemberExprType*>(stmt->module)->lastProp, member);
     } else
@@ -379,46 +432,46 @@ Type TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, Context* ctx)
         context->modules = ctx->modules;
 
         ProgramType* program = parser.produceAST(file, context);
-        std::unordered_map<std::string, Type> exports = getExports(program, context);
+        std::unordered_map<std::string, TypePtr> exports = getExports(program, context);
 
         if (!stmt->hasMember)
         {
-            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, Type(TypeKind::Object, "module", TypeVal(exports)));
+            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, std::make_shared<Type>(TypeKind::Object, "module", std::make_shared<TypeVal>(exports)));
         }
 
         TypeEnvPtr mockenv = std::make_shared<TypeEnv>();
-        mockenv->declareVar(stmt->name, Type(TypeKind::Object, "module", TypeVal(exports)));
-        Type member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), mockenv);
+        mockenv->declareVar(stmt->name, std::make_shared<Type>(TypeKind::Object, "module", std::make_shared<TypeVal>(exports)));
+        TypePtr member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), mockenv);
 
         return env->declareVar(stmt->customIdent ? stmt->ident : static_cast<MemberExprType*>(stmt->module)->lastProp, member);
     }
 
-    return Type(TypeKind::Any, "module");
+    return std::make_shared<Type>(TypeKind::Any, "module");
 }
 
-Type TC::checkNewExpr(NewExprType* expr, TypeEnvPtr env)
+TypePtr TC::checkNewExpr(NewExprType* expr, TypeEnvPtr env)
 {
-    Type cls = check(expr->constructor, env);
-    if (cls.type != TypeKind::Class)
+    TypePtr cls = check(expr->constructor, env);
+    if (cls->type != TypeKind::Class)
     {
         std::cout << TypeError("Cannot construct non-class value");
         exit(1);
     }
 
-    TypeVal val = TypeVal(cls.val.props);
+    TypeValPtr val = std::make_shared<TypeVal>(cls->val->props);
 
-    Type type = Type(TypeKind::Module, "object", val);
-    type.isInstance = true;
-    type.typeID = cls.typeID;
-    type.name = cls.typeName;
+    TypePtr type = std::make_shared<Type>(TypeKind::Module, "object", val);
+    type->isInstance = true;
+    type->typeID = cls->typeID;
+    type->name = cls->typeName;
 
     return type;
 }
 
-std::unordered_map<std::string, Type> TC::getExports(ProgramType* program, Context* ctx)
+std::unordered_map<std::string, TypePtr> TC::getExports(ProgramType* program, Context* ctx)
 {
     TypeEnvPtr env = std::make_shared<TypeEnv>();
-    std::unordered_map<std::string, Type> exports;
+    std::unordered_map<std::string, TypePtr> exports;
 
     for (Stmt* stmt : program->body)
     {
@@ -458,48 +511,48 @@ std::unordered_map<std::string, Type> TC::getExports(ProgramType* program, Conte
     return exports;
 }
 
-Type TC::getType(Expr* name, TypeEnvPtr env)
+TypePtr TC::getType(Expr* name, TypeEnvPtr env)
 {
-    if (!name) return Type(TypeKind::Any, "any");
+    if (!name) return std::make_shared<Type>(TypeKind::Any, "any");
 
     if (name->kind == NodeType::Identifier)
     {
         IdentifierType* ident = static_cast<IdentifierType*>(name);
 
         if (ident->symbol == "str")
-            return Type(TypeKind::String, "string");
+            return std::make_shared<Type>(TypeKind::String, "string");
         else if (ident->symbol == "num")
-            return Type(TypeKind::Number, "number");
+            return std::make_shared<Type>(TypeKind::Number, "number");
         else if (ident->symbol == "bool")
-            return Type(TypeKind::Bool, "bool");
+            return std::make_shared<Type>(TypeKind::Bool, "bool");
         else if (ident->symbol == "map")
-            return Type(TypeKind::Object, "map");
+            return std::make_shared<Type>(TypeKind::Object, "map");
         else if (ident->symbol == "function")
-            return Type(TypeKind::Function, "function");
+            return std::make_shared<Type>(TypeKind::Function, "function");
     }
 
-    Type type = check(name, env);
+    TypePtr type = check(name, env);
 
-    if (type.type == TypeKind::Class)
+    if (type->type == TypeKind::Class)
     {
-        type.type = TypeKind::Module;
-        type.name = type.typeName;
+        type->type = TypeKind::Module;
+        type->name = type->typeName;
     }
 
     return type;
 }
 
-bool TC::compare(Type left, Type right, TypeEnvPtr env)
+bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
 {
-    if (left.type == TypeKind::Any || right.type == TypeKind::Any)
+    if (left->type == TypeKind::Any || right->type == TypeKind::Any)
         return true;
     else
     {
-        if (right.isInstance)
+        if (right->isInstance)
         {
-            return right.typeID == left.typeID;
+            return right->typeID == left->typeID;
         }
 
-        return (left.type == right.type);
+        return (left->type == right->type);
     }
 }

@@ -9,7 +9,7 @@
 
 std::unordered_map<std::string, Val> getHttpModule();
 
-#include "runtime/env.hpp"
+#include "env.hpp"
 #include "runtime/interpreter.hpp"
 
 inline std::string trim(const std::string& str) {
@@ -73,7 +73,7 @@ inline std::pair<std::string, std::string> parseMethodAndPath(const std::string&
 
 #ifdef _WIN32
 
-#pragma comment(lib, "Ws3_32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 #include <winsock2.h>
 #include <ws2tcpip.h>

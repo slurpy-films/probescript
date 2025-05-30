@@ -18,7 +18,12 @@ probe Main {
 A probe in probescript is a modular unit similar to a class or function, and is the core building block of the language.
 
 ## Building
-You can use make to build the project, but you can also just compile the src/main.cpp file with your own compiler. This project is built on Windows with the g++ compiler.
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
 
 ## Basic Syntax
 probescript uses curly brace syntax and optional semicolons. It uses var for variable declarations, fn for function declarations, class for class declarations, and probe for probe declarations. If and while statments are done in the C-like way like this:

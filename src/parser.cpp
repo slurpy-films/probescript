@@ -74,7 +74,7 @@ Stmt* Parser::parseStmt()
             stmt = parseExpr();
     }
 
-    expect(Lexer::Semicolon, "Expected semicolon after statment");
+    if (at().type == Lexer::Semicolon) eat();
     return stmt;
 }
 
@@ -119,58 +119,34 @@ Stmt* Parser::parseForStmt()
     expect(Lexer::OpenParen, "Expected '(' after 'for'");
 
     std::vector<Stmt*> decl;
-    if (at().type == Lexer::OpenParen)
+    while (at().type != Lexer::Semicolon && at().type != Lexer::END)
     {
-        eat();
-        while (at().type != Lexer::ClosedParen && at().type != Lexer::END)
-        {
-            decl.push_back(parseStmt());
-            if (at().type == Lexer::Comma) eat();
-            else break;
-        }
-        expect(Lexer::ClosedParen, "Expected ')' after initializer block");
-    } else if (at().type != Lexer::Comma)
-    {
-        decl.push_back(parseStmt());
+        decl.push_back(parseVarDeclaration());
+        if (at().type == Lexer::Comma) eat();
+        else break;
     }
 
-    expect(Lexer::Comma, "Expected ',' after initializer in for loop");
+    expect(Lexer::Semicolon, "Expected semicolon after initializer in for loop");
 
     std::vector<Expr*> cond;
-    if (at().type == Lexer::OpenParen)
-    {
-        eat();
-        while (at().type != Lexer::ClosedParen && at().type != Lexer::END)
-        {
-            cond.push_back(parseExpr());
-            if (at().type == Lexer::Comma) eat();
-            else break;
-        }
-        expect(Lexer::ClosedParen, "Expected ')' after condition block");
-    } else if (at().type != Lexer::Comma)
+    while (at().type != Lexer::Semicolon && at().type != Lexer::END)
     {
         cond.push_back(parseExpr());
+        if (at().type == Lexer::Comma) eat();
+        else break;
     }
-    expect(Lexer::Comma, "Expected ',' after condition in for loop");
+
+    expect(Lexer::Semicolon, "Expected semicolon after condition in for loop");
 
     std::vector<Expr*> update;
-    if (at().type == Lexer::OpenParen)
-    {
-        eat();
-        while (at().type != Lexer::ClosedParen && at().type != Lexer::END)
-        {
-            update.push_back(parseExpr());
-            if (at().type == Lexer::Comma) eat();
-            else break;
-        }
-        expect(Lexer::ClosedParen, "Expected ')' after update block");
-    } else if (at().type != Lexer::ClosedParen)
+    while (at().type != Lexer::Semicolon && at().type != Lexer::END)
     {
         update.push_back(parseExpr());
+        if (at().type == Lexer::Comma) eat();
+        else break;
     }
 
-    expect(Lexer::ClosedParen, "Expected ')' after update in for loop");
-
+    expect(Lexer::ClosedParen, "Expected closing parentheses after for loop updates");
     std::vector<Stmt*> body = parseBody();
     return new ForStmtType(decl, cond, update, body);
 }

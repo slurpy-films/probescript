@@ -21,10 +21,10 @@ void Initializer::start(char* argv[])
     std::ofstream outMainFile(mainFile);
 
     outMainFile << "probe Main {\n"
-                << "\trun() {\n"
+                << "\tMain() {\n"
                 << "\t\tconsole.println(\"Hello World!\");\n"
                 << "\t}\n"
-                << "}";
+                << "};";
 
     outProjectFile << "{\n\t\"name\": \"" << name << "\"" << ",\n\t\"main\": \"" << main << "\"\n}";
 
