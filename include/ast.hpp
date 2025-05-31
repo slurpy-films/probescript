@@ -1,4 +1,5 @@
 #pragma once
+#include "lexer.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -41,6 +42,7 @@ enum NodeType {
 };
 
 struct Stmt {
+    Lexer::Token token = Lexer::Token();
     NodeType kind;
     Stmt(NodeType kind) : kind(kind) {}
     virtual ~Stmt() = default;

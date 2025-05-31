@@ -14,15 +14,19 @@ inline std::string SyntaxError(const std::string& m, Lexer::Token tk = Lexer::To
     if (line == "")
         return ConsoleColors::RED + "[SyntaxError]: " + ConsoleColors::RESET + m + "\n";
     else
-    {
-        std::string indent;
-        
+    {        
         return ConsoleColors::RED + "[SyntaxError]: " + ConsoleColors::RESET + m + "\n\n" + "At " + ctx->filename + ":" + std::to_string(tk.line) + ":" + std::to_string(tk.col) + "\n" + line + "\n";
     }
 }
 
-inline std::string TypeError(const std::string& m) {
-    return ConsoleColors::RED + "[TypeError]: " + ConsoleColors::RESET + m + "\n";
+inline std::string TypeError(const std::string& m, Lexer::Token tk = Lexer::Token(), Context* ctx = new Context()) {
+    std::string line = split(ctx->file, "\n")[tk.line - 1];
+    if (line == "")
+        return ConsoleColors::RED + "[TypeError]: " + ConsoleColors::RESET + m + "\n";
+    else
+    {        
+        return ConsoleColors::RED + "[TypeError]: " + ConsoleColors::RESET + m + "\n\n" + "At " + ctx->filename + ":" + std::to_string(tk.line) + ":" + std::to_string(tk.col) + "\n" + line + "\n";
+    }
 }
 
 inline std::string ArgumentError(const std::string& m) {

@@ -100,6 +100,7 @@ public:
     void checkProgram(ProgramType* program, TypeEnvPtr env, Context* ctx = new Context());
 private:
     int m_typeId = 0;
+    Context* m_context;
 
     TypePtr check(Stmt* node, TypeEnvPtr env, Context* ctx = new Context());
 

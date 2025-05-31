@@ -7,6 +7,13 @@
 #include "errors.hpp"
 #include "context.hpp"
 
+template<typename T, typename... Args>
+T* newNode(Lexer::Token tok, Args&&... args) {
+    T* node = new T(std::forward<Args>(args)...);
+    node->token = tok;
+    return node;
+}
+
 class Parser
 {
 public:
@@ -90,6 +97,8 @@ private:
     std::vector<Expr*> parseArgList();
 
     std::vector<VarDeclarationType*> parseParams();
+
+    VarDeclarationType* parseParam();
 
     Lexer::Token at(int index = 0);
 
