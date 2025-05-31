@@ -70,6 +70,10 @@ Stmt* Parser::parseStmt()
         case Lexer::Try:
             stmt = parseTryStmt();
             break;
+        case Lexer::Semicolon:
+            eat();
+            stmt = new UndefinedLiteralType();
+            break;
         default:
             stmt = parseExpr();
     }
@@ -246,9 +250,9 @@ Stmt* Parser::parseExportStmt()
     return exportstmt;
 }
 
-Stmt* Parser::parseFunctionDeclaration()
+Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
 {
-    eat();
+    if (!tkEaten) eat();
     std::string name = (at().type == Lexer::Identifier ? eat().value : "anonymous");
 
     std::vector<VarDeclarationType*> params = parseParams();
@@ -299,10 +303,10 @@ Stmt* Parser::parseIfStmt()
     return ifStmt;
 }
 
-VarDeclarationType* Parser::parseVarDeclaration(bool isConstant)
+VarDeclarationType* Parser::parseVarDeclaration(bool isConstant, bool tkEaten)
 {
-    eat();
-    std::string ident = expect(Lexer::Identifier, "Expected identifier, recieved: ").value;
+    if (!tkEaten) eat();
+    std::string ident = expect(Lexer::Identifier, "Expected identifier").value;
 
     bool hasType = false;
     Expr* type;
@@ -848,33 +852,22 @@ std::vector<Stmt*> Parser::parseBody(bool methods, std::string prbname)
             {
                 if (at().type == Lexer::Identifier)
                 {
-                    std::string name = eat().value;
-                    if (at().type == Lexer::OpenParen)
+                    std::string name = at().value;
+                    if (at(1).type == Lexer::OpenParen)
                     {
-                        std::vector<VarDeclarationType*> params = parseParams();
+                        Stmt* fn = parseFunctionDeclaration(true);
 
-                        if (at().type == Lexer::Colon)
+                        if (fn->kind == NodeType::FunctionDeclaration)
                         {
-                            eat();
-                            Expr* type = parseExpr();
-                            std::vector<Stmt*> fnbody = parseBody();
+                            FunctionDeclarationType* func = static_cast<FunctionDeclarationType*>(fn);
+                            
+                            func->name = (func->name == prbname ? "run" : func->name);
 
-                            body.push_back(new FunctionDeclarationType(params, (name == prbname ? "run" : name), fnbody));
-                        } else {
-                            std::vector<Stmt*> fnbody = parseBody();
-                            body.push_back(new FunctionDeclarationType(params, (name == prbname ? "run" : name), fnbody));
-                        }
+                            body.push_back(fn);
+                        } else body.push_back(fn);
                     } else
                     {
-                        if (at().type == Lexer::Equals)
-                        {
-                            eat();
-                            Expr* val = parseExpr();
-                            body.push_back(new AssignmentExprType(new IdentifierType(name), val, "="));
-                        } else
-                        {
-                            body.push_back(new AssignmentExprType(new IdentifierType(name), new UndefinedLiteralType(), "="));
-                        }
+                        body.push_back(parseVarDeclaration(false, true));
                     }
                 } else body.push_back(parseStmt());
             }

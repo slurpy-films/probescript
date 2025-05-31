@@ -41,11 +41,11 @@ private:
 
     Stmt* parseExportStmt();
 
-    Stmt* parseFunctionDeclaration();
+    Stmt* parseFunctionDeclaration(bool tkEaten = false);
 
     Stmt* parseIfStmt();
 
-    VarDeclarationType* parseVarDeclaration(bool isConstant = false);
+    VarDeclarationType* parseVarDeclaration(bool isConstant = false, bool tkEaten = false);
 
     // Expression methods
 

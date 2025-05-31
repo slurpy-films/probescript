@@ -51,6 +51,7 @@ struct Type
     int typeID;
     std::string typeName;
     bool isInstance = false;
+    TypePtr parent;
 
     Type(TypeKind type, std::string name, std::string typeName = "")
         : type(type), name(name), typeName(typeName) {}
@@ -61,6 +62,13 @@ struct Type
     Type(TypeKind type, std::string name, TypeValPtr value, std::string typeName = "")
         : type(type), name(name), val(value), typeName(typeName) {}
     
+    Type(const TypePtr& other)
+        : type(other->type),
+        name(other->name),
+        val(other->val),
+        typeName(other->typeName),
+        isInstance(other->isInstance) {}
+
     Type()
         : type(TypeKind::Any), name("any") {}
 };

@@ -71,7 +71,7 @@ Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
             }
         
             default:
-                return env->throwErr(ManualError("Only member variables and method definitions are allowed in class bodies", "ClassBodyError"));
+                eval(stmt, env);
         }
     }
     

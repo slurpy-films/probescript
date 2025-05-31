@@ -182,7 +182,7 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 {
     TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
 
-    scope->declareVar("this", std::make_shared<Type>(TypeKind::Object, "this"));
+    scope->declareVar("this", std::make_shared<Type>(TypeKind::Object, cls->name));
     
     if (cls->doesExtend) scope->declareVar("super", std::make_shared<Type>(TypeKind::Any, "any"));
 
@@ -205,6 +205,11 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
     TypePtr type = std::make_shared<Type>(TypeKind::Class, "class", std::make_shared<TypeVal>(scope->getVars()));
     type->typeID = m_typeId++;
     type->typeName = cls->name;
+    if (cls->doesExtend)
+    {
+        type->parent = check(cls->extends, env);
+    }
+
     return env->declareVar(cls->name, type);
 }
 
@@ -454,7 +459,7 @@ TypePtr TC::checkNewExpr(NewExprType* expr, TypeEnvPtr env)
     TypePtr cls = check(expr->constructor, env);
     if (cls->type != TypeKind::Class)
     {
-        std::cout << TypeError("Cannot construct non-class value");
+        std::cout << TypeError("Expected constructor to be of type class, got " + cls->name);
         exit(1);
     }
 
@@ -464,6 +469,7 @@ TypePtr TC::checkNewExpr(NewExprType* expr, TypeEnvPtr env)
     type->isInstance = true;
     type->typeID = cls->typeID;
     type->name = cls->typeName;
+    type->parent = cls->parent;
 
     return type;
 }
@@ -531,7 +537,7 @@ TypePtr TC::getType(Expr* name, TypeEnvPtr env)
             return std::make_shared<Type>(TypeKind::Function, "function");
     }
 
-    TypePtr type = check(name, env);
+    TypePtr type = std::make_shared<Type>(check(name, env));
 
     if (type->type == TypeKind::Class)
     {
@@ -550,7 +556,15 @@ bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
     {
         if (right->isInstance)
         {
-            return right->typeID == left->typeID;
+            if (right->typeID == left->typeID) return true;
+            TypePtr current = right;
+            while (current->parent)
+            {
+                current = current->parent;
+                if (current->typeID == left->typeID) return true;
+            }
+
+            return false;
         }
 
         return (left->type == right->type);

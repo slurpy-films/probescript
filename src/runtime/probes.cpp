@@ -38,7 +38,7 @@ Val evalProbeCall(std::string probeName, EnvPtr declarationEnv, std::vector<Val>
                 eval(stmt, env);
                 break;
             default:
-                return env->throwErr(ManualError("Only member and method definitions are allowed within probe bodies", "ProbeBodyError"));
+                eval(stmt, env);
         }
     }
 
