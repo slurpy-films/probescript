@@ -619,7 +619,7 @@ bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
             if (right->val->props == left->val->props) return true;
 
             TypePtr current = right;
-            while (current = current->parent)
+            while ((current = current->parent))
             {
                 if (current->val->props == left->val->props) return true;
             }
@@ -632,7 +632,7 @@ bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
             if (left->val->props == right->val->props) return true;
 
             TypePtr current = left;
-            while (current = current->parent)
+            while ((current = current->parent))
             {
                 if (current->val->props == right->val->props) return true;
             }

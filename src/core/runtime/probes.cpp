@@ -9,7 +9,8 @@ Val evalProbeDeclaration(ProbeDeclarationType* probe, EnvPtr env) {
 Val evalProbeCall(std::string probeName, EnvPtr declarationEnv, std::vector<Val> args) {
     Val val = declarationEnv->lookupVar(probeName);
 
-    if (val->type != ValueType::Probe) {
+    if (val->type != ValueType::Probe)
+    {
         return declarationEnv->throwErr(TypeError("Probe " + probeName + " is not of type probe"));
     }
 
@@ -60,6 +61,8 @@ void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env)
     if (!prb->doesExtend) return;
     
     Val extends = eval(prb->extends, prb->declarationEnv);
+    EnvPtr parentenv = std::make_shared<Env>();
+    
     if (extends->type != ValueType::Probe)
     {
         if (extends->type == ValueType::NativeClass)
@@ -76,9 +79,11 @@ void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env)
             std::cerr << ManualError("Probes can only inherit from probes", "ProbeInheritanceError");
             exit(1);
         }
-    }
-    std::shared_ptr<ProbeValue> superProbe = std::static_pointer_cast<ProbeValue>(extends);
+    } else
+        parentenv = std::static_pointer_cast<ProbeValue>(extends)->declarationEnv;
 
+    std::shared_ptr<ProbeValue> superProbe = std::static_pointer_cast<ProbeValue>(extends);
+    
     inheritProbe(superProbe, env);
 
     bool hasRun = false;
@@ -87,12 +92,15 @@ void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env)
     {
         if (stmt->kind == NodeType::FunctionDeclaration)
         {
-            std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), env, true));
+            std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), parentenv, true));
             if (fn->name == "run")
             {
                 hasRun = true;
                 run = fn;
             } else env->variables[fn->name] = fn;
+        } else if (stmt->kind == NodeType::VarDeclaration) {
+            eval(stmt, parentenv);
+            eval(stmt, env);
         } else
             eval(stmt, env);
     }

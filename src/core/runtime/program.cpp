@@ -58,7 +58,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
     } else if (config->type == RuntimeType::Exports) {
         std::unordered_map<std::string, Val> exports;
 
-        EnvPtr env = std::make_shared<Env>();
+        EnvPtr exportenv = std::make_shared<Env>();
 
         Val lasteval;
 
@@ -74,7 +74,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     case NodeType::Identifier: {
                         IdentifierType* ident = static_cast<IdentifierType*>(exportstmt->exporting);
                         exportname = ident->symbol;
-                        lasteval = exporting = eval(ident, env);
+                        lasteval = exporting = eval(ident, exportenv);
                         found = true;
                         
                         break;
@@ -86,7 +86,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                             std::cerr << ManualError("Cannot export non identifier assignment", "ExportError");
                         }
                         exportname = static_cast<IdentifierType*>(a->assigne)->symbol;
-                        lasteval = exporting = eval(a->value, env);
+                        lasteval = exporting = eval(a->value, exportenv);
                         found = true;
 
                         break;
@@ -95,7 +95,8 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     case NodeType::ProbeDeclaration: {
                         ProbeDeclarationType* probe = static_cast<ProbeDeclarationType*>(exportstmt->exporting);
                         exportname = probe->name;
-                        lasteval = exporting = eval(probe, env);
+                        lasteval = exporting = eval(probe, exportenv);
+
                         found = true;
 
                         break;
@@ -105,7 +106,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                         FunctionDeclarationType* fn = static_cast<FunctionDeclarationType*>(exportstmt->exporting);
                         exportname = fn->name;
                         found = true;
-                        lasteval = exporting = eval(fn, env);
+                        lasteval = exporting = eval(fn, exportenv);
 
                         break;
                     }
@@ -114,7 +115,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                         ClassDefinitionType* cls = static_cast<ClassDefinitionType*>(exportstmt->exporting);
                         exportname = cls->name;
                         found = true;
-                        lasteval = exporting = eval(cls, env);
+                        lasteval = exporting = eval(cls, exportenv);
 
                         break;
                     }
@@ -126,7 +127,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
 
                 exports[exportname] = exporting;
             } else {
-                eval(stmt, env, config);
+                eval(stmt, exportenv, config);
             }
         }
 
