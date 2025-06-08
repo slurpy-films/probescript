@@ -32,9 +32,12 @@ struct TypeVal
 {
     std::vector<VarDeclarationType*> params = {};
     std::unordered_map<std::string, TypePtr> props = {};
+    TypePtr returntype;
 
     TypeVal(std::vector<VarDeclarationType*> params)
         : params(params) {}
+    TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype)
+        : params(params), returntype(returntype) {}
     TypeVal(std::unordered_map<std::string, TypePtr> props)
         : props(props) {}
     TypeVal() {}

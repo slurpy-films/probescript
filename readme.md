@@ -38,7 +38,7 @@ while (condition) {
 ```
 
 ## Probes
-When you make a new probescript project, you should have a main file that has your Main probe. That probe will be run when you start your program. A probe is a hybrid between a function and a class, because it can be called as a function, but it can also inherit like a class. When a probe is called, either as a function or as the Main probe, it needs a run function. The run function will be called with the args that the probe is called with, or none if it is the Main probe. Example:
+When you make a new probescript project, you should have a main file that has your Main probe. That probe will be run when you start your program. A probe is a hybrid between a function and a class, because it can be called as a function, but it can also inherit like a class. When a probe is called, either as a function or as the Main probe, it needs a run function. The run function will be called with the args that the probe is called with, or none if it is the Main probe. A function with the same name as the probe will be the run function. Example:
 
 ```probe
 probe Main {

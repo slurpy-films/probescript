@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <filesystem>
 
 #include "frontend/ast.hpp"
 #include "runtime/values.hpp"

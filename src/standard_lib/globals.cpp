@@ -124,5 +124,17 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
             }),
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "obj", new IdentifierType("map")) })))
         }
+    },
+    {
+        "copy",
+        {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
+            {
+                if (args.empty()) return env->throwErr(ArgumentError("Usage: copy(val: any)"));
+
+                return std::make_shared<RuntimeVal>(*args[0]);
+            }),
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "val") })))
+        }
     }
 };

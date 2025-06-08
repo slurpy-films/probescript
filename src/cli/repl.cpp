@@ -16,7 +16,7 @@ void REPL::start()
 
         if (src.find("exit") == 0) break;
 
-        ProgramType* program = parser.produceAST(src);
+        ProgramType* program = parser.parse(src);
 
         TC tc;
         tc.checkProgram(program, typeenv, context);

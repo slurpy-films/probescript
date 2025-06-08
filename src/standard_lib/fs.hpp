@@ -9,5 +9,7 @@
 
 namespace fs = std::filesystem;
 
+extern fs::path g_currentCwd;
+
 Val getValFsModule();
 TypePtr getTypeFsModule();

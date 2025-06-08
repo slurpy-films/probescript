@@ -13,21 +13,21 @@ Val getValFsModule()
                     return env->throwErr(ArgumentError("readFile: Expected one string argument (file path)"));
                 }
 
-                std::string filePath = std::static_pointer_cast<StringVal>(args[0])->string;
+                fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<StringVal>(args[0])->string);
 
                 if (!fs::exists(filePath))
                 {
-                    return env->throwErr(ArgumentError("File does not exist: " + filePath));
+                    return env->throwErr(ArgumentError("File does not exist: " + filePath.string()));
                 }
 
                 if (!fs::is_regular_file(filePath))
                 {
-                    return env->throwErr(ArgumentError("Provided path is not a file: " + filePath));
+                    return env->throwErr(ArgumentError("Provided path is not a file: " + filePath.string()));
                 }
 
                 std::ifstream file(filePath);
                 if (!file.is_open()) {
-                    return env->throwErr(ArgumentError("Failed to open file: " + filePath));
+                    return env->throwErr(ArgumentError("Failed to open file: " + filePath.string()));
                 }
 
                 std::string fileContent, line;
@@ -49,13 +49,13 @@ Val getValFsModule()
                     return env->throwErr(ArgumentError("writeFile: Expected two string arguments (path, content)"));
                 }
 
-                std::string filePath = std::static_pointer_cast<StringVal>(args[0])->string;
+                fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<StringVal>(args[0])->string);
                 std::string content = std::static_pointer_cast<StringVal>(args[1])->string;
 
                 std::ofstream file(filePath);
                 if (!file.is_open())
                 {
-                    return env->throwErr(ArgumentError("Failed to open file for writing: " + filePath));
+                    return env->throwErr(ArgumentError("Failed to open file for writing: " + filePath.string()));
                 }
 
                 file << content;

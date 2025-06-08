@@ -105,8 +105,7 @@ TypePtr TC::check(Stmt* node, TypeEnvPtr env, std::shared_ptr<Context> ctx)
         case NodeType::TernaryExpr:
             return checkTernaryExpr(static_cast<TernaryExprType*>(node), env);
         case NodeType::ReturnStmt:
-            check(static_cast<ReturnStmtType*>(node)->stmt, env);
-            return std::make_shared<Type>(TypeKind::Any, "any");
+            return checkReturnStmt(static_cast<ReturnStmtType*>(node), env);
         default:
             return std::make_shared<Type>(TypeKind::Any, "any");
     }
@@ -127,6 +126,25 @@ TypePtr TC::checkForStmt(ForStmtType* forstmt, TypeEnvPtr env)
     
     for (Stmt* stmt : forstmt->body)
         check(stmt, scope);
+
+    return std::make_shared<Type>(TypeKind::Any, "any");
+}
+
+TypePtr TC::checkReturnStmt(ReturnStmtType* stmt, TypeEnvPtr env)
+{
+    if (!m_currentret)
+    {
+        std::cerr << TypeError("Did not expect return statment", stmt->token, m_context);
+        exit(1);
+    }
+
+    TypePtr rettype = check(stmt->stmt, env);
+
+    if (!compare(m_currentret, rettype, env))
+    {
+        std::cerr << TypeError(rettype->name + " does not match expected return type, " + m_currentret->name, stmt->token, m_context);
+        exit(1);
+    }
 
     return std::make_shared<Type>(TypeKind::Any, "any");
 }
@@ -267,6 +285,8 @@ TypePtr TC::checkBinExpr(BinaryExprType* expr, TypeEnvPtr env)
 TypePtr TC::checkAssign(AssignmentExprType* assign, TypeEnvPtr env)
 {
     TypePtr assigne = check(assign->assigne, env);
+
+    if (assign->op != "=") return assigne;
     TypePtr value = check(assign->value, env);
 
     if (!compare(assigne, value, env))
@@ -319,12 +339,16 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
         scope->declareVar(param->identifier, param->staticType ? getType(param->type, env) : std::make_shared<Type>(TypeKind::Any, "any"));
     }
 
+    m_currentret = fn->rettype ? getType(fn->rettype, env) : std::make_shared<Type>(TypeKind::Any, "any");
+
     for (Stmt* stmt : fn->body)
     {
         check(stmt, scope);
     }
 
-    return env->declareVar(fn->name, std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters)));
+    m_currentret = nullptr;
+
+    return env->declareVar(fn->name, std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters, fn->rettype ? getType(fn->rettype, env) : std::make_shared<Type>(TypeKind::Any, "any"))));
 }
 
 TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
@@ -351,7 +375,7 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
             }
         }
 
-        return std::make_shared<Type>(TypeKind::Any, "any");
+        return fn->val->returntype ? fn->val->returntype : std::make_shared<Type>(TypeKind::Any, "any");
     } else if (fn->type == TypeKind::Probe)
     {
         if (fn->val->props.find("run") == fn->val->props.end() || fn->val->props["run"]->type != TypeKind::Function)
@@ -490,7 +514,7 @@ TypePtr TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, std::shared_pt
         context->filename = fs::absolute(path).string();
         context->modules = ctx->modules;
 
-        ProgramType* program = parser.produceAST(file, context);
+        ProgramType* program = parser.parse(file, context);
         m_context = context;
         std::unordered_map<std::string, TypePtr> exports = getExports(program, context);
         m_context = ctx;

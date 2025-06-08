@@ -2,7 +2,7 @@
 
 using Lexer::Token;
 
-ProgramType* Parser::produceAST(std::string& sourceCode, std::shared_ptr<Context> ctx)
+ProgramType* Parser::parse(std::string& sourceCode, std::shared_ptr<Context> ctx)
 {
     tokens = Lexer::tokenize(sourceCode);
     file = sourceCode;
@@ -163,7 +163,7 @@ Stmt* Parser::parseThrowStmt()
 Stmt* Parser::parseReturnStmt()
 {
     Token tk = eat();
-    return newNode<ReturnStmtType>(tk, parseExpr());
+    return newNode<ReturnStmtType>(tk, at().type == Lexer::Semicolon ? new UndefinedLiteralType() : parseExpr());
 }
 
 Stmt* Parser::parseClassDeclaration()

@@ -1,5 +1,7 @@
 #include "application.hpp"
 
+fs::path g_currentCwd = std::filesystem::current_path();
+
 void showHelp(char* argv[])
 {
     std::cout << ConsoleColors::CYAN << "Probescript v" << __PROBESCRIPTVERSION__ << "\n" << ConsoleColors::RESET
@@ -41,6 +43,7 @@ void Application::run()
 
         fs::path fileName(argv[2]);
 
+
         Parser parser;
         std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
         EnvPtr env = std::make_shared<Env>();
@@ -55,12 +58,14 @@ void Application::run()
 
         std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
 
+        g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
         context->filename = std::filesystem::absolute(fileName).string();
         context->file = file;
         context->modules = indexedPair.first;
         context->project = indexedPair.second;
         
-        ProgramType* program = parser.produceAST(file, context);
+        ProgramType* program = parser.parse(file, context);
 
         std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
 
