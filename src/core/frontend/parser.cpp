@@ -253,7 +253,29 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
 {
     Token tk = at();
     if (!tkEaten) eat();
-    std::string name = (at().type == Lexer::Identifier ? eat().value : "anonymous");
+    std::string name = (at().type == Lexer::Identifier || at().type == Lexer::New ? eat().value : "anonymous");
+    std::vector<VarDeclarationType*> templateparams;
+
+    if (at().value == "<")
+    {
+        eat();
+        while (at().value != ">" && notEOF())
+        {
+            Token ident = expect(Lexer::Identifier, "Expected identifier");
+            Expr* value;
+
+            if (at().type == Lexer::Equals)
+            {
+                eat();
+                value = parseExpr();
+            }
+
+            templateparams.push_back(newNode<VarDeclarationType>(ident, value, ident.value));
+
+            if (at().type == Lexer::Comma) eat();
+        }
+        eat();
+    }
 
     std::vector<VarDeclarationType*> params = parseParams();
 
@@ -269,6 +291,8 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
     std::vector<Stmt*> body = parseBody();
 
     FunctionDeclarationType* fn = (type ? newNode<FunctionDeclarationType>(tk, params, name, body, type) : newNode<FunctionDeclarationType>(tk, params, name, body));
+
+    fn->templateparams = templateparams;
 
     return fn;
 }
@@ -393,8 +417,14 @@ Expr* Parser::parseMemberExpr()
 {
     Expr* obj = parseLogicalExpr();
 
-    while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
+    while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket || at().type == Lexer::LessThan)
     {
+        if (at().type == Lexer::LessThan)
+        {
+            obj = parseTemplateCall(obj);
+            continue;
+        }
+
         Token op = eat();
         Expr* property;
         bool computed;
@@ -441,6 +471,44 @@ Expr* Parser::parseMemberExpr()
     return obj;
 }
 
+Expr* Parser::parseTemplateCall(Expr* caller)
+{
+    Token open = expect(Lexer::LessThan, "Expected '<'");
+    std::vector<Expr*> tempargs;
+
+    if (at().type != Lexer::GreaterThan)
+    {
+        tempargs.push_back(parseTemplateArg());
+
+        if (at().type != Lexer::Comma && at().type != Lexer::GreaterThan) 
+        {
+            return newNode<BinaryExprType>(caller->token, caller, tempargs[0], "<");
+        }
+
+        while (at().type == Lexer::Comma)
+        {
+            eat();
+            tempargs.push_back(parseTemplateArg());
+        }
+    }
+
+    expect(Lexer::GreaterThan, "Expected '>' after template arguments");
+
+    Expr* call = newNode<TemplateCallType>(open, caller, tempargs);
+
+    if (at().type == Lexer::OpenParen)
+    {
+        call = parseCallexpr(call);
+    }
+
+    return call;
+}
+
+Expr* Parser::parseTemplateArg()
+{
+    return parseObjectExpr();
+}
+
 Expr* Parser::parseLogicalExpr()
 {
     Expr* left = parseEqualityExpr();
@@ -474,7 +542,7 @@ Expr* Parser::parseRelationalExpr()
 {
     Expr* left = parseObjectExpr();
 
-    while (at().value == "<" || at().value == ">" || at().value == "<=" || at().value == ">=")
+    while (at().type == Lexer::LessThan || at().type == Lexer::GreaterThan || at().value == "<=" || at().value == ">=")
     {
         Token op = eat();
 
@@ -575,6 +643,11 @@ Expr* Parser::parseUnaryExpr()
 
 Expr* Parser::parseCallexpr(Expr* caller)
 {
+    if (at().type == Lexer::LessThan)
+    {
+        caller = parseTemplateCall(caller);
+    }
+
     CallExprType* callExpr = newNode<CallExprType>(at(), caller, parseArgs());
     if (at().type == Lexer::OpenParen) return parseCallexpr(callExpr);
     
@@ -687,24 +760,29 @@ Expr* Parser::parsePrimaryExpr()
         return parseArrayExpr();
     }
 
+    Expr* primary;
+
     switch (tk.type)
     {
         case Lexer::Identifier:
         {
             Token token = eat();
-            return newNode<IdentifierType>(token, token.value);
+            primary = newNode<IdentifierType>(token, token.value);
+            break;
         }
 
         case Lexer::Number:
         {
             Token token = eat();
-            return newNode<NumericLiteralType>(token, std::stod(token.value));
+            primary = newNode<NumericLiteralType>(token, std::stod(token.value));
+            break;
         }
 
         case Lexer::String:
         {
             Token token = eat();
-            return newNode<StringLiteralType>(token, token.value);
+            primary = newNode<StringLiteralType>(token, token.value);
+            break;
         }
 
         case Lexer::OpenParen:
@@ -712,27 +790,39 @@ Expr* Parser::parsePrimaryExpr()
             eat();
             Expr* value = parseExpr();
             expect(Lexer::ClosedParen, "Expected closing parentheses ");
-            return value;
+            primary = value;
+            break;
         }
 
         case Lexer::Bool:
-            return newNode<BoolLiteralType>(at(), eat().value == "true");
+            primary = newNode<BoolLiteralType>(at(), eat().value == "true");
+            break;
 
         case Lexer::Undefined:
-            return newNode<UndefinedLiteralType>(at());
+            primary = newNode<UndefinedLiteralType>(eat());
+            break;
 
         case Lexer::Null:
             eat();
-            return new NullLiteralType();
+            primary = new NullLiteralType();
+            break;
 
         case Lexer::END:
             eat();
-            return new UndefinedLiteralType();
+            primary = new UndefinedLiteralType();
+            break;
 
         default:
             std::cout << SyntaxError("Unexpected token found while parsing: " + at().value, at(), context);
             exit(1);
     }
+
+    if (primary->kind == NodeType::Identifier && at().type == Lexer::LessThan)
+    {
+        primary = parseTemplateCall(primary);
+    }
+
+    return primary;
 }
 
 Expr* Parser::parseArrayExpr()
@@ -845,10 +935,10 @@ std::vector<Stmt*> Parser::parseBody(bool methods, std::string prbname)
         {
             while (at().type != Lexer::ClosedBrace && at().type != Lexer::END)
             {
-                if (at().type == Lexer::Identifier)
+                if (at().type == Lexer::Identifier || at().type == Lexer::New)
                 {
                     std::string name = at().value;
-                    if (at(1).type == Lexer::OpenParen)
+                    if (at(1).type == Lexer::OpenParen || at(1).type == Lexer::LessThan)
                     {
                         Stmt* fn = parseFunctionDeclaration(true);
 

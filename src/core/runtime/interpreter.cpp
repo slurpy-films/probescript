@@ -14,6 +14,30 @@ Val evalArrowFunction(ArrowFunctionType* fn, EnvPtr env) {
     return std::make_shared<FunctionValue>("arrow", fn->params, env, fn->body);
 }
 
+Val evalTemplateCall(TemplateCallType* call, EnvPtr env)
+{
+    Val caller = eval(call->caller, env);
+    EnvPtr scope = std::make_shared<Env>(env);
+    std::string name = "template";
+    std::vector<VarDeclarationType*> params;
+    std::vector<Stmt*> body;
+
+    if (caller->type == ValueType::Function)
+    {
+        std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(caller);
+        name = fn->name;
+        params = fn->params;
+        body = fn->body;
+
+        for (size_t i = 0; i < fn->templateparams.size(); i++)
+        {
+            scope->declareVar(fn->templateparams[i]->identifier, (call->templateArgs.size() >= i ? eval(call->templateArgs[i], scope) : std::make_shared<UndefinedVal>()));
+        }
+    }
+
+    return std::make_shared<FunctionValue>(name, params, scope, body);
+}
+
 Val evalAssignment(AssignmentExprType* assignment, EnvPtr env) {
     if (assignment->assigne->kind != NodeType::Identifier) {
         return env->throwErr(ManualError("Expected Identifier in assignment", "AssignmentError"));
@@ -179,6 +203,7 @@ Val evalBooleanBinExpr(BinaryExprType* binop, EnvPtr env) {
 
 Val evalFunctionDeclaration(FunctionDeclarationType* declaration, EnvPtr env, bool onlyValue) {
     std::shared_ptr<FunctionValue> fn = std::make_shared<FunctionValue>(declaration->name, declaration->parameters, env, declaration->body);
+    fn->templateparams = declaration->templateparams;
 
     return onlyValue ? fn : env->declareVar(declaration->name, fn, true);
 }
@@ -516,6 +541,9 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config) {
 
         case NodeType::TernaryExpr:
             return evalTernaryExpr(static_cast<TernaryExprType*>(astNode), env);
+        
+        case NodeType::TemplateCall:
+            return evalTemplateCall(static_cast<TemplateCallType*>(astNode), env);
 
         default:
             std::cerr << "Unexpected AST-node kind found: " << std::to_string(static_cast<int>(astNode->kind));

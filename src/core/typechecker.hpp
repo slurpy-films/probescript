@@ -47,11 +47,13 @@ private:
     TypePtr checkArrowFunction(ArrowFunctionType* fn, TypeEnvPtr env);
     TypePtr checkTernaryExpr(TernaryExprType* expr, TypeEnvPtr env);
     TypePtr checkReturnStmt(ReturnStmtType* stmt, TypeEnvPtr env);
+    TypePtr checkTemplateCall(TemplateCallType* call, TypeEnvPtr env);
 
     void checkProbeInheritance(TypePtr prb, TypeEnvPtr env);
 
     std::unordered_map<std::string, TypePtr> getExports(ProgramType* program, std::shared_ptr<Context> ctx);
 
     TypePtr getType(Expr* name, TypeEnvPtr env);
+    TypePtr getType(TypePtr type);
     bool compare(TypePtr left, TypePtr right, TypeEnvPtr env);
 };

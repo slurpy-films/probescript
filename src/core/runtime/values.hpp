@@ -298,6 +298,7 @@ struct ArrayVal : public RuntimeVal {
 struct FunctionValue : public RuntimeVal {
     std::string name;
     std::vector<VarDeclarationType*> params;
+    std::vector<VarDeclarationType*> templateparams;
     EnvPtr declarationEnv;
     std::vector<Stmt*> body;
     FunctionValue (std::string name, std::vector<VarDeclarationType*> params, EnvPtr declarationEnv, std::vector<Stmt*> body) 

@@ -59,6 +59,12 @@ private:
 
     Expr* parseAssignmentExpr();
 
+    Expr* parseMemberExpr();
+
+    Expr* parseTemplateCall(Expr* caller);
+
+    Expr* parseTemplateArg();
+
     Expr* parseTernaryExpr();
 
     Expr* parseLogicalExpr();
@@ -82,9 +88,7 @@ private:
     Expr* parseArrowFunction();
 
     Expr* parseNewExpr();
-    
-    Expr* parseMemberExpr();
-    
+        
     Expr* parseMemberChain(Expr* expr);
 
     Expr* parsePrimaryExpr();
