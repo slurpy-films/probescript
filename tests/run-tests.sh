@@ -35,7 +35,7 @@ echo "==================="
 while IFS= read -r -d '' file; do
     ((total_tests++))
     
-    rel_path=$(realpath --relative-to="$(pwd)" "$file")
+    rel_path="${file#./}"
     
     printf "Testing %-50s " "$rel_path"
     
