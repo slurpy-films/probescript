@@ -1,0 +1,7 @@
+probe Main
+{
+    Main()
+    {
+        console.println("Hello, World!");
+    }
+}

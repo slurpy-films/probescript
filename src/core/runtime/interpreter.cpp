@@ -216,13 +216,9 @@ Val evalIdent(IdentifierType* ident, EnvPtr env) {
 Val evalIfStmt(IfStmtType* stmt, EnvPtr baseEnv) {
     Val condition = eval(stmt->condition, baseEnv);
 
-    if (condition->type != ValueType::Boolean) {
-        return baseEnv->throwErr(ManualError("If statement condition must evaluate to a boolean, got " + condition->value, "TypeError"));
-    }
+    bool cond = condition->toBool();
 
-    std::shared_ptr<BooleanVal> boolval = std::static_pointer_cast<BooleanVal>(condition);
-
-    if (boolval->getValue()) {
+    if (cond) {
         EnvPtr env = std::make_shared<Env>(baseEnv);
         return evalBody(stmt->body, env);
     } else if (stmt->hasElse) {
@@ -496,6 +492,9 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config) {
 
         case NodeType::ArrayLiteral:
             return evalArray(static_cast<ArrayLiteralType*>(astNode), env);
+
+        case NodeType::CastExpr:
+            return eval(static_cast<CastExprType*>(astNode)->left, env);
 
         case NodeType::CallExpr:
             return evalCall(static_cast<CallExprType*>(astNode), env);

@@ -41,7 +41,8 @@ enum NodeType {
     BoolLiteral,
     TernaryExpr,
     TemplateArgument,
-    TemplateCall
+    TemplateCall,
+    CastExpr,
 };
 
 struct Stmt {
@@ -204,6 +205,15 @@ struct TemplateArgumentType : public Expr {
         : arguments(args) {
         kind = NodeType::TemplateArgument;
     }
+};
+
+struct CastExprType : public Expr
+{
+    Expr* left;
+    Expr* type;
+
+    CastExprType(Expr* left, Expr* type)
+        : left(left), type(type), Expr(NodeType::CastExpr) {}
 };
 
 struct TemplateCallType : public Expr {

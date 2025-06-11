@@ -59,13 +59,15 @@ private:
 
     Expr* parseAssignmentExpr();
 
+    Expr* parseTernaryExpr();
+
+    Expr* parseAsExpr();
+
     Expr* parseMemberExpr();
 
     Expr* parseTemplateCall(Expr* caller);
 
     Expr* parseTemplateArg();
-
-    Expr* parseTernaryExpr();
 
     Expr* parseLogicalExpr();
 

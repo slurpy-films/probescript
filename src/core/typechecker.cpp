@@ -58,6 +58,7 @@ void TC::checkProgram(ProgramType* program, TypeEnvPtr env, std::shared_ptr<Cont
 
 TypePtr TC::check(Stmt* node, TypeEnvPtr env, std::shared_ptr<Context> ctx)
 {
+    if (!node) return std::make_shared<Type>(TypeKind::Any, "any");
     switch (node->kind)
     {
         case NodeType::NumericLiteral:
@@ -108,9 +109,20 @@ TypePtr TC::check(Stmt* node, TypeEnvPtr env, std::shared_ptr<Context> ctx)
             return checkReturnStmt(static_cast<ReturnStmtType*>(node), env);
         case NodeType::TemplateCall:
             return checkTemplateCall(static_cast<TemplateCallType*>(node), env);
+        case NodeType::CastExpr:
+            return checkCastExpr(static_cast<CastExprType*>(node), env);
+        case NodeType::UnaryPrefix:
+            return checkUnaryPrefix(static_cast<UnaryPrefixType*>(node), env);
         default:
             return std::make_shared<Type>(TypeKind::Any, "any");
     }
+}
+
+TypePtr TC::checkUnaryPrefix(UnaryPrefixType* expr, TypeEnvPtr env)
+{
+    TypePtr right = check(expr->assigne, env);
+    if (expr->op == "!") return std::make_shared<Type>(TypeKind::Bool, "bool");
+    else return right;
 }
 
 TypePtr TC::checkForStmt(ForStmtType* forstmt, TypeEnvPtr env)
@@ -160,7 +172,7 @@ TypePtr TC::checkReturnStmt(ReturnStmtType* stmt, TypeEnvPtr env)
 {
     if (!m_currentret)
     {
-        std::cerr << TypeError("Did not expect return statment", stmt->token, m_context);
+        std::cerr << TypeError("Did not expect return statement", stmt->token, m_context);
         exit(1);
     }
 
@@ -186,7 +198,29 @@ TypePtr TC::checkIfStmt(IfStmtType* stmt, TypeEnvPtr env)
         check(stmt, scope);
     }
 
+    if (stmt->hasElse){
+        TypeEnvPtr elsescope = std::make_shared<TypeEnv>(env);
+        for (Stmt* stmt : stmt->elseStmt)
+        {
+            check(stmt, elsescope);
+        }
+    }
+
     return std::make_shared<Type>(TypeKind::Any, "any");
+}
+
+TypePtr TC::checkCastExpr(CastExprType* expr, TypeEnvPtr env)
+{
+    TypePtr left = check(expr->left, env);
+    TypePtr type = getType(expr->type, env);
+
+    if (!compare(left, type, env))
+    {
+        std::cerr << TypeError("Bad cast: " + type->name + " is not compatible with " + left->name, expr->token, m_context);
+        exit(1);
+    }
+
+    return type;
 }
 
 TypePtr TC::checkTernaryExpr(TernaryExprType* expr, TypeEnvPtr env)
@@ -215,7 +249,7 @@ TypePtr TC::checkMemberAssign(MemberAssignmentType* assign, TypeEnvPtr env)
     }
 
     if (key.empty()) return std::make_shared<Type>(TypeKind::Any, "any");
-    return obj->val->props[key] = check(assign->newvalue, env);
+    return check(assign->newvalue, env);
 }
 
 TypePtr TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, std::shared_ptr<Context> ctx)
@@ -240,34 +274,57 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 {
     TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
 
-    scope->declareVar("this", std::make_shared<Type>(TypeKind::Object, cls->name));
+    TypePtr thisobj = std::make_shared<Type>(TypeKind::Object, cls->name);
+
+    scope->declareVar("this", thisobj);
     
     if (cls->doesExtend) scope->declareVar("super", std::make_shared<Type>(TypeKind::Any, "any"));
 
-    for (Stmt* stmt : cls->body)
-    {
-        if (stmt->kind == NodeType::AssignmentExpr)
-        {
-            AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
-            if (assign->assigne->kind != NodeType::Identifier)
-            {
-                std::cerr << TypeError("Only identifier members are allowed in classes", assign->token, m_context);
-                exit(1);
-            }
+    TypePtr type = std::make_shared<Type>(TypeKind::Class, "class");
 
-            scope->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, check(assign->value, scope));
-        } else
-            check(stmt, scope);
-    }
-
-    TypePtr type = std::make_shared<Type>(TypeKind::Class, "class", std::make_shared<TypeVal>(scope->getVars()));
     type->typeName = cls->name;
     if (cls->doesExtend)
     {
         type->parent = check(cls->extends, env);
     }
 
+    checkClassInheritance(type, scope, thisobj);
+
+    for (Stmt* stmt : cls->body)
+    {
+        if (stmt->kind == NodeType::VarDeclaration)
+        {
+            VarDeclarationType* decl = static_cast<VarDeclarationType*>(stmt);
+
+            thisobj->val->props[decl->identifier] = check(decl->value, scope);
+        }
+        else if (stmt->kind == NodeType::FunctionDeclaration)
+        {
+            FunctionDeclarationType* fn = static_cast<FunctionDeclarationType*>(stmt);
+
+            thisobj->val->props[fn->name] = checkFunction(fn, scope);
+        }
+        else
+        {
+            check(stmt, scope);
+        }
+    }
+
+    type->val->props = thisobj->val->props;
+
     return env->declareVar(cls->name, type);
+}
+
+void TC::checkClassInheritance(TypePtr cls, TypeEnvPtr env, TypePtr thisobj)
+{
+    if (cls->parent)
+    {
+        checkClassInheritance(cls->parent, env, thisobj);
+        for (const auto& [key, type] : cls->parent->val->props)
+        {
+            thisobj->val->props[key] = type;
+        }
+    }
 }
 
 TypePtr TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)

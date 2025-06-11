@@ -390,7 +390,7 @@ Expr* Parser::parseAssignmentExpr()
 
 Expr* Parser::parseTernaryExpr()
 {
-    Expr* cond = parseCallMemberExpr();
+    Expr* cond = parseAsExpr();
 
     if (at().type != Lexer::Ternary) return cond;
 
@@ -401,6 +401,19 @@ Expr* Parser::parseTernaryExpr()
     Expr* alt = parseExpr();
 
     return newNode<TernaryExprType>(tk, cond, cons, alt);
+}
+
+Expr* Parser::parseAsExpr()
+{
+    Expr* left = parseCallMemberExpr();
+
+    while (at().type == Lexer::As && at().type != Lexer::END)
+    {
+        Token tk = eat();
+        left = newNode<CastExprType>(tk, left, parseExpr());
+    }
+
+    return left;
 }
 
 Expr* Parser::parseCallMemberExpr()
@@ -480,7 +493,7 @@ Expr* Parser::parseTemplateCall(Expr* caller)
     {
         tempargs.push_back(parseTemplateArg());
 
-        if (at().type != Lexer::Comma && at().type != Lexer::GreaterThan) 
+        if (at().type != Lexer::Comma && at().type != Lexer::GreaterThan && at().type != Lexer::Equals) 
         {
             return newNode<BinaryExprType>(caller->token, caller, tempargs[0], "<");
         }
@@ -631,7 +644,6 @@ Expr* Parser::parseUnaryExpr()
         at().type == Lexer::Decrement
     )
     {
-
         Token op = eat();
         Expr* argument = parseExpr();
         return newNode<UnaryPrefixType>(op, op.value, argument);
@@ -820,6 +832,11 @@ Expr* Parser::parsePrimaryExpr()
     if (primary->kind == NodeType::Identifier && at().type == Lexer::LessThan)
     {
         primary = parseTemplateCall(primary);
+    }
+
+    if (at().type == Lexer::Dot)
+    {
+        primary = parseMemberChain(primary);
     }
 
     return primary;

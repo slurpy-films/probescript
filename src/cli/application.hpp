@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <filesystem>
+#include <algorithm>
 
 #include "frontend/ast.hpp"
 #include "runtime/values.hpp"
@@ -22,6 +23,8 @@ public:
     void run();
 
 private:
-    int argc;
-    char** argv;
+    std::string m_command;
+    std::vector<std::string> m_args;
+    std::vector<std::string> m_flags;
+    char** m_argv;
 };

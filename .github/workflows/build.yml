@@ -41,3 +41,14 @@ jobs:
       
       - name: Build
         run: cmake --build build --config Release
+
+      - name: Copy binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: cp build/probescript probescript
+
+      - name: Copy binary (Windows)
+        if: runner.os == 'Windows'
+        run: cp build/Release/probescript.exe probescript.exe
+
+      - name: Run tests
+        run: bash tests/run-tests.sh

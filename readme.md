@@ -26,7 +26,7 @@ cmake --build .
 ```
 
 ## Basic Syntax
-probescript uses curly brace syntax and optional semicolons. It uses var for variable declarations, fn for function declarations, class for class declarations, and probe for probe declarations. If and while statments are done in the C-like way like this:
+probescript uses curly brace syntax and optional semicolons. It uses var for variable declarations, fn for function declarations, class for class declarations, and probe for probe declarations. If and while statements are done in the C-like way like this:
 ```probe
 if (condition) {
     // body
@@ -71,7 +71,7 @@ fn add(a, b) {
 Classes are created with the **class** keyword. When you create a method in a class, it has access to the **this** object. When you modify that, you modify the object that is created with the class. To set the class constructor, create a fn constructor in the class body.
 ```probe
 class Animal {
-    constructor(age, species) {
+    new(age, species) {
         this.age = age;
         this.species = species;
     }
@@ -88,7 +88,7 @@ class Animal {
 Class inheritance is done with the **extends** keyword. When you have a class that inherits from another class, you can call the **super()** function to call the parent's constructor. It is not required, but it is best practice to call super() before using the **this** object. Example:
 ```probe
 class FarmAnimal extends Animal {
-    constructor(name, age, species) {
+    new(name, age, species) {
         super(age, species); // Call the Animal class constructor
         this.name = name;
     }
@@ -101,7 +101,7 @@ class FarmAnimal extends Animal {
 }
 
 class Cow extends FarmAnimal {
-    constructor(name, age) {
+    new(name, age) {
         super(name, age, "Cow");
     }
 }

@@ -1,0 +1,17 @@
+class Test
+{
+    a: num = 13;
+}
+
+class NotTest
+{
+    b: str = "14";
+}
+
+probe Main
+{
+    Main()
+    {
+        var t: Test = new NotTest;
+    }
+}
