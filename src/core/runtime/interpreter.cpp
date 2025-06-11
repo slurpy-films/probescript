@@ -14,6 +14,30 @@ Val evalArrowFunction(ArrowFunctionType* fn, EnvPtr env) {
     return std::make_shared<FunctionValue>("arrow", fn->params, env, fn->body);
 }
 
+Val evalTemplateCall(TemplateCallType* call, EnvPtr env)
+{
+    Val caller = eval(call->caller, env);
+    EnvPtr scope = std::make_shared<Env>(env);
+    std::string name = "template";
+    std::vector<VarDeclarationType*> params;
+    std::vector<Stmt*> body;
+
+    if (caller->type == ValueType::Function)
+    {
+        std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(caller);
+        name = fn->name;
+        params = fn->params;
+        body = fn->body;
+
+        for (size_t i = 0; i < fn->templateparams.size(); i++)
+        {
+            scope->declareVar(fn->templateparams[i]->identifier, (call->templateArgs.size() >= i ? eval(call->templateArgs[i], scope) : std::make_shared<UndefinedVal>()));
+        }
+    }
+
+    return std::make_shared<FunctionValue>(name, params, scope, body);
+}
+
 Val evalAssignment(AssignmentExprType* assignment, EnvPtr env) {
     if (assignment->assigne->kind != NodeType::Identifier) {
         return env->throwErr(ManualError("Expected Identifier in assignment", "AssignmentError"));
@@ -28,50 +52,17 @@ Val evalAssignment(AssignmentExprType* assignment, EnvPtr env) {
         return env->assignVar(varName, rightVal);
     }
 
-    if (assignment->op == "+=") {
-        if (leftVal->type == ValueType::String && rightVal->type == ValueType::String) {
-            std::string leftStr = std::static_pointer_cast<StringVal>(leftVal)->value;
-            std::string rightStr = std::static_pointer_cast<StringVal>(rightVal)->value;
-            return env->assignVar(varName, std::make_shared<StringVal>(leftStr + rightStr));
-        }
+    Val result;
 
-        if (leftVal->type == ValueType::String && rightVal->type == ValueType::Number) {
-            std::string leftStr = std::static_pointer_cast<StringVal>(leftVal)->value;
-            std::string rightStr = std::to_string(std::static_pointer_cast<NumberVal>(rightVal)->toNum());
-            return env->assignVar(varName, std::make_shared<StringVal>(leftStr + rightStr));
-        }
-
-        if (leftVal->type == ValueType::Number && rightVal->type == ValueType::String) {
-            std::string leftStr = std::to_string(std::static_pointer_cast<NumberVal>(leftVal)->toNum());
-            std::string rightStr = std::static_pointer_cast<StringVal>(rightVal)->value;
-            return env->assignVar(varName, std::make_shared<StringVal>(leftStr + rightStr));
-        }
-
-        if (leftVal->type == ValueType::Number && rightVal->type == ValueType::Number) {
-            double left = std::static_pointer_cast<NumberVal>(leftVal)->toNum();
-            double right = std::static_pointer_cast<NumberVal>(rightVal)->toNum();
-            return env->assignVar(varName, std::make_shared<NumberVal>(left + right));
-        }
-
-        return env->throwErr(ManualError("Unsupported types for += operator", "OperatorError"));
-    }
-
-    if (leftVal->type != ValueType::Number || rightVal->type != ValueType::Number) {
-        return env->throwErr(ManualError("Assignment operator '" + assignment->op + "' requires numeric values", "OperatorError"));
-    }
-
-    double left = std::static_pointer_cast<NumberVal>(leftVal)->toNum();
-    double right = std::static_pointer_cast<NumberVal>(rightVal)->toNum();
-    double result;
-
-    if (assignment->op == "-=") result = left - right;
-    else if (assignment->op == "*=") result = left * right;
-    else if (assignment->op == "/=") result = left / right;
+    if (assignment->op == "-=") result = leftVal->sub(rightVal);
+    else if (assignment->op == "*=") result = leftVal->mul(rightVal);
+    else if (assignment->op == "/=") result = leftVal->div(rightVal);
+    else if (assignment->op == "+=") result = leftVal->add(rightVal);
     else {
         return env->throwErr(ManualError("Unsupported assignment operator: " + assignment->op, "AssignmentError"));
     }
 
-    return env->assignVar(varName, std::make_shared<NumberVal>(result));
+    return env->assignVar(varName, result);
 }
 
 Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env) {
@@ -212,6 +203,7 @@ Val evalBooleanBinExpr(BinaryExprType* binop, EnvPtr env) {
 
 Val evalFunctionDeclaration(FunctionDeclarationType* declaration, EnvPtr env, bool onlyValue) {
     std::shared_ptr<FunctionValue> fn = std::make_shared<FunctionValue>(declaration->name, declaration->parameters, env, declaration->body);
+    fn->templateparams = declaration->templateparams;
 
     return onlyValue ? fn : env->declareVar(declaration->name, fn, true);
 }
@@ -224,13 +216,9 @@ Val evalIdent(IdentifierType* ident, EnvPtr env) {
 Val evalIfStmt(IfStmtType* stmt, EnvPtr baseEnv) {
     Val condition = eval(stmt->condition, baseEnv);
 
-    if (condition->type != ValueType::Boolean) {
-        return baseEnv->throwErr(ManualError("If statement condition must evaluate to a boolean, got " + condition->value, "TypeError"));
-    }
+    bool cond = condition->toBool();
 
-    std::shared_ptr<BooleanVal> boolval = std::static_pointer_cast<BooleanVal>(condition);
-
-    if (boolval->getValue()) {
+    if (cond) {
         EnvPtr env = std::make_shared<Env>(baseEnv);
         return evalBody(stmt->body, env);
     } else if (stmt->hasElse) {
@@ -271,7 +259,7 @@ Val evalImportStmt(ImportStmtType* importstmt, EnvPtr envptr, std::shared_ptr<Co
 
     Parser parser;
 
-    ProgramType* program = parser.produceAST(file);
+    ProgramType* program = parser.parse(file);
 
     std::shared_ptr<Context> conf = std::make_shared<Context>(RuntimeType::Exports);
 
@@ -505,6 +493,9 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config) {
         case NodeType::ArrayLiteral:
             return evalArray(static_cast<ArrayLiteralType*>(astNode), env);
 
+        case NodeType::CastExpr:
+            return eval(static_cast<CastExprType*>(astNode)->left, env);
+
         case NodeType::CallExpr:
             return evalCall(static_cast<CallExprType*>(astNode), env);
 
@@ -549,6 +540,9 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config) {
 
         case NodeType::TernaryExpr:
             return evalTernaryExpr(static_cast<TernaryExprType*>(astNode), env);
+        
+        case NodeType::TemplateCall:
+            return evalTemplateCall(static_cast<TemplateCallType*>(astNode), env);
 
         default:
             std::cerr << "Unexpected AST-node kind found: " << std::to_string(static_cast<int>(astNode->kind));

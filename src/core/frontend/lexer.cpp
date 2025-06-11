@@ -18,7 +18,7 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
         { "+", BinaryOperator }, { "-", BinaryOperator },
         { "*", BinaryOperator }, { "/", BinaryOperator },
         { "%", BinaryOperator }, { "=", Equals },
-        { "<", BinaryOperator }, { ">", BinaryOperator },
+        { "<", LessThan}, { ">", GreaterThan },
         { "!", Bang }, { "?", Ternary },
     };
 

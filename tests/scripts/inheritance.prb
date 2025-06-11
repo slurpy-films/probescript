@@ -1,0 +1,45 @@
+class Test
+{
+    a: num = 13;
+}
+
+class NotTest extends Test
+{
+    b: str = "test";
+    new()
+    {
+        this.a = 15;
+    }
+}
+
+probe Main
+{
+    Main()
+    {
+        var t: NotTest = new NotTest;
+        var failed: bool = false;
+
+        if (!t.a)
+        {
+            console.println("Test failed because 't' is expected to have a property 'a'");
+            failed = true;
+        }
+        else if (t.a != 15)
+        {
+            console.println("Test failed because t.a is expected to be 15");
+            failed = true;
+        }
+        else if (!t.b)
+        {
+            console.println("Test failed because 't' is expected to have a property 'b'");
+            failed = true;
+        }
+        else if (t.b != "test")
+        {
+            console.println("Test failed because t.b is expected to be 'test'");
+            failed = true;
+        }
+
+        if (failed) process.kill(1);
+    }
+}

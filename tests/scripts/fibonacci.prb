@@ -1,0 +1,30 @@
+fn fibonacci(n: num): num
+{
+    if (n <= 1)
+        return n;
+
+    var a = 0;
+    var b = 1;
+    for (var i: num = 2; i <= n; i++)
+    {
+        var temp: num = a + b;
+        a = b;
+        b = temp;
+    }
+
+    return b;
+}
+
+probe Main
+{
+    Main()
+    {
+        var result: num = fibonacci(13);
+
+        if (result != 233)
+        {
+            console.println("Test failed because 233 was expected as result of fibonacci(13) but got", result);
+            process.kill(1);
+        }
+    }
+}

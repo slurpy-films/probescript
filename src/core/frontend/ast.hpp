@@ -40,6 +40,9 @@ enum NodeType {
     TryStmt,
     BoolLiteral,
     TernaryExpr,
+    TemplateArgument,
+    TemplateCall,
+    CastExpr,
 };
 
 struct Stmt {
@@ -116,6 +119,7 @@ struct FunctionDeclarationType : public Stmt {
     bool staticRet = false;
     Expr* rettype = new UndefinedLiteralType();
     std::vector<VarDeclarationType*> parameters;
+    std::vector<VarDeclarationType*> templateparams;
     std::string name;
     std::vector<Stmt*> body;
 };
@@ -192,6 +196,34 @@ struct AssignmentExprType : public Expr {
     Expr* assigne;
     Expr* value;
     std::string op;
+};
+
+struct TemplateArgumentType : public Expr {
+    std::vector<Expr*> arguments;
+    
+    TemplateArgumentType(std::vector<Expr*> args) 
+        : arguments(args) {
+        kind = NodeType::TemplateArgument;
+    }
+};
+
+struct CastExprType : public Expr
+{
+    Expr* left;
+    Expr* type;
+
+    CastExprType(Expr* left, Expr* type)
+        : left(left), type(type), Expr(NodeType::CastExpr) {}
+};
+
+struct TemplateCallType : public Expr {
+    Expr* caller;
+    std::vector<Expr*> templateArgs;
+    
+    TemplateCallType(Expr* caller, std::vector<Expr*> args) 
+        : caller(caller), templateArgs(args) {
+        kind = NodeType::TemplateCall;
+    }
 };
 
 struct TernaryExprType : public Expr {

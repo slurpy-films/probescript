@@ -31,10 +31,17 @@ enum class TypeKind
 struct TypeVal
 {
     std::vector<VarDeclarationType*> params = {};
+    std::vector<VarDeclarationType*> templateparams = {};
     std::unordered_map<std::string, TypePtr> props = {};
+    TypePtr returntype;
+    VarDeclarationType* sourcenode;
 
     TypeVal(std::vector<VarDeclarationType*> params)
         : params(params) {}
+    TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype)
+        : params(params), returntype(returntype) {}
+    TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype, std::vector<VarDeclarationType*> templateparams)
+        : params(params), returntype(returntype), templateparams(templateparams) {}
     TypeVal(std::unordered_map<std::string, TypePtr> props)
         : props(props) {}
     TypeVal() {}
@@ -49,6 +56,7 @@ struct Type
     TypeValPtr val = std::make_shared<TypeVal>();
     std::string typeName;
     bool isInstance = false;
+    bool templateSub = false;
     TypePtr parent;
 
     Type(TypeKind type, std::string name, std::string typeName = "")
@@ -65,7 +73,9 @@ struct Type
         name(other->name),
         val(other->val),
         typeName(other->typeName),
-        isInstance(other->isInstance) {}
+        isInstance(other->isInstance),
+        templateSub(other->templateSub),
+        parent(other->parent) {}
 
     Type()
         : type(TypeKind::Any), name("any") {}

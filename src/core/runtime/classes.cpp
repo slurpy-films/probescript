@@ -76,9 +76,9 @@ Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
     }
     
 
-    if (std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.find("constructor") != std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.end())
+    if (std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.find("new") != std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.end())
     {
-        Val constructor = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"))->properties["constructor"];
+        Val constructor = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"))->properties["new"];
         evalCallWithFnVal(constructor, args, scope);
     }
 
@@ -110,7 +110,7 @@ void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<Obj
         if (stmt->kind == NodeType::FunctionDeclaration)
         {
             std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), superScope, true));
-            if (fnval->name == "constructor")
+            if (fnval->name == "new")
             {
                 cons = fnval;
                 hasCons = true;

@@ -19,7 +19,7 @@ class Env : public std::enable_shared_from_this<Env>
 public:
     Env(EnvPtr parentENV = nullptr);
 
-    std::unordered_map<std::string, Val> variables;
+    std::unordered_map<std::string, Val> variables = {};
 
     Val declareVar(std::string varName, Val value, bool constant = false);
 

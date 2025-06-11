@@ -1,0 +1,23 @@
+class Test
+{
+    a = 13;
+}
+
+probe Main
+{
+    Main()
+    {
+        var t: Test = new Test;
+
+        if (!t.a)
+        {
+            console.println("Test failed because 't' is expected to have a property 'a'");
+            process.kill(1);
+        }
+        else if (t.a != 13)
+        {
+            console.println("Test failed because t.a is expected to be 13");
+            process.kill(1);
+        }
+    }
+}

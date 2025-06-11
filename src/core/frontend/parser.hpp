@@ -16,7 +16,7 @@ T* newNode(Lexer::Token tok, Args&&... args) {
 class Parser
 {
 public:
-    ProgramType* produceAST(std::string& sourceCode, std::shared_ptr<Context> ctx = std::make_shared<Context>());
+    ProgramType* parse(std::string& sourceCode, std::shared_ptr<Context> ctx = std::make_shared<Context>());
 
 private:
     std::vector<Lexer::Token> tokens;
@@ -61,6 +61,14 @@ private:
 
     Expr* parseTernaryExpr();
 
+    Expr* parseAsExpr();
+
+    Expr* parseMemberExpr();
+
+    Expr* parseTemplateCall(Expr* caller);
+
+    Expr* parseTemplateArg();
+
     Expr* parseLogicalExpr();
 
     Expr* parseEqualityExpr();
@@ -82,9 +90,7 @@ private:
     Expr* parseArrowFunction();
 
     Expr* parseNewExpr();
-    
-    Expr* parseMemberExpr();
-    
+        
     Expr* parseMemberChain(Expr* expr);
 
     Expr* parsePrimaryExpr();

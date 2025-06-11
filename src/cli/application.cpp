@@ -1,5 +1,7 @@
 #include "application.hpp"
 
+fs::path g_currentCwd = std::filesystem::current_path();
+
 void showHelp(char* argv[])
 {
     std::cout << ConsoleColors::CYAN << "Probescript v" << __PROBESCRIPTVERSION__ << "\n" << ConsoleColors::RESET
@@ -12,34 +14,44 @@ void showHelp(char* argv[])
                 << ConsoleColors::YELLOW <<  "  init    Initialize a new probescript project\n" << ConsoleColors::RESET;
 }
 
-Application::Application(int l_argc, char* l_argv[])
+Application::Application(int argc, char* argv[])
 {
-    argc = l_argc;
-    argv = l_argv;
+    m_argv = argv;
+    for (size_t i = 1; i < argc; i++)
+    {
+        std::string arg(argv[i]);
+
+        if (arg.find("--") == 0 || arg.find("-") == 0)
+        {
+            m_flags.push_back(arg);
+        }
+        else if (m_command.empty())
+        {
+            m_command = arg;
+        }
+        else
+        {
+            m_args.push_back(arg);
+        }
+    }
 }
 
 void Application::run()
 {
-    if (argc < 2)
-    {
-        showHelp(argv);
-        return;
-    }
-
-    if (std::string(argv[1]) == "repl")
+    if (m_command == "repl")
     {
         REPL repl;
         repl.start();
         return;
-    } else if (std::string(argv[1]) == "run")
+    } else if (m_command == "run")
     {
-        if (argc < 3)
+        if (m_args.empty())
         {
-            std::cerr << "Run command expects 1 argument, " << argc - 2 << " given";
+            std::cerr << "Run command expects 1 argument, 0 given";
             exit(1);
         }
 
-        fs::path fileName(argv[2]);
+        fs::path fileName(m_args[0]);
 
         Parser parser;
         std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
@@ -55,12 +67,14 @@ void Application::run()
 
         std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
 
+        g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
         context->filename = std::filesystem::absolute(fileName).string();
         context->file = file;
         context->modules = indexedPair.first;
         context->project = indexedPair.second;
         
-        ProgramType* program = parser.produceAST(file, context);
+        ProgramType* program = parser.parse(file, context);
 
         std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
 
@@ -72,8 +86,12 @@ void Application::run()
         delete program;
 
         return;
-    } else if (std::string(argv[1]) == "help") showHelp(argv);
-    else if (std::string(argv[1]) == "init") 
+    }
+    else if (std::find(m_flags.begin(), m_flags.end(), "-h") != m_flags.end() || std::find(m_flags.begin(), m_flags.end(), "--help") != m_flags.end()) 
+        showHelp(m_argv);
+    else if (std::find(m_flags.begin(), m_flags.end(), "-v") != m_flags.end() || std::find(m_flags.begin(), m_flags.end(), "--version") != m_flags.end()) 
+        std::cout << "v" << __PROBESCRIPTVERSION__ << "\n";
+    else if (m_command == "init") 
     {
         std::string name;
         std::string main;
@@ -104,11 +122,11 @@ void Application::run()
         outMainFile.close();
         outProjectFile.close();
 
-        std::cout << "Project initialized! Run it with " << argv[0] << " run " << name;
+        std::cout << "Project initialized! Run it with " << m_argv[0] << " run " << name;
     } else
     {
-        std::cerr << "Unknown command: " << argv[1];
-        std::cerr << "\nUse " << argv[0] << " help to see commands";
+        std::cerr << "Unknown command: " << m_command;
+        std::cerr << "\nUse " << m_argv[0] << " help to see commands";
         exit(1);
     }
 }

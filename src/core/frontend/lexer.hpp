@@ -58,6 +58,8 @@ enum TokenType {
     Undefined,
     Bool,
     Ternary,
+    LessThan,
+    GreaterThan,
 };
 
 struct Token {
