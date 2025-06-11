@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -14,12 +16,7 @@ declare -a failed_files
 declare -a error_messages
 
 declare -a should_fail_patterns=(
-    "*/errors/*"
     "*/fail/*"
-    "*_error.prb"
-    "*_fail.prb"
-    "*/negative/*"
-    "*/should_fail/*"
 )
 
 should_fail() {
