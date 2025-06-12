@@ -3,7 +3,7 @@
 
 ![C++ CI](https://github.com/slurpy-films/probescript/actions/workflows/build.yml/badge.svg)
 
-## probescript is a programming language designed to be very modular, through its core feature probes.
+## Probescript is a programming language designed to be very modular, through its core feature probes.
 
 ## Code Example
 
@@ -16,6 +16,11 @@ probe Main {
 ```
 
 A probe in probescript is a modular unit similar to a class or function, and is the core building block of the language.
+
+## Intallation
+1. Go to the [latest release](https://github.com/slurpy-films/probescript/releases).
+2. Download and unzip the ZIP file that fits your operating system.
+3. Follow the instructions found in the `installation.txt` file.
 
 ## Building
 ```bash
@@ -60,7 +65,7 @@ probe HelloWorld {
 
 ```
 
-## Functions and Classes
+## Functions
 In probescript, functions are created with the **fn** keyword. Example:
 ```probe
 fn add(a, b) {
@@ -68,65 +73,6 @@ fn add(a, b) {
 }
 ```
 
-Classes are created with the **class** keyword. When you create a method in a class, it has access to the **this** object. When you modify that, you modify the object that is created with the class. To set the class constructor, create a fn constructor in the class body.
-```probe
-class Animal {
-    new(age, species) {
-        this.age = age;
-        this.species = species;
-    }
-
-    increaseAge(amount) {
-        age += amount;
-    }
-
-    age = 0;
-    species = undefined;
-}
-```
-
-Class inheritance is done with the **extends** keyword. When you have a class that inherits from another class, you can call the **super()** function to call the parent's constructor. It is not required, but it is best practice to call super() before using the **this** object. Example:
-```probe
-class FarmAnimal extends Animal {
-    new(name, age, species) {
-        super(age, species); // Call the Animal class constructor
-        this.name = name;
-    }
-
-    newYear() {
-        this.increaseAge(1); // Will call the increaseAge method made in the "Animal" class that this class inherits from
-    }
-
-    name = undefined;
-}
-
-class Cow extends FarmAnimal {
-    new(name, age) {
-        super(name, age, "Cow");
-    }
-}
-```
-
-To instantiate a class, use the **new** keyword.
-```probe
-var bob = new Cow("bob", 43); // { name: "bob", age: 43, species: Cow, constructor: [function constructor], newYear: [function constructor], increaseAge: [function increaseAge] }
-bob.newYear();
-bob.age // 44
-```
-
-## For Loops
-The for loop syntax in probescript is unique. You create a for loop with the for keyword. After the for keyword you need parentheses. In the for loop there are 3 sections: declarations, conditions, and updates, similar to any language with C-like syntax, but in probescript, they are divided by commas instead of semicolons, since semicolons are optional in probescript. If you need more than one declaration, condition or update, you can put them in parentheses and divide them with commas. Example:
-```probe
-// Example with one of each
-for (var i = 0, i < 10, i++) {
-    console.println(i); // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-}
-
-// Example using multiple declarations, conditions, and updates:
-for ((var i = 0, var j = 10), (i > j, j > 0), (i++, j--)) {
-    console.println(i, j);
-}
-```
 ## Import Syntax
 Imports are done with the **import** keyword. If you want to import a user made module, that file needs a **module** declaration at the very top of the file, like this: 
 ```probe
@@ -166,132 +112,4 @@ import MyModule.add as addTwoNumbers;
 addTwoNumbers(1, 3); // 4
 ```
 
-## Operators
-These are the operators probescript supports now, as well as a brief explanation.
-
-### Binary Operators
-These operators are used to perform operations between two values:
-
-    + (Addition Operator): Adds two operands.
-
-        Example: 5 + 3 results in 8.
-
-    - (Subtraction Operator): Subtracts the right operand from the left operand.
-
-        Example: 5 - 3 results in 2.
-
-    * (Multiplication Operator): Multiplies two operands.
-
-        Example: 5 * 3 results in 15.
-
-    / (Division Operator): Divides the left operand by the right operand.
-
-        Example: 6 / 3 results in 2.
-
-    % (Modulo Operator): Returns the remainder of division of two operands.
-
-        Example: 5 % 3 results in 2.
-
-    < (Less Than Operator): Checks if the left operand is less than the right operand.
-
-        Example: 5 < 10 results in true.
-
-    > (Greater Than Operator): Checks if the left operand is greater than the right operand.
-
-        Example: 5 > 3 results in true.
-
-    <= (Less Than or Equal To Operator): Checks if the left operand is less than or equal to the right operand.
-
-        Example: 5 <= 5 results in true.
-
-    >= (Greater Than or Equal To Operator): Checks if the left operand is greater than or equal to the right operand.
-
-        Example: 5 >= 3 results in true.
-
-    == (Equality Operator): Checks if two operands are equal.
-
-        Example: 5 == 5 results in true.
-
-    != (Inequality Operator): Checks if two operands are not equal.
-
-        Example: 5 != 3 results in true.
-
-### Assignment Operator
-
-This operator is used to assign values to variables:
-
-    = (Assignment Operator): Assigns the value of the right operand to the left operand.
-
-        Example: x = 10 assigns the value 10 to x.
-
-### Logical Operators
-
-These operators are used to perform logical operations:
-
-    && (Logical AND Operator): Returns true if both operands are true.
-
-        Example: true && false results in false.
-
-    || (Logical OR Operator): Returns true if at least one of the operands is true.
-
-        Example: true || false results in true.
-
-### Increment/Decrement Operators
-
-These operators are used to increase or decrease a value:
-
-    ++ (Increment Operator): Increases the value of the operand by 1.
-
-        Example: x++ increases x by 1.
-
-    -- (Decrement Operator): Decreases the value of the operand by 1.
-
-        Example: x-- decreases x by 1.
-
-### Assignment Operators
-
-These operators are used to perform operations and then assign the result to a variable:
-
-    += (Addition Assignment Operator): Adds the right operand to the left operand and assigns the result to the left operand.
-
-        Example: x += 5 is equivalent to x = x + 5.
-
-    -= (Subtraction Assignment Operator): Subtracts the right operand from the left operand and assigns the result to the left operand.
-
-        Example: x -= 5 is equivalent to x = x - 5.
-
-    *= (Multiplication Assignment Operator): Multiplies the left operand by the right operand and assigns the result to the left operand.
-
-        Example: x *= 5 is equivalent to x = x * 5.
-
-    /= (Division Assignment Operator): Divides the left operand by the right operand and assigns the result to the left operand.
-
-        Example: x /= 5 is equivalent to x = x / 5.
-
-### Comparison Operators
-
-These operators are used to compare two values:
-
-    == (Equality Operator): Checks if two operands are equal.
-
-        Example: 5 == 5 results in true.
-
-    != (Inequality Operator): Checks if two operands are not equal.
-
-        Example: 5 != 3 results in true.
-
-    < (Less Than Operator): Checks if the left operand is less than the right operand.
-
-        Example: 5 < 10 results in true.
-
-    > (Greater Than Operator): Checks if the left operand is greater than the right operand.
-
-        Example: 5 > 3 results in true.
-
-    <= (Less Than or Equal To Operator): Checks if the left operand is less than or equal to the right operand.
-
-        Example: 5 <= 5 results in true.
-
-    >= (Greater Than or Equal To Operator): Checks if the left operand is greater than or equal to the right operand.
-
-        Example: 5 >= 3 results in true.
+Further documentation is found in the `docs` folder.

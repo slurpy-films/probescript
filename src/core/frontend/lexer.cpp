@@ -148,16 +148,20 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
         }
         
 
-        if (isAlpha(src[0])) {
+        if (isAlpha(src[0]) || src[0] == "_")
+        {
             std::string ident = "";
             int l = 0;
-            while (!src.empty() && isAlpha(src[0])) {
+            while (!src.empty() && (isAlpha(src[0]) || src[0] == "_"))
+            {
                 ident += shift(src);
                 l++;
             }
-            if (keywords.find(ident) != keywords.end()) {
+            if (keywords.find(ident) != keywords.end())
+            {
                 tokens.push_back(token(ident, keywords[ident], { line, col }));
-            } else {
+            } else
+            {
                 tokens.push_back(token(ident, Identifier, { line, col }));
             }
             col += l;

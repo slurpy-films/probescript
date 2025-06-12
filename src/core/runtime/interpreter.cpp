@@ -87,11 +87,13 @@ Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env) {
 
         return std::make_shared<NumberVal>(value);
     } else if (expr->assigne->kind == NodeType::MemberExpr) {
-        MemberAssignmentType* member = new MemberAssignmentType(
+        MemberAssignmentType* member = newNode<MemberAssignmentType>(
+            expr->token,
             static_cast<MemberExprType*>(expr->assigne)->object,
             static_cast<MemberExprType*>(expr->assigne)->property,
-            new NumericLiteralType((expr->op == "++") ? 1 : -1),
-            static_cast<MemberExprType*>(expr->assigne)->computed
+            new NumericLiteralType(1),
+            static_cast<MemberExprType*>(expr->assigne)->computed,
+            expr->op
         );
 
         return evalMemberAssignment(member, env);
@@ -107,7 +109,6 @@ Val evalUnaryPrefix(UnaryPrefixType* expr, EnvPtr env) {
     if (expr->op == "!") {
         return std::make_shared<BooleanVal>(!val->toBool());
     }
-
 
     return std::make_shared<UndefinedVal>();
 }
@@ -279,34 +280,68 @@ Val evalImportStmt(ImportStmtType* importstmt, EnvPtr envptr, std::shared_ptr<Co
     return std::make_shared<UndefinedVal>();
 }
 
-Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env) {
+Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env)
+{
     Val obj = eval(expr->object, env);
     Val value = eval(expr->newvalue, env);
 
     std::string key;
 
-    if (expr->computed) {
+    if (expr->computed)
+    {
         Val propValue = eval(expr->property, env);
 
-        if (propValue->type == ValueType::Number) {
-            int index = std::static_pointer_cast<NumberVal>(propValue)->toNum();
+        if (propValue->type == ValueType::Number)
+        {
+            int index = propValue->toNum();
 
-            if (obj->type == ValueType::Array) {
+            if (obj->type == ValueType::Array)
+            {
                 std::shared_ptr<ArrayVal> array = std::static_pointer_cast<ArrayVal>(obj);
 
-                if (index >= array->items.size()) {
+                if (index >= array->items.size())
+                {
                     array->items.resize(index + 1, std::make_shared<UndefinedVal>());
                 }
 
-                array->items[index] = value;
+                if (expr->op == "=")
+                {
+                    array->items[index] = value;
+                }
+                else if (expr->op == "+=")
+                {
+                    array->items[index] = array->items[index]->add(value);
+                }
+                else if (expr->op == "-=")
+                {
+                    array->items[index] = array->items[index]->sub(value);
+                }
+                else if (expr->op == "*=")
+                {
+                    array->items[index] = array->items[index]->mul(value);
+                }
+                else if (expr->op == "/=")
+                {
+                    array->items[index] = array->items[index]->div(value);
+                }
+                else if (expr->op == "++")
+                {
+                    array->items[index] = array->items[index]->add(value);
+                }
+                else if (expr->op == "--")
+                {
+                    array->items[index] = array->items[index]->sub(value);
+                }
                 return array;
-            } else {
-                return env->throwErr(ManualError("Cannot use numeric index on non-array object", "TypeError"));
+            }
+            else
+            {
+                return env->throwErr(ManualError("Cannot use numeric index on non-array object", "MemberError"));
             }
         }
 
         if (propValue->type != ValueType::String) {
-            return env->throwErr(ManualError("Computed property must evaluate to a string or number", "TypeError"));
+            return env->throwErr(ManualError("Computed property must evaluate to a string or number", "MemberError"));
         }
 
         key = std::static_pointer_cast<StringVal>(propValue)->string;
@@ -317,7 +352,34 @@ Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env) {
 
     if (obj->type == ValueType::Object) {
         std::shared_ptr<ObjectVal> objectVal = std::static_pointer_cast<ObjectVal>(obj);
-        objectVal->properties[key] = value;
+        if (expr->op == "=")
+        {
+            objectVal->properties[key] = value;
+        }
+        else if (expr->op == "+=")
+        {
+            objectVal->properties[key] = objectVal->properties[key]->add(value);
+        }
+        else if (expr->op == "-=")
+        {
+            objectVal->properties[key] = objectVal->properties[key]->sub(value);
+        }
+        else if (expr->op == "*=")
+        {
+            objectVal->properties[key] = objectVal->properties[key]->mul(value);
+        }
+        else if (expr->op == "/=")
+        {
+            objectVal->properties[key] = objectVal->properties[key]->div(value);
+        }
+        else if (expr->op == "++")
+        {
+            objectVal->properties[key] = objectVal->properties[key]->add(value);
+        }
+        else if (expr->op == "--")
+        {
+            objectVal->properties[key] = objectVal->properties[key]->sub(value);
+        }
         return objectVal;
     }
 

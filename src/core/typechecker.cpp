@@ -243,7 +243,7 @@ TypePtr TC::checkMemberAssign(MemberAssignmentType* assign, TypeEnvPtr env)
     TypePtr obj = check(assign->object, env);
     
     std::string key;
-    if (!assign->computed)
+    if (!assign->computed && assign->property->kind == NodeType::Identifier)
     {
         key = static_cast<IdentifierType*>(assign->property)->symbol;
     }
