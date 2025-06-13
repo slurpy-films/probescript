@@ -1,6 +1,6 @@
 #include "application.hpp"
 
-char __PROBESCRIPTVERSION__[] = "1.0";
+char __PROBESCRIPTVERSION__[] = "0.2";
 
 int main(int argc, char* argv[])
 {

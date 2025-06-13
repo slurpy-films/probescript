@@ -7,16 +7,16 @@ probe Main
 {
     Main()
     {
-        var t: Test = new Test;
+        var class_instance: Test = new Test;
 
-        if (!t.a)
+        if (!class_instance.a)
         {
-            console.println("Test failed because 't' is expected to have a property 'a'");
+            console.println("Test failed because 'class_instance' is expected to have a property 'a'");
             process.kill(1);
         }
-        else if (t.a != 13)
+        else if (class_instance.a != 13)
         {
-            console.println("Test failed because t.a is expected to be 13");
+            console.println("Test failed because class_instance.a is expected to be 13");
             process.kill(1);
         }
     }

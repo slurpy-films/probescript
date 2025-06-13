@@ -377,11 +377,12 @@ struct MemberExprType : public Expr {
 };
 
 struct MemberAssignmentType : public Expr {
-    MemberAssignmentType(Expr* obj, Expr* property, Expr* value, bool computed) :
-        Expr(NodeType::MemberAssignment), object(obj), newvalue(value),property(property), computed(computed) {}
+    MemberAssignmentType(Expr* obj, Expr* property, Expr* value, bool computed, std::string op) :
+        Expr(NodeType::MemberAssignment), object(obj), newvalue(value),property(property), computed(computed), op(op) {}
     Expr* object;
     Expr* property;
     Expr* newvalue;
+    std::string op;
     bool computed;
 };
 

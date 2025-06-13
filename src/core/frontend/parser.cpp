@@ -382,7 +382,15 @@ Expr* Parser::parseAssignmentExpr()
     {
         Token op = eat();
         Expr* value = parseExpr();
-        return newNode<AssignmentExprType>(op, left, value, op.value);
+        if (left->kind == NodeType::MemberExpr)
+        {
+            MemberExprType* expr = static_cast<MemberExprType*>(left);
+            return newNode<MemberAssignmentType>(op, expr->object, expr->property, value, expr->computed, op.value);
+        }
+        else
+        {
+            return newNode<AssignmentExprType>(op, left, value, op.value);
+        }
     }
 
     return left;
@@ -468,17 +476,9 @@ Expr* Parser::parseMemberExpr()
             }
         }
 
-        if (at().type == Lexer::Equals)
-        {
-            eat();
-            Expr* value = parseExpr();
-            obj = newNode<MemberAssignmentType>(op, obj, property, value, computed);
-        } else
-        {
-            MemberExprType* member = newNode<MemberExprType>(op, obj, property, computed);
-            member->lastProp = lastProp;
-            obj = member;
-        }
+        MemberExprType* member = newNode<MemberExprType>(op, obj, property, computed);
+        member->lastProp = lastProp;
+        obj = member;
     }
 
     return obj;
@@ -743,17 +743,9 @@ Expr* Parser::parseMemberChain(Expr* expr)
             }
         }
         
-        if (at().type == Lexer::Equals)
-        {
-            eat();
-            Expr* value = parseExpr();
-            expr = newNode<MemberAssignmentType>(op, expr, property, value, computed);
-        } else
-        {
-            MemberExprType* member = newNode<MemberExprType>(op, expr, property, computed);
-            member->lastProp = lastProp;
-            expr = member;
-        }
+        MemberExprType* member = newNode<MemberExprType>(op, expr, property, computed);
+        member->lastProp = lastProp;
+        expr = member;
         
         if (at().type == Lexer::OpenParen)
         {
