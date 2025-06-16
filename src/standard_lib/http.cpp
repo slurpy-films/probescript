@@ -109,7 +109,7 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
                         headersMap->properties[key] = std::make_shared<StringVal>(value);
                     }
 
-                    req->properties["headers"] = headersMap;    
+                    req->properties["headers"] = headersMap;
                     if (headersMap->hasProperty("Cookie")) {
                         std::unordered_map<std::string, std::string> raw = parseCookies(headersMap->properties["Cookie"]->toString());
                         auto cookies = std::make_shared<ObjectVal>();

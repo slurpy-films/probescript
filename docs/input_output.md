@@ -38,7 +38,7 @@ Probescript has one primary function for reading input from the user:
 
 * `console.prompt(...)` – Displays a prompt with the provided arguments and waits for user input. The input is returned as a string (`str`).
 
-To convert input to a number or another type, use casting functions such as `num()`.
+To convert input to a number or another type, use casting classes such as `new num()`.
 
 **Example:**
 

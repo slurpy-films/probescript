@@ -122,11 +122,11 @@ void Application::run()
         outMainFile.close();
         outProjectFile.close();
 
-        std::cout << "Project initialized! Run it with " << m_argv[0] << " run " << name;
+        std::cout << "Project initialized! Run it with " << m_argv[0] << " run " << name << "\n";
     } else
     {
         std::cerr << "Unknown command: " << m_command;
-        std::cerr << "\nUse " << m_argv[0] << " help to see commands";
+        std::cerr << "\nUse " << m_argv[0] << " help to see commands\n";
         exit(1);
     }
 }

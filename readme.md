@@ -46,23 +46,22 @@ while (condition) {
 When you make a new probescript project, you should have a main file that has your Main probe. That probe will be run when you start your program. A probe is a hybrid between a function and a class, because it can be called as a function, but it can also inherit like a class. When a probe is called, either as a function or as the Main probe, it needs a run function. The run function will be called with the args that the probe is called with, or none if it is the Main probe. A function with the same name as the probe will be the run function. Example:
 
 ```probe
+probe HelloWorld {
+    print(message) {
+        console.println(message);
+    }
+    
+    HelloWorld() {
+        print("Hello, World"); // This will call the print function created below
+    }
+}
+
 probe Main {
     Main() {
         // This code will run when your program starts
         HelloWorld(); // This will call the run function in the HelloWorld probe
     }
 }
-
-probe HelloWorld {
-    HelloWorld() {
-        print("Hello, World"); // This will call the print function created below
-    }
-
-    print(message) {
-        console.println(message);
-    }
-}
-
 ```
 
 ## Functions
