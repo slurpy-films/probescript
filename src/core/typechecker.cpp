@@ -241,15 +241,29 @@ TypePtr TC::checkTernaryExpr(TernaryExprType* expr, TypeEnvPtr env)
 TypePtr TC::checkMemberAssign(MemberAssignmentType* assign, TypeEnvPtr env)
 {
     TypePtr obj = check(assign->object, env);
+    TypePtr val = check(assign->newvalue, env);
     
     std::string key;
     if (!assign->computed && assign->property->kind == NodeType::Identifier)
     {
         key = static_cast<IdentifierType*>(assign->property)->symbol;
+        if (obj->val->props.find(key) != obj->val->props.end())
+        {
+            if (!compare(val, obj->val->props[key], env))
+            {
+                std::cerr << TypeError(val->name + " is not compatible with type " + obj->val->props[key]->name, assign->token, m_context);
+                exit(1);
+            }
+        }
+        else if (obj->type == TypeKind::Module)
+        {
+            std::cerr << TypeError(obj->name + " does not have property " + key, assign->token, m_context);
+            exit(1);
+        }
     }
 
     if (key.empty()) return std::make_shared<Type>(TypeKind::Any, "any");
-    return check(assign->newvalue, env);
+    return val;
 }
 
 TypePtr TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, std::shared_ptr<Context> ctx)
@@ -296,7 +310,13 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
         {
             VarDeclarationType* decl = static_cast<VarDeclarationType*>(stmt);
 
-            thisobj->val->props[decl->identifier] = check(decl->value, scope);
+            if (decl->staticType && decl->value && !compare(check(decl->value, scope), getType(decl->type, scope), scope))
+            {
+                std::cerr << TypeError(check(decl->value, scope)->name + " is not compatible with type " + getType(decl->type, scope)->name, decl->token, m_context);
+                exit(1);
+            }
+
+            thisobj->val->props[decl->identifier] = decl->staticType ? getType(decl->type, scope) : std::make_shared<Type>(TypeKind::Any, "any");
         }
         else if (stmt->kind == NodeType::FunctionDeclaration)
         {

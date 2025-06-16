@@ -23,7 +23,7 @@ private:
     std::string file;
     std::shared_ptr<Context> context;
 
-    // Statment methods
+    // Statement methods
 
     Stmt* parseStmt();
 

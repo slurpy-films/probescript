@@ -47,27 +47,67 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
     {
         "num",
         {
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.empty()) return env->throwErr(ArgumentError("Usage: num(val: any)"));
-                if (!isNum(args[0]->toString()))
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (!args.empty() && !isNum(args[0]->toString()))
                 {
                     return env->throwErr(ArgumentError("Invalid argument: " + args[0]->toString() + " is not a number"));
                 }
 
-                return std::make_shared<NumberVal>(args[0]->toNum());
+                return std::make_shared<NumberVal>(!args.empty() ? args[0]->toNum() : 0);
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function")
+            std::make_shared<Type>(TypeKind::Class, "native class")
         }
     },
     {
         "str",
         {
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.empty()) return env->throwErr(ArgumentError("Usage: str(val: any)"));
-
-                return std::make_shared<StringVal>(args[0]->toString());
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+                return std::make_shared<StringVal>(!args.empty() ? args[0]->toString() : "");
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function")
+            std::make_shared<Type>(TypeKind::Class, "native class")
+        }
+    },
+    {
+        "bool",
+        {
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+                return std::make_shared<BooleanVal>(!args.empty() ? args[0]->toBool() : false);
+            }),
+            std::make_shared<Type>(TypeKind::Class, "native class")
+        }
+    },
+    {
+        "map",
+        {
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+                return std::make_shared<ObjectVal>(args.empty() ? std::unordered_map<std::string, Val>() : args[0]->properties);
+            }),
+            std::make_shared<Type>(TypeKind::Class, "native class")
+        }
+    },
+    {
+        "function",
+        {
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (args.empty() || args[0]->type == ValueType::Function) return env->throwErr(ArgumentError("Usage: new function(fn: function)"));
+
+                return std::static_pointer_cast<FunctionValue>(args[0]);
+            }),
+            std::make_shared<Type>(TypeKind::Class, "native class")
+        }
+    },
+    {
+        "array",
+        {
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+                std::shared_ptr<ArrayVal> array = std::make_shared<ArrayVal>();
+
+                for (Val val : args)
+                    array->items.push_back(val);
+
+                return array;
+            }),
+            std::make_shared<Type>(TypeKind::Class, "native class")
         }
     },
     {
