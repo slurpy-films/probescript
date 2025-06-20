@@ -476,6 +476,18 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
 
     if (fn->type == TypeKind::Function)
     {
+        // First check that all required parameters are provided
+        for (size_t i = 0; i < fn->val->params.size(); i++)
+        {
+            if (i >= call->args.size() && fn->val->params[i]->value && fn->val->params[i]->value->kind == NodeType::UndefinedLiteral)
+            {
+                std::cerr <<
+                    TypeError("Function expects " + std::to_string(fn->val->params.size()) + " arguments, but " + std::to_string(call->args.size()) + " were provided", call->token, m_context);
+                exit(1);
+            }
+        }
+
+        // Then check the type of all arguments
         for (size_t i = 0; i < call->args.size(); i++)
         {
             TypePtr type = check(call->args[i], scope);
@@ -503,6 +515,18 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
 
         TypePtr run = fn->val->props["run"];
 
+        // First check that all required parameters are provided
+        for (size_t i = 0; i < run->val->params.size(); i++)
+        {
+            if (i >= call->args.size() && run->val->params[i]->value && run->val->params[i]->value->kind == NodeType::UndefinedLiteral)
+            {
+                std::cerr <<
+                    TypeError("Probe expects " + std::to_string(run->val->params.size()) + " arguments, but " + std::to_string(call->args.size()) + " were provided", call->token, m_context);
+                exit(1);
+            }
+        }
+
+        // Then check the types of all arguments
         for (size_t i = 0; i < call->args.size(); i++)
         {
             TypePtr type = check(call->args[i], scope);
@@ -514,7 +538,7 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
             if (!compare(getType(run->val->params[i]->type, scope), type, scope))
             {
                 std::cerr
-                    << TypeError("Function parameter " + std::to_string(i + 1) + " expects " + getType(run->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token, m_context);
+                    << TypeError("Probe parameter " + std::to_string(i + 1) + " expects " + getType(run->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token, m_context);
                 exit(1);
             }
         }

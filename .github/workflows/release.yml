@@ -1,0 +1,75 @@
+name: Build and Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, windows]
+        arch: [x64, arm64]
+
+        include:
+          - os: linux
+            arch: x64
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: x64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v2
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v4
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=${{ matrix.os }} \
+            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
+
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --config Release
+
+      - name: Prepare zip structure
+        run: |
+          mkdir dist
+          EXT=""
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            EXT=".exe"
+          fi
+
+          cp build/probescript${EXT} dist/
+
+          cp src/installer/installation.txt dist/
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            cp src/installer/probescript-setup.bat dist/
+          else
+            cp src/installer/probescript-setup.sh dist/
+          fi
+
+      - name: Zip files
+        run: |
+          cd dist
+          FILENAME="probescript-${{ matrix.os }}-${{ matrix.arch }}.zip"
+          zip "$FILENAME" probescript* installation.txt
+          ls -l "$FILENAME"
+
+      - name: Upload zipped asset to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
