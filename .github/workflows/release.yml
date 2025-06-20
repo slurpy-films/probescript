@@ -2,10 +2,11 @@ name: Build and Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
