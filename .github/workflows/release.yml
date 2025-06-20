@@ -1,9 +1,7 @@
 name: Build and Release
-
 on:
   release:
     types: [published]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,7 +9,6 @@ jobs:
       matrix:
         os: [linux, windows]
         arch: [x64, arm64]
-
         include:
           - os: linux
             arch: x64
@@ -19,17 +16,13 @@ jobs:
             arch: arm64
           - os: windows
             arch: x64
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v2
-
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@v4
-
       - name: Configure CMake
         run: |
           mkdir build
@@ -37,12 +30,16 @@ jobs:
           cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_SYSTEM_NAME=${{ matrix.os }} \
             -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
-
       - name: Build
         run: |
           cd build
           cmake --build . --config Release
-
+      - name: Debug - List build contents
+        run: |
+          echo "Contents of build directory:"
+          find build -name "probescript*" -type f || true
+          ls -la build/ || true
+          ls -la build/Release/ || true
       - name: Prepare zip structure
         run: |
           mkdir dist
@@ -50,23 +47,32 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             EXT=".exe"
           fi
-
-          cp build/probescript${EXT} dist/
-
+          
+          if [ -f "build/probescript${EXT}" ]; then
+            cp build/probescript${EXT} dist/
+          elif [ -f "build/Release/probescript${EXT}" ]; then
+            cp build/Release/probescript${EXT} dist/
+          elif [ -f "build/Debug/probescript${EXT}" ]; then
+            cp build/Debug/probescript${EXT} dist/
+          else
+            echo "ERROR: Could not find probescript${EXT} in any expected location"
+            echo "Build directory contents:"
+            find build -name "*probescript*" || true
+            exit 1
+          fi
+          
           cp src/installer/installation.txt dist/
           if [ "${{ matrix.os }}" = "windows" ]; then
             cp src/installer/probescript-setup.bat dist/
           else
             cp src/installer/probescript-setup.sh dist/
           fi
-
       - name: Zip files
         run: |
           cd dist
           FILENAME="probescript-${{ matrix.os }}-${{ matrix.arch }}.zip"
           zip "$FILENAME" probescript* installation.txt
           ls -l "$FILENAME"
-
       - name: Upload zipped asset to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
