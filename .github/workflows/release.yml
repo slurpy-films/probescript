@@ -68,7 +68,11 @@ jobs:
         run: |
           cd dist
           FILENAME="probescript-${{ matrix.os }}-${{ matrix.arch }}.zip"
-          zip "$FILENAME" probescript* installation.txt
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            powershell Compress-Archive -Path probescript*,installation.txt -DestinationPath "$FILENAME"
+          else
+            zip "$FILENAME" probescript* installation.txt
+          fi
         shell: bash
       - name: Upload zipped asset to GitHub Release
         uses: softprops/action-gh-release@v2
