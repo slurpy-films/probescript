@@ -10,7 +10,7 @@ class B extends A
 
 probe Main
 {
-    template<A, B>(a: A, b: B): A
+    template<A, B>(): A
     {
         return new B;
     }
