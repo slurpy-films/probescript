@@ -2,6 +2,20 @@
 
 fs::path g_currentCwd = std::filesystem::current_path();
 
+extern "C"
+{
+    const char* interpret(const char* raw)
+    {
+        std::string code = std::string(raw);
+        ProgramType* program = Parser().parse(code);
+        Val result = eval(program, std::make_shared<Env>());
+
+        static std::string lastResult;
+        lastResult = result->toString();
+        return lastResult.c_str();
+    }
+}
+
 void showHelp(char* argv[])
 {
     std::cout << ConsoleColors::CYAN << "Probescript v" << __PROBESCRIPTVERSION__ << "\n" << ConsoleColors::RESET
