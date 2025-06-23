@@ -17,8 +17,7 @@ TypePtr TypeEnv::declareVar(std::string name, TypePtr type)
 {
     if (m_variables.find(name) != m_variables.end())
     {
-        std::cerr << ManualError("Variable " + name + " is already defined", "RedefinitionError");
-        exit(1);
+        throw std::runtime_error(ManualError("Variable " + name + " is already defined", "RedefinitionError"));
     }
 
     m_variables[name] = type;
@@ -34,8 +33,7 @@ TypePtr TypeEnv::lookUp(std::string name)
         return m_parent->lookUp(name);
     else
     {
-        std::cerr << ManualError("Variable " + name + " is not defined", "ReferenceError");
-        exit(1);
+        throw std::runtime_error(ManualError("Variable " + name + " is not defined", "ReferenceError"));
     }
 }
 
@@ -172,16 +170,14 @@ TypePtr TC::checkReturnStmt(ReturnStmtType* stmt, TypeEnvPtr env)
 {
     if (!m_currentret)
     {
-        std::cerr << TypeError("Did not expect return statement", stmt->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Did not expect return statement", stmt->token, m_context));
     }
 
     TypePtr rettype = check(stmt->stmt, env);
 
     if (!compare(m_currentret, rettype, env))
     {
-        std::cerr << TypeError(rettype->name + " does not match expected return type, " + m_currentret->name, stmt->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError(rettype->name + " does not match expected return type, " + m_currentret->name, stmt->token, m_context));
     }
 
     return std::make_shared<Type>(TypeKind::Any, "any");
@@ -216,8 +212,7 @@ TypePtr TC::checkCastExpr(CastExprType* expr, TypeEnvPtr env)
 
     if (!compare(left, type, env))
     {
-        std::cerr << TypeError("Bad cast: " + type->name + " is not compatible with " + left->name, expr->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Bad cast: " + type->name + " is not compatible with " + left->name, expr->token, m_context));
     }
 
     return type;
@@ -231,8 +226,7 @@ TypePtr TC::checkTernaryExpr(TernaryExprType* expr, TypeEnvPtr env)
 
     if (!compare(alt, cons, env))
     {
-        std::cerr << TypeError("Ternary expression operands are incompatible: " + cons->name + " and " + alt->name, expr->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Ternary expression operands are incompatible: " + cons->name + " and " + alt->name, expr->token, m_context));
     }
 
     return cons;
@@ -251,14 +245,12 @@ TypePtr TC::checkMemberAssign(MemberAssignmentType* assign, TypeEnvPtr env)
         {
             if (!compare(val, obj->val->props[key], env))
             {
-                std::cerr << TypeError(val->name + " is not compatible with type " + obj->val->props[key]->name, assign->token, m_context);
-                exit(1);
+                throw std::runtime_error(TypeError(val->name + " is not compatible with type " + obj->val->props[key]->name, assign->token, m_context));
             }
         }
         else if (obj->type == TypeKind::Module)
         {
-            std::cerr << TypeError(obj->name + " does not have property " + key, assign->token, m_context);
-            exit(1);
+            throw std::runtime_error(TypeError(obj->name + " does not have property " + key, assign->token, m_context));
         }
     }
 
@@ -274,8 +266,7 @@ TypePtr TC::checkExportStmt(Stmt* stmt, TypeEnvPtr env, std::shared_ptr<Context>
 
         if (assign->assigne->kind != NodeType::Identifier)
         {
-            std::cerr << TypeError("Assignment exporting can only be used on identifiers", assign->token, m_context);
-            exit(1);
+            throw std::runtime_error(TypeError("Assignment exporting can only be used on identifiers", assign->token, m_context));
         }
 
         return check(new VarDeclarationType(assign->value, static_cast<IdentifierType*>(assign->assigne)->symbol), env, ctx);
@@ -312,8 +303,7 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 
             if (decl->staticType && decl->value && !compare(check(decl->value, scope), getType(decl->type, scope), scope))
             {
-                std::cerr << TypeError(check(decl->value, scope)->name + " is not compatible with type " + getType(decl->type, scope)->name, decl->token, m_context);
-                exit(1);
+                throw std::runtime_error(TypeError(check(decl->value, scope)->name + " is not compatible with type " + getType(decl->type, scope)->name, decl->token, m_context));
             }
 
             thisobj->val->props[decl->identifier] = decl->staticType ? getType(decl->type, scope) : std::make_shared<Type>(TypeKind::Any, "any");
@@ -356,8 +346,7 @@ TypePtr TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
 
         if (!compare(vartype, assigntype, env))
         {
-            std::cerr << TypeError("Cannot convert " + assigntype->name + " to " + vartype->name, decl->token, m_context);
-            exit(1);
+            throw std::runtime_error(TypeError("Cannot convert " + assigntype->name + " to " + vartype->name, decl->token, m_context));
         }
     }
 
@@ -394,8 +383,7 @@ TypePtr TC::checkAssign(AssignmentExprType* assign, TypeEnvPtr env)
 
     if (!compare(assigne, value, env))
     {
-        std::cerr << TypeError("Cannot convert " + value->name + " to " + assigne->name, assign->value->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Cannot convert " + value->name + " to " + assigne->name, assign->value->token, m_context));
     }
 
     return value;
@@ -481,9 +469,9 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
         {
             if (i >= call->args.size() && fn->val->params[i]->value && fn->val->params[i]->value->kind == NodeType::UndefinedLiteral)
             {
-                std::cerr <<
-                    TypeError("Function expects " + std::to_string(fn->val->params.size()) + " arguments, but " + std::to_string(call->args.size()) + " were provided", call->token, m_context);
-                exit(1);
+                throw std::runtime_error(
+                    TypeError("Function expects " + std::to_string(fn->val->params.size()) + " arguments, but " + std::to_string(call->args.size()) + " were provided", call->token, m_context)
+                );
             }
         }
 
@@ -498,9 +486,9 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
 
             if (!compare(getType(fn->val->params[i]->type, scope), type, scope))
             {
-                std::cerr
-                    << TypeError("Function parameter " + std::to_string(i + 1) + " expects " + getType(fn->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token, m_context);
-                exit(1);
+                throw std::runtime_error(
+                    TypeError("Function parameter " + std::to_string(i + 1) + " expects " + getType(fn->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token, m_context)
+                );
             }
         }
 
@@ -509,8 +497,7 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
     {
         if (fn->val->props.find("run") == fn->val->props.end() || fn->val->props["run"]->type != TypeKind::Function)
         {
-            std::cerr << TypeError("Probe has no 'run' method or it is not of type function", call->calee->token, m_context);
-            exit(1);
+            throw std::runtime_error(TypeError("Probe has no 'run' method or it is not of type function", call->calee->token, m_context));
         }
 
         TypePtr run = fn->val->props["run"];
@@ -520,9 +507,9 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
         {
             if (i >= call->args.size() && run->val->params[i]->value && run->val->params[i]->value->kind == NodeType::UndefinedLiteral)
             {
-                std::cerr <<
-                    TypeError("Probe expects " + std::to_string(run->val->params.size()) + " arguments, but " + std::to_string(call->args.size()) + " were provided", call->token, m_context);
-                exit(1);
+                throw std::runtime_error(
+                    TypeError("Probe expects " + std::to_string(run->val->params.size()) + " arguments, but " + std::to_string(call->args.size()) + " were provided", call->token, m_context)
+                );
             }
         }
 
@@ -537,17 +524,16 @@ TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
 
             if (!compare(getType(run->val->params[i]->type, scope), type, scope))
             {
-                std::cerr
-                    << TypeError("Probe parameter " + std::to_string(i + 1) + " expects " + getType(run->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token, m_context);
-                exit(1);
+                throw std::runtime_error(
+                    TypeError("Probe parameter " + std::to_string(i + 1) + " expects " + getType(run->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token, m_context)
+                );
             }
         }
 
         return std::make_shared<Type>(TypeKind::Any, "any");
     } else
     {
-        std::cerr << TypeError("Only function and probes can be called, but got " + fn->name, call->calee->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Only function and probes can be called, but got " + fn->name, call->calee->token, m_context));
     }
 }
 
@@ -577,15 +563,13 @@ TypePtr TC::checkMemberExpr(MemberExprType* expr, TypeEnvPtr env)
 
         if (obj->type == TypeKind::Module)
         {
-            std::cerr << TypeError("Object does not have property " + ident->symbol, ident->token, m_context);
-            exit(1);
+            throw std::runtime_error(TypeError("Object does not have property " + ident->symbol, ident->token, m_context));
         }
     }
 
     if (obj->type == TypeKind::Module)
     {
-        std::cerr << TypeError("Object does not have that property", expr->property->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Object does not have that property", expr->property->token, m_context));
     }
 
     return std::make_shared<Type>(TypeKind::Any, "any");
@@ -641,8 +625,7 @@ TypePtr TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, std::shared_pt
     {
         if (ctx->modules.find(stmt->name) == ctx->modules.end())
         {
-            std::cerr << ManualError("Module " + stmt->name + " not found", "ImportError");
-            exit(1);
+            throw std::runtime_error(ManualError("Module " + stmt->name + " not found", "ImportError"));
         }
 
         fs::path path = ctx->modules[stmt->name];
@@ -683,8 +666,7 @@ TypePtr TC::checkNewExpr(NewExprType* expr, TypeEnvPtr env)
 
     if (cls->type != TypeKind::Class)
     {
-        std::cerr << TypeError("Expected constructor to be of type class, got " + cls->name, expr->constructor->token, m_context);
-        exit(1);
+        throw std::runtime_error(TypeError("Expected constructor to be of type class, got " + cls->name, expr->constructor->token, m_context));
     }
 
     TypeValPtr val = std::make_shared<TypeVal>(cls->val->props);
@@ -715,8 +697,7 @@ std::unordered_map<std::string, TypePtr> TC::getExports(ProgramType* program, st
                 case NodeType::AssignmentExpr:
                     if (static_cast<AssignmentExprType*>(exportstmt->exporting)->assigne->kind != NodeType::Identifier)
                     {
-                        std::cerr << TypeError("Only identifiers can be exported in assignment exporting", static_cast<AssignmentExprType*>(exportstmt->exporting)->assigne->token, m_context);
-                        exit(1);
+                        throw std::runtime_error(TypeError("Only identifiers can be exported in assignment exporting", static_cast<AssignmentExprType*>(exportstmt->exporting)->assigne->token, m_context));
                     }
                     exports[static_cast<IdentifierType*>(static_cast<AssignmentExprType*>(exportstmt->exporting)->assigne)->symbol]
                         = check(static_cast<AssignmentExprType*>(exportstmt->exporting)->value, env, ctx);
@@ -734,8 +715,7 @@ std::unordered_map<std::string, TypePtr> TC::getExports(ProgramType* program, st
                         = check(static_cast<ClassDefinitionType*>(exportstmt->exporting), env, ctx);
                     break;
                 default:
-                    std::cerr << TypeError("Unknown export type", exportstmt->exporting->token, m_context);
-                    exit(1);
+                    throw std::runtime_error(TypeError("Unknown export type", exportstmt->exporting->token, m_context));
             }
         } else check(stmt, env, ctx);
     }

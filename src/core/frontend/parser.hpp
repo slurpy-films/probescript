@@ -2,6 +2,7 @@
 #include "frontend/ast.hpp"
 #include "frontend/lexer.hpp"
 #include <iostream>
+#include <stdexcept>
 #include "utils.hpp"
 #include "errors.hpp"
 #include "context.hpp"

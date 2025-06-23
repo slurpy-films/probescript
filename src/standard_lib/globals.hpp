@@ -5,3 +5,6 @@
 #include "types.hpp"
 #include "env.hpp"
 #include "errors.hpp"
+#include "frontend/parser.hpp"
+#include "runtime/interpreter.hpp"
+#include <regex>

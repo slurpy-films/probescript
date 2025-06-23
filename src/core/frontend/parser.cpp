@@ -307,8 +307,7 @@ Stmt* Parser::parseIfStmt()
     Token lastToken = eat();
     if (lastToken.type != Lexer::ClosedParen)
     {
-        std::cerr << SyntaxError("Expected closing parentheses, recieved " + lastToken.value, lastToken, context);
-        exit(1);
+        throw std::runtime_error(SyntaxError("Expected closing parentheses, recieved " + lastToken.value, lastToken, context));
     }
 
     std::vector<Stmt*> body = parseBody();
@@ -345,8 +344,7 @@ VarDeclarationType* Parser::parseVarDeclaration(bool isConstant, bool tkEaten)
     {
         if (isConstant)
         {
-            std::cout << SyntaxError("Must assign value to constant variable", at(), context);
-            exit(1);
+            throw std::runtime_error(SyntaxError("Must assign value to constant variable", at(), context));
         }
 
         if (!hasType)
@@ -458,8 +456,7 @@ Expr* Parser::parseMemberExpr()
 
             if (property->kind != NodeType::Identifier)
             {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
-                exit(1);
+                throw std::runtime_error(SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context));
             }
 
             lastProp = static_cast<IdentifierType*>(property)->symbol;
@@ -725,8 +722,7 @@ Expr* Parser::parseMemberChain(Expr* expr)
             
             if (property->kind != NodeType::Identifier)
             {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
-                exit(1);
+                throw std::runtime_error(SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context));
             }
             
             lastProp = static_cast<IdentifierType*>(property)->symbol;
@@ -817,8 +813,7 @@ Expr* Parser::parsePrimaryExpr()
             break;
 
         default:
-            std::cout << SyntaxError("Unexpected token found while parsing: " + at().value, at(), context);
-            exit(1);
+            throw std::runtime_error(SyntaxError("Unexpected token found while parsing: " + at().value, at(), context));
     }
 
     if (primary->kind == NodeType::Identifier && at().type == Lexer::LessThan)
@@ -1004,8 +999,7 @@ Lexer::Token Parser::expect(Lexer::TokenType type, std::string err)
     Lexer::Token prev = shift(tokens);
     if (prev.type != type)
     {
-        std::cerr << SyntaxError(err, prev, context);
-        exit(1);
+        throw std::runtime_error(SyntaxError(err, prev, context));
     }
 
     return prev;

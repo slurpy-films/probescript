@@ -17,8 +17,7 @@ Val Env::declareVar(std::string varname, Val value, bool constant)
     if (!m_ready) init();
     if (variables.find(varname) != variables.end())
     {
-        std::cout << "Variable " << varname << " is already defined" << std::endl;
-        exit(1);
+        throw std::runtime_error("Variable " + varname + " is already defined\n");
     }
 
     variables[varname] = value;
@@ -33,8 +32,7 @@ Val Env::assignVar(std::string varname, Val value)
 
     if (env->constants.find(varname) != env->constants.end() && env->constants[varname])
     {
-        std::cout << "Assignment to constant variable " << varname << std::endl;
-        exit(1);
+        throw std::runtime_error("Assignment to constant variable " + varname + "\n");
     }
 
     env->variables[varname] = value;
@@ -61,8 +59,7 @@ std::shared_ptr<ReturnSignal> Env::throwErr(std::string err)
         return parent->throwErr(err);
     } else
     {
-        std::cerr << err;
-        exit(1);
+        throw std::runtime_error(err);
     }
 
     return std::make_shared<ReturnSignal>(std::make_shared<UndefinedVal>());
@@ -79,8 +76,7 @@ EnvPtr Env::resolve(std::string varname)
 
     if (!parent)
     {
-        std::cout << "Cannot resolve variable " << varname << " as it does not exist";
-        exit(1);
+        throw std::runtime_error("Cannot resolve variable " + varname + " as it does not exist");
     }
 
     return parent->resolve(varname);

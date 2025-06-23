@@ -31,15 +31,13 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                         eval(stmt, scope, config);
                         break;
                     default:
-                        std::cerr << "Only variable, function, class, and probe declarations are allowed in program bodies";
-                        exit(1);
+                        throw std::runtime_error(ManualError("Only variable, function, class, and probe declarations are allowed in program bodies", "ProgramError"));
                 }
             }
         }
 
         if (!foundProbe) {
-            std::cerr << "Probe " << config->probeName << " is not declared";
-            exit(1);
+            throw std::runtime_error(ManualError("Probe " + config->probeName + " is not defined", "MainError"));
         }
 
 
@@ -121,8 +119,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     }
 
                     default:
-                        std::cerr << ManualError("Type cannot be exported", "ExportError");
-                        exit(1);
+                        throw std::runtime_error(ManualError("Unknown export type", "ExportError"));
                 }
 
                 exports[exportname] = exporting;

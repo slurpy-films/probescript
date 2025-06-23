@@ -4,6 +4,7 @@
 #include <memory>
 #include "types.hpp"
 #include "runtime/values.hpp"
+#include <stdexcept>
 
 extern std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals;
 

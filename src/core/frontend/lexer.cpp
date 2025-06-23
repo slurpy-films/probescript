@@ -168,8 +168,7 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
             continue;
         }
 
-        std::cout << "Unrecognized character in source: '" << src[0] << "'" << std::endl;
-        exit(1);
+        throw std::runtime_error("Unrecognized character in source: '" + src[0] + "'\n");
     }
 
     tokens.push_back(token("EndOfFile", END, { line, col }));

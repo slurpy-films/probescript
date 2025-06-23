@@ -6,13 +6,18 @@ extern "C"
 {
     const char* interpret(const char* raw)
     {
-        std::string code = std::string(raw);
-        ProgramType* program = Parser().parse(code);
-        Val result = eval(program, std::make_shared<Env>());
+        try
+        {
+            std::string code = std::string(raw);
+            ProgramType* program = Parser().parse(code);
+            eval(program, std::make_shared<Env>());
 
-        static std::string lastResult;
-        lastResult = result->toString();
-        return lastResult.c_str();
+            return "";
+        }
+        catch (const std::runtime_error& err)
+        {
+            return err.what();
+        }
     }
 }
 
@@ -66,40 +71,47 @@ void Application::run()
         }
 
         fs::path fileName(m_args[0]);
-
-        Parser parser;
-        std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
-        EnvPtr env = std::make_shared<Env>();
-
-        if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
+        try
         {
-            fileName = fileName / indexedPair.second->properties["main"]->toString();
+            Parser parser;
+            std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
+            EnvPtr env = std::make_shared<Env>();
+
+            if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
+            {
+                fileName = fileName / indexedPair.second->properties["main"]->toString();
+            }
+
+            std::ifstream stream(fileName);
+            std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+            std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
+
+            g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
+            context->filename = std::filesystem::absolute(fileName).string();
+            context->file = file;
+            context->modules = indexedPair.first;
+            context->project = indexedPair.second;
+            
+            ProgramType* program = parser.parse(file, context);
+
+            std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
+
+            TC tc;
+            tc.checkProgram(program, typeenv, context);
+
+            Val result = eval(program, env, context);
+
+            delete program;
+
+            return;
         }
-
-        std::ifstream stream(fileName);
-        std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-
-        std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
-
-        g_currentCwd = std::filesystem::absolute(fileName).parent_path();
-
-        context->filename = std::filesystem::absolute(fileName).string();
-        context->file = file;
-        context->modules = indexedPair.first;
-        context->project = indexedPair.second;
-        
-        ProgramType* program = parser.parse(file, context);
-
-        std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
-
-        TC tc;
-        tc.checkProgram(program, typeenv, context);
-
-        Val result = eval(program, env, context);
-
-        delete program;
-
-        return;
+        catch (const std::runtime_error& err)
+        {
+            std::cerr << err.what();
+            exit(1);
+        }
     }
     else if (std::find(m_flags.begin(), m_flags.end(), "-h") != m_flags.end() || std::find(m_flags.begin(), m_flags.end(), "--help") != m_flags.end()) 
         showHelp(m_argv);

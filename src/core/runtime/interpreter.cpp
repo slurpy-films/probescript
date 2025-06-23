@@ -141,10 +141,6 @@ Val evalBinExpr(BinaryExprType* binop, EnvPtr env) {
         return evalNumericBinExpr(std::static_pointer_cast<NumberVal>(left), std::static_pointer_cast<NumberVal>(right), binop->op);
     }
 
-    if (left->type == ValueType::String && right->type == ValueType::String) {
-        return evalStringericBinExpr(std::static_pointer_cast<StringVal>(left), std::static_pointer_cast<StringVal>(right), binop->op);
-    }
-
     return env->throwErr(ManualError("Invalid operants: " + left->toString() + " and " + right->toString(), "OperatorError"));
 }
 
@@ -182,7 +178,7 @@ Val evalBooleanBinExpr(BinaryExprType* binop, EnvPtr env) {
     }
 
     if (op == "==" || op == "!=") {
-        bool result = (left->toString() == right->toString());
+        bool result = *left.get() == *right.get();
         return std::make_shared<BooleanVal>(op == "==" ? result : !result);
     }
 

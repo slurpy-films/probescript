@@ -10,23 +10,6 @@
 class Env;
 using EnvPtr = std::shared_ptr<Env>;
 
-namespace ConsoleColors {
-    const std::string RESET   = "\033[0m";
-    const std::string RED     = "\033[31m";
-    const std::string GREEN   = "\033[32m";
-    const std::string YELLOW  = "\033[33m";
-    const std::string BLUE    = "\033[34m";
-    const std::string MAGENTA = "\033[35m";
-    const std::string CYAN    = "\033[36m";
-    const std::string WHITE   = "\033[37m";
-    const std::string BOLD    = "\033[1m";
-    
-    const std::string DARK_GRAY  = "\033[90m";
-    const std::string LIGHT_GRAY = "\033[37m";
-    const std::string GRAY       = "\033[2;37m";
-    const std::string DIM        = "\033[2m";
-}
-
 enum class ValueType {
     Probe,
     Null,
@@ -77,6 +60,16 @@ struct RuntimeVal {
 
     virtual std::string toConsole() const {
         return toString();
+    }
+
+    virtual bool compare(const RuntimeVal& other) const
+    {
+        return false;
+    }
+
+    bool operator == (const RuntimeVal& other) const
+    {
+        return this->compare(other);
     }
 
     virtual Val add(Val o) const;
@@ -136,6 +129,15 @@ struct NumberVal : public RuntimeVal {
     Val mod(Val o) const override {
         return std::make_shared<NumberVal>(fmod(number, o->toNum()));
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::Number)
+            return false;
+    
+        const NumberVal& num = static_cast<const NumberVal&>(other);
+        return num.number == number;
+    }
 };
 
 struct UndefinedVal : public RuntimeVal {
@@ -158,6 +160,10 @@ struct UndefinedVal : public RuntimeVal {
         return std::make_shared<NumberVal>(0 - o->toNum());
     }
 
+    bool compare(const RuntimeVal& other) const override
+    {
+        return other.type == ValueType::Undefined;
+    }
 };
 
 struct NullVal : public RuntimeVal {
@@ -179,6 +185,11 @@ struct NullVal : public RuntimeVal {
     Val sub(Val o) const override {
         return std::make_shared<NumberVal>(0 - o->toNum());
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        return other.type == ValueType::Null;
+    }
 };
 
 struct NativeFnValue : public RuntimeVal {
@@ -188,6 +199,11 @@ struct NativeFnValue : public RuntimeVal {
         return "[native function]";
     }
     bool toBool() const override { return true; }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        return false;
+    }
 };
 
 struct BooleanVal : public RuntimeVal {
@@ -227,6 +243,15 @@ struct BooleanVal : public RuntimeVal {
 
     Val mod(Val o) const override {
         return std::make_shared<NumberVal>(fmod((value ? 1 : 0), o->toNum()));
+    }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::Boolean)
+            return false;
+    
+        const BooleanVal& boolean = static_cast<const BooleanVal&>(other);
+        return boolean.value == value;
     }
 };
 
@@ -290,6 +315,24 @@ struct ArrayVal : public RuntimeVal {
         std::vector<Val> citems(items);
         citems.push_back(o);
         return std::make_shared<ArrayVal>(citems);
+    }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::Array)
+            return false;
+    
+        const ArrayVal& arr = static_cast<const ArrayVal&>(other);
+        if (arr.items.size() != items.size())
+            return false;
+
+        for (size_t i = 0; i < items.size(); i++)
+        {
+            if (!(*arr.items[i] == *items[i]))
+                return false;
+        }
+
+        return true;
     }
 };
 
@@ -435,6 +478,15 @@ struct StringVal : public RuntimeVal {
 
         return std::make_shared<StringVal>(r);
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::String)
+            return false;
+    
+        const StringVal& str = static_cast<const StringVal&>(other);
+        return str.string == string;
+    }
 };
 
 
@@ -486,4 +538,9 @@ struct ObjectVal : public RuntimeVal {
         return result;
     }
     bool toBool() const override { return true; }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+       return false;
+    }
 };

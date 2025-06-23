@@ -176,5 +176,56 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
             }),
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "val") })))
         }
+    },
+    {
+        "evaluate",
+        {
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
+            {
+                if (args.empty()) return env->throwErr(ArgumentError("Usage: evaluate(val: string)"));
+
+                try
+                {
+                    std::string code = args[0]->toString();
+                    return eval(Parser().parse(code), std::make_shared<Env>(), std::make_shared<Context>(RuntimeType::REPL));
+                }
+                catch (const std::runtime_error& err)
+                {
+                    return env->throwErr(err.what());
+                }
+
+                return std::make_shared<UndefinedVal>();
+            }),
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "code", new IdentifierType("str")) })))
+        }
+    },
+    {
+        "Regex",
+        {
+            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val
+            {
+                if (args.empty()) return env->throwErr(ArgumentError("Usage: new Regex(expr: string)"));
+
+                std::regex regex(args[0]->toString());
+                std::shared_ptr<ObjectVal> obj = std::make_shared<ObjectVal>();
+
+                obj->properties["match"] = std::make_shared<NativeFnValue>([regex](std::vector<Val> args, EnvPtr env) -> Val
+                {
+                    if (args.empty()) return env->throwErr(ArgumentError("Usage: regex.match(input: string)"));
+
+                    return std::make_shared<BooleanVal>(std::regex_match(args[0]->toString(), regex));
+                });
+
+                return obj;
+            }),
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>(
+                {
+                    {
+                        "match",
+                        std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "input", new IdentifierType("str")) })))
+                    }
+                }
+            )))
+        }
     }
 };
