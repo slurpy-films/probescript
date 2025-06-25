@@ -441,6 +441,11 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
 
     m_currentret = fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any");
 
+    TypePtr type =
+        std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters, fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any"), fn->templateparams));
+
+    env->declareVar(fn->name, type);
+    
     for (Stmt* stmt : fn->body)
     {
         check(stmt, scope);
@@ -448,10 +453,7 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
 
     m_currentret = nullptr;
 
-    TypePtr type =
-        std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters, fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any"), fn->templateparams));
-
-    return env->declareVar(fn->name, type);
+    return type;
 }
 
 TypePtr TC::checkCall(CallExprType* call, TypeEnvPtr env)
@@ -669,6 +671,7 @@ TypePtr TC::checkNewExpr(NewExprType* expr, TypeEnvPtr env)
         throw std::runtime_error(TypeError("Expected constructor to be of type class, got " + cls->name, expr->constructor->token, m_context));
     }
 
+    if (cls->val->returntype) return cls->val->returntype;
     TypeValPtr val = std::make_shared<TypeVal>(cls->val->props);
 
     TypePtr type = std::make_shared<Type>(TypeKind::Module, "object", val);

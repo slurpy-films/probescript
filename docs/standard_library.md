@@ -23,7 +23,7 @@ This class provides functionality to create a http server. When you instance it 
 ### json.parse(text: string)
 This function is used for turning text in the JSON format into an object that is usable in probescript. 
 
-### json.stringify(obj: object)
+### json.to_string(obj: object)
 This function is used for turning a probescript object into valid json.
 
 ## random

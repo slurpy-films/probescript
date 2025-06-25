@@ -55,7 +55,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return std::make_shared<NumberVal>(!args.empty() ? args[0]->toNum() : 0);
             }),
-            std::make_shared<Type>(TypeKind::Class, "native class")
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::make_shared<Type>(TypeKind::Number, "number")))
         }
     },
     {
@@ -64,7 +64,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
             std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
                 return std::make_shared<StringVal>(!args.empty() ? args[0]->toString() : "");
             }),
-            std::make_shared<Type>(TypeKind::Class, "native class")
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::make_shared<Type>(TypeKind::String, "string")))
         }
     },
     {
@@ -73,7 +73,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
             std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
                 return std::make_shared<BooleanVal>(!args.empty() ? args[0]->toBool() : false);
             }),
-            std::make_shared<Type>(TypeKind::Class, "native class")
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::make_shared<Type>(TypeKind::Bool, "boolean")))
         }
     },
     {
@@ -82,7 +82,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
             std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
                 return std::make_shared<ObjectVal>(args.empty() ? std::unordered_map<std::string, Val>() : args[0]->properties);
             }),
-            std::make_shared<Type>(TypeKind::Class, "native class")
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::make_shared<Type>(TypeKind::Object, "map")))
         }
     },
     {
@@ -93,7 +93,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return std::static_pointer_cast<FunctionValue>(args[0]);
             }),
-            std::make_shared<Type>(TypeKind::Class, "native class")
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::make_shared<Type>(TypeKind::Function, "function")))
         }
     },
     {
@@ -107,7 +107,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return array;
             }),
-            std::make_shared<Type>(TypeKind::Class, "native class")
+            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::make_shared<Type>(TypeKind::Array, "array")))
         }
     },
     {
@@ -225,7 +225,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
                         std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "input", new IdentifierType("str")) })))
                     }
                 }
-            )))
+            )), "Regex")
         }
     }
 };

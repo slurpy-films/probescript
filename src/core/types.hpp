@@ -38,6 +38,8 @@ struct TypeVal
 
     TypeVal(std::vector<VarDeclarationType*> params)
         : params(params) {}
+    TypeVal(TypePtr returntype)
+        : returntype(returntype) {}
     TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype)
         : params(params), returntype(returntype) {}
     TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype, std::vector<VarDeclarationType*> templateparams)

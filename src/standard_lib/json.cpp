@@ -173,7 +173,7 @@ Val getValJsonModule()
             })
         },
         {
-            "stringify",
+            "to_string",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.empty() || args[0]->type != ValueType::Object) return env->throwErr(ArgumentError("Expected argument 1 to be of type object"));
@@ -193,7 +193,7 @@ TypePtr getTypeJsonModule()
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "raw", new IdentifierType("str")) })))
         },
         {
-            "stringify",
+            "to_string",
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "object") })))
         }
     })));

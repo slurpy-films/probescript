@@ -5,7 +5,7 @@ Val getValFsModule()
     return std::make_shared<ObjectVal>(std::unordered_map<std::string, Val>(
     {
         {
-            "readFile",
+            "read_file",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
@@ -41,7 +41,7 @@ Val getValFsModule()
         })
         },
         {
-            "writeFile",
+            "write_file",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::String)
@@ -79,7 +79,7 @@ Val getValFsModule()
             })
         },
         {
-            "isDirectory",
+            "is_directory",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
@@ -92,7 +92,7 @@ Val getValFsModule()
             })
         },
         {
-            "listDir",
+            "list_dir",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
@@ -123,11 +123,11 @@ TypePtr getTypeFsModule()
 {
     return std::make_shared<Type>(TypeKind::Module, "native module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({
         {
-            "readFile",
+            "read_file",
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
         },
         {
-            "writeFile",
+            "write_file",
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
         },
         {
@@ -135,11 +135,11 @@ TypePtr getTypeFsModule()
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
         },
         {
-            "isDirectory",
+            "is_directory",
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
         },
         {
-            "listDir",
+            "list_dir",
             std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
         }
     })));
