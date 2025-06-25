@@ -821,6 +821,11 @@ Expr* Parser::parsePrimaryExpr()
         primary = parseTemplateCall(primary);
     }
 
+    if (at().type == Lexer::Dot || at().type == Lexer::OpenParen)
+    {
+        primary = parseMemberChain(primary);
+    }
+
     return primary;
 }
 
