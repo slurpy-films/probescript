@@ -16,7 +16,7 @@ probe Main
 {
     Main()
     {
-        var t: NotTest = new NotTest;
+        var t: NotTest = new NotTest{};
         var failed: bool = false;
 
         if (!t.a)

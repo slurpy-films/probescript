@@ -4,6 +4,8 @@
 #include <cmath>
 #include <vector>
 #include <functional>
+#include <algorithm>
+#include <cctype>
 #include "frontend/ast.hpp"
 #include "utils.hpp"
 
@@ -78,6 +80,8 @@ struct RuntimeVal {
     virtual Val div(Val o) const;
     virtual Val mod(Val o) const;
 };
+
+Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env);
 
 using NativeFunction = std::function<Val(std::vector<Val>, EnvPtr)>;
 
@@ -409,44 +413,7 @@ struct NativeClassVal : public RuntimeVal {
 
 struct StringVal : public RuntimeVal {
     std::string string;
-    StringVal(std::string val) : RuntimeVal(ValueType::String), string(val) {
-        properties = 
-        {
-            {
-                "length",
-                std::make_shared<NativeFnValue>([this](std::vector<Val> _args, EnvPtr _env) -> Val {
-                    return std::make_shared<NumberVal>(this->string.length());
-                })
-            },
-            {
-                "split",
-                std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _) -> Val {
-                    if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
-                    std::string str = this->string;
-                    std::string deli = std::static_pointer_cast<StringVal>(args[0])->string;
-
-                    std::vector<Val> result;
-                    if (deli == "") {
-                        std::vector<std::string> chars = splitToChars(str);
-
-                        for (auto& c : chars) {
-                            result.push_back(std::make_shared<StringVal>(c));
-                        }
-
-                        return std::make_shared<ArrayVal>(result);
-                    }
-                    size_t pos = 0;
-                    std::string token;
-                    while ((pos = str.find(deli)) != std::string::npos) {
-                        token = str.substr(0, pos);
-                        result.push_back(std::make_shared<StringVal>(token));
-                        str.erase(0, pos + deli.length());
-                    }
-                    return std::make_shared<ArrayVal>(result);
-                })
-            }
-        };
-    }
+    StringVal(std::string val);
     std::string toString() const override { return string; }
     std::string toJSON() const override { return "\"" + string + "\""; }
     double toNum() const override

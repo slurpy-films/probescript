@@ -22,7 +22,7 @@ enum TokenType {
     Const,
     Comma,
     Colon,
-    Openbrace,
+    OpenBrace,
     ClosedBrace,
     OpenBracket,
     CloseBracket,

@@ -8,7 +8,7 @@
 #include "context.hpp"
 
 template<typename T, typename... Args>
-T* newNode(Lexer::Token tok, Args&&... args) {
+T* newnode(Lexer::Token tok, Args&&... args) {
     T* node = new T(std::forward<Args>(args)...);
     node->token = tok;
     return node;
@@ -100,7 +100,7 @@ private:
 
     // Utility methods
 
-    std::vector<Expr*> parseArgs();
+    std::vector<Expr*> parseArgs(bool braces = false);
 
     std::vector<Expr*> parseArgList();
 

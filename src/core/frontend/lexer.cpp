@@ -12,7 +12,7 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
 
     std::unordered_map<std::string, TokenType> singleCharTokens = {
         { "(", OpenParen }, { ")", ClosedParen },
-        { "{", Openbrace }, { "}", ClosedBrace },
+        { "{", OpenBrace }, { "}", ClosedBrace },
         { "[", OpenBracket }, { "]", CloseBracket },
         { ",", Comma }, { ":", Colon }, { ".", Dot },
         { "+", BinaryOperator }, { "-", BinaryOperator },

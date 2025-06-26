@@ -7,7 +7,7 @@ probe Main
 {
     Main()
     {
-        var class_instance: Test = new Test;
+        var class_instance: Test = new Test{};
 
         if (!class_instance.a)
         {

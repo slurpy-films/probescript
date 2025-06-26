@@ -50,7 +50,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
             std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (!args.empty() && !isNum(args[0]->toString()))
                 {
-                    return env->throwErr(ArgumentError("Invalid argument: " + args[0]->toString() + " is not a number"));
+                    return env->throwErr(ArgumentError("Invalid argument: '" + args[0]->toString() + "' is not a number"));
                 }
 
                 return std::make_shared<NumberVal>(!args.empty() ? args[0]->toNum() : 0);

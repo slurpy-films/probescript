@@ -87,7 +87,7 @@ Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env) {
 
         return std::make_shared<NumberVal>(value);
     } else if (expr->assigne->kind == NodeType::MemberExpr) {
-        MemberAssignmentType* member = newNode<MemberAssignmentType>(
+        MemberAssignmentType* member = newnode<MemberAssignmentType>(
             expr->token,
             static_cast<MemberExprType*>(expr->assigne)->object,
             static_cast<MemberExprType*>(expr->assigne)->property,

@@ -15,15 +15,21 @@ void REPL::start()
         std::getline(std::cin, src);
 
         if (src.find("exit") == 0) break;
+        try
+        {
+            ProgramType* program = parser.parse(src);
 
-        ProgramType* program = parser.parse(src);
+            TC tc;
+            tc.checkProgram(program, typeenv, context);
 
-        TC tc;
-        tc.checkProgram(program, typeenv, context);
+            Val result = eval(program, env, context);
 
-        Val result = eval(program, env, context);
-
-        std::cout << result->toConsole() << "\n";
-        delete program;
+            std::cout << result->toConsole() << "\n";
+            delete program;
+        }
+        catch (const std::runtime_error& err)
+        {
+            std::cerr << err.what();
+        }
     }
 }
