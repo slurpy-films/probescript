@@ -199,7 +199,7 @@ Val evalBooleanBinExpr(BinaryExprType* binop, EnvPtr env) {
 }
 
 Val evalFunctionDeclaration(FunctionDeclarationType* declaration, EnvPtr env, bool onlyValue) {
-    std::shared_ptr<FunctionValue> fn = std::make_shared<FunctionValue>(declaration->name, declaration->parameters, env, declaration->body);
+    std::shared_ptr<FunctionValue> fn = std::make_shared<FunctionValue>(declaration->name, declaration->parameters, env, declaration->body, declaration->isAsync);
     fn->templateparams = declaration->templateparams;
 
     return onlyValue ? fn : env->declareVar(declaration->name, fn, true);
@@ -601,6 +601,9 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config) {
         
         case NodeType::TemplateCall:
             return evalTemplateCall(static_cast<TemplateCallType*>(astNode), env);
+        
+        case NodeType::AwaitExpr:
+            return evalAwaitExpr(static_cast<AwaitExprType*>(astNode), env);
 
         default:
             std::cerr << "Unexpected AST-node kind found: " << std::to_string(static_cast<int>(astNode->kind));

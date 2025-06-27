@@ -64,8 +64,6 @@ private:
 
     Expr* parseAsExpr();
 
-    Expr* parseMemberExpr();
-
     Expr* parseTemplateCall(Expr* caller);
 
     Expr* parseTemplateArg();
@@ -84,9 +82,13 @@ private:
 
     Expr* parseUnaryExpr();
 
+    Expr* parseAwaitExpr();
+
     Expr* parseCallMemberExpr();
 
-    Expr* parseCallexpr(Expr* caller);
+    Expr* parseMemberExpr();
+
+    Expr* parseCallExpr(Expr* caller);
 
     Expr* parseArrowFunction();
 

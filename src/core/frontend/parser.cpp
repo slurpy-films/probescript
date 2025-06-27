@@ -34,6 +34,9 @@ Stmt* Parser::parseStmt()
         case Lexer::Function:
             stmt = parseFunctionDeclaration();
             break;
+        case Lexer::Async:
+            stmt = parseFunctionDeclaration();
+            break;
         case Lexer::Module:
             stmt = parseModuleDeclaration();
             break;
@@ -253,6 +256,8 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
 {
     Token tk = at();
     if (!tkEaten) eat();
+    
+    bool isAsync = tk.type == Lexer::Async;
     std::string name = (at().type == Lexer::Identifier || at().type == Lexer::New ? eat().value : "anonymous");
     std::vector<VarDeclarationType*> templateparams;
 
@@ -270,7 +275,7 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
                 value = parseExpr();
             }
 
-            templateparams.push_back(newnode<VarDeclarationType>(ident, value, ident.value));
+            templateparams.push_back(newnode<VarDeclarationType>(ident, value, ident.value, isAsync));
 
             if (at().type == Lexer::Comma) eat();
         }
@@ -290,7 +295,7 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
 
     std::vector<Stmt*> body = parseBody();
 
-    FunctionDeclarationType* fn = (type ? newnode<FunctionDeclarationType>(tk, params, name, body, type) : newnode<FunctionDeclarationType>(tk, params, name, body));
+    FunctionDeclarationType* fn = (type ? newnode<FunctionDeclarationType>(tk, params, name, body, type, isAsync) : newnode<FunctionDeclarationType>(tk, params, name, body, isAsync));
 
     fn->templateparams = templateparams;
 
@@ -448,7 +453,7 @@ Expr* Parser::parseTemplateCall(Expr* caller)
 
     if (at().type == Lexer::OpenParen)
     {
-        call = parseCallexpr(call);
+        call = parseCallExpr(call);
     }
 
     return call;
@@ -586,10 +591,19 @@ Expr* Parser::parseUnaryExpr()
         return newnode<UnaryPrefixType>(op, op.value, argument);
     }
 
-    return parseCallMemberExpr();
+    return parseAwaitExpr();
 }
 
-Expr* Parser::parseCallexpr(Expr* caller)
+Expr* Parser::parseAwaitExpr()
+{
+    if (at().type != Lexer::Await)
+        return parseCallMemberExpr();
+
+    Token tk = eat();
+    return newnode<AwaitExprType>(tk, parseCallMemberExpr());
+}
+
+Expr* Parser::parseCallExpr(Expr* caller)
 {
     if (at().type == Lexer::LessThan)
     {
@@ -597,7 +611,7 @@ Expr* Parser::parseCallexpr(Expr* caller)
     }
 
     CallExprType* callExpr = newnode<CallExprType>(at(), caller, parseArgs());
-    if (at().type == Lexer::OpenParen) return parseCallexpr(callExpr);
+    if (at().type == Lexer::OpenParen) return parseCallExpr(callExpr);
     
     if (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
     {
@@ -613,7 +627,7 @@ Expr* Parser::parseCallMemberExpr()
 
     if (at().type == Lexer::OpenParen)
     {
-        return parseCallexpr(member);
+        return parseCallExpr(member);
     } else return member;
 }
 
@@ -747,7 +761,7 @@ Expr* Parser::parseMemberChain(Expr* expr)
         
         if (at().type == Lexer::OpenParen)
         {
-            expr = parseCallexpr(expr);
+            expr = parseCallExpr(expr);
         }
     }
     

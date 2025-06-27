@@ -60,6 +60,8 @@ enum TokenType {
     Ternary,
     LessThan,
     GreaterThan,
+    Async,
+    Await,
 };
 
 struct Token {
@@ -116,7 +118,9 @@ inline std::unordered_map<std::string, TokenType> getKeyWords() {
         { "catch", Catch },
         { "undefined", Undefined },
         { "true", Bool },
-        { "false", Bool }
+        { "false", Bool },
+        { "async", Async },
+        { "await", Await },
     };
 
     return keywords;

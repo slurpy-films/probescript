@@ -43,6 +43,7 @@ enum NodeType {
     TemplateArgument,
     TemplateCall,
     CastExpr,
+    AwaitExpr,
 };
 
 struct Stmt {
@@ -113,8 +114,8 @@ struct UndefinedLiteralType : public Expr {
 };
 
 struct FunctionDeclarationType : public Stmt {
-    FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body) {}
-    FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body, Expr* rettype) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body), rettype(rettype), staticRet(true) {}
+    FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body, bool isAsync = false) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body), isAsync(isAsync) {}
+    FunctionDeclarationType(std::vector<VarDeclarationType*> params, std::string name, std::vector<Stmt*> body, Expr* rettype, bool isAsync = false) : Stmt(NodeType::FunctionDeclaration), parameters(params), name(name), body(body), rettype(rettype), staticRet(true), isAsync(isAsync) {}
 
     bool staticRet = false;
     Expr* rettype = new UndefinedLiteralType();
@@ -122,6 +123,7 @@ struct FunctionDeclarationType : public Stmt {
     std::vector<VarDeclarationType*> templateparams;
     std::string name;
     std::vector<Stmt*> body;
+    bool isAsync = false;
 };
 
 struct ExportStmtType : public Stmt {
@@ -393,4 +395,12 @@ struct BreakStmtType : public Stmt {
 
 struct ContinueStmtType : public Stmt {
     ContinueStmtType() : Stmt(NodeType::ContinueStmt) {}
+};
+
+struct AwaitExprType : public Expr
+{
+    Expr* caller;
+
+    AwaitExprType(Expr* caller)
+        : Expr(NodeType::AwaitExpr), caller(caller) {}
 };

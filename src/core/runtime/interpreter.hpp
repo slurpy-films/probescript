@@ -46,6 +46,7 @@ Val evalUnaryPrefix(UnaryPrefixType* expr, EnvPtr env);
 Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env);
 Val evalTernaryExpr(TernaryExprType* expr, EnvPtr env);
 Val evalTemplateCall(TemplateCallType* call, EnvPtr env);
+Val evalAwaitExpr(AwaitExprType* expr, EnvPtr env);
 
 void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args);
 void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env);
