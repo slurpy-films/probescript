@@ -18,6 +18,10 @@ extern "C"
         {
             return err.what();
         }
+        catch (const ThrowException& err)
+        {
+            return err.what();
+        }
     }
 }
 
@@ -98,8 +102,11 @@ void Application::run()
 
             std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
 
-            TC tc;
-            tc.checkProgram(program, typeenv, context);
+            if (std::find(m_flags.begin(), m_flags.end(), "--skip-tc") == m_flags.end())
+            {
+                TC tc;
+                tc.checkProgram(program, typeenv, context);
+            }
 
             Val result = eval(program, env, context);
 
@@ -108,6 +115,11 @@ void Application::run()
             return;
         }
         catch (const std::runtime_error& err)
+        {
+            std::cerr << err.what();
+            exit(1);
+        }
+        catch (const ThrowException& err)
         {
             std::cerr << err.what();
             exit(1);

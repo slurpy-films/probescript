@@ -19,9 +19,6 @@ void REPL::start()
         {
             ProgramType* program = parser.parse(src);
 
-            TC tc;
-            tc.checkProgram(program, typeenv, context);
-
             Val result = eval(program, env, context);
 
             std::cout << result->toConsole() << "\n";
@@ -30,6 +27,11 @@ void REPL::start()
         catch (const std::runtime_error& err)
         {
             std::cerr << err.what();
+        }
+        catch (const ThrowException& err)
+        {
+            std::cerr << err.what();
+            exit(1);
         }
     }
 }

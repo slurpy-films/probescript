@@ -34,12 +34,10 @@ Val evalImportStmt(ImportStmtType* importstmt, EnvPtr envptr, std::shared_ptr<Co
 Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env);
 Val evalMemberExpr(MemberExprType* expr, EnvPtr env);
 Val evalNewExpr(NewExprType* newexpr, EnvPtr env);
-std::shared_ptr<NumberVal> evalNumericBinExpr(std::shared_ptr<NumberVal> lhs, std::shared_ptr<NumberVal> rhs, std::string op);
 Val evalObject(MapLiteralType* obj, EnvPtr env);
 Val evalProbeDeclaration(ProbeDeclarationType* probe, EnvPtr env);
 Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> config);
-Val evalProbeCall(std::string probeName, EnvPtr declarationEnv, std::vector<Val> args = {});
-std::shared_ptr<StringVal> evalStringericBinExpr(std::shared_ptr<StringVal> lhs, std::shared_ptr<StringVal> rhs, std::string op);
+Val evalProbeCall(Val val, EnvPtr declarationEnv, std::vector<Val> args = {});
 Val evalVarDeclaration(VarDeclarationType* var, EnvPtr env, bool constant = false);
 Val evalWhileStmt(WhileStmtType* stmt, EnvPtr env);
 Val evalUnaryPrefix(UnaryPrefixType* expr, EnvPtr env);

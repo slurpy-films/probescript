@@ -7,13 +7,6 @@
 #include "errors.hpp"
 #include "context.hpp"
 
-template<typename T, typename... Args>
-T* newnode(Lexer::Token tok, Args&&... args) {
-    T* node = new T(std::forward<Args>(args)...);
-    node->token = tok;
-    return node;
-}
-
 class Parser
 {
 public:
@@ -122,4 +115,12 @@ private:
     std::string getCurrentLine(Lexer::Token at);
 
     std::vector<Stmt*> parseBody(bool methods = false, std::string prbname = "");
+
+    template<typename T, typename... Args>
+    T* newnode(Lexer::Token tok, Args&&... args) {
+        T* node = new T(std::forward<Args>(args)...);
+        tok.ctx = context;
+        node->token = tok;
+        return node;
+    }
 };

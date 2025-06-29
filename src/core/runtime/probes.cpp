@@ -3,15 +3,13 @@
 Val evalProbeDeclaration(ProbeDeclarationType* probe, EnvPtr env) {
     std::shared_ptr<ProbeValue> probeval = probe->doesExtend ? std::make_shared<ProbeValue>(probe->name, env, probe->body, probe->extends) : std::make_shared<ProbeValue>(probe->name, env, probe->body);
 
-    return env->declareVar(probe->name, probeval);
+    return env->declareVar(probe->name, probeval, probe->token);
 }
 
-Val evalProbeCall(std::string probeName, EnvPtr declarationEnv, std::vector<Val> args) {
-    Val val = declarationEnv->lookupVar(probeName);
-
+Val evalProbeCall(Val val, EnvPtr declarationEnv, std::vector<Val> args) {
     if (val->type != ValueType::Probe)
     {
-        return declarationEnv->throwErr(TypeError("Probe " + probeName + " is not of type probe"));
+        throw ThrowException(TypeError("Probe is not of type probe"));
     }
 
     std::shared_ptr<ProbeValue> probe = std::static_pointer_cast<ProbeValue>(val);
@@ -42,7 +40,7 @@ Val evalProbeCall(std::string probeName, EnvPtr declarationEnv, std::vector<Val>
     }
 
 
-    Val runfnval = env->lookupVar("run");
+    Val runfnval = env->lookupVar("run", val->token);
 
     if (runfnval->type != ValueType::Function) {
         throw std::runtime_error(ManualError("Expected 'run' to be of type function", "ProbeError"));

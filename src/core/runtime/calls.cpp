@@ -15,7 +15,7 @@ Val evalCall(CallExprType* call, EnvPtr env) {
 Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
 
     if (fn == nullptr) {
-        return env->throwErr(ManualError("Function call target is null", "FunctionCallError"));
+        throw ThrowException(ManualError("Function call target is null", "FunctionCallError"));
     }
 
     if (fn->type == ValueType::NativeFn) {
@@ -39,7 +39,7 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
                 {
                     std::string varname = func->params[i]->identifier;
                     Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
-                    scope->declareVar(varname, value, false);
+                    scope->declareVar(varname, value, Lexer::Token());
                 }
 
                 Val result = evalBody(func->body, scope);
@@ -55,7 +55,7 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
             {
                 std::string varname = func->params[i]->identifier;
                 Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
-                scope->declareVar(varname, value, false);
+                scope->declareVar(varname, value, fn->token);
             }
             
             Val result = evalBody(func->body, scope);
@@ -65,17 +65,17 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
     }
 
     if (fn->type == ValueType::Probe) {
-        return evalProbeCall(std::static_pointer_cast<ProbeValue>(fn)->name, env, args);
+        return evalProbeCall(fn, env, args);
     }
 
-    return env->throwErr(ManualError("Cannot call value that is not a function", "FunctionCallError"));
+    throw ThrowException(ManualError("Cannot call value that is not a function", "FunctionCallError"));
 }
 
 Val evalAwaitExpr(AwaitExprType* expr, EnvPtr env) {
     Val result = eval(expr->caller, env);
     
     if (result->type != ValueType::Future) {
-        return env->throwErr(ArgumentError("'await' requires a future"));
+        throw ThrowException(ArgumentError("'await' requires a future"));
     }
     
     std::shared_ptr<FutureVal> future = std::static_pointer_cast<FutureVal>(result);
@@ -83,6 +83,6 @@ Val evalAwaitExpr(AwaitExprType* expr, EnvPtr env) {
     try {
         return future->future.get();
     } catch (...) {
-        return env->throwErr(ManualError("Async function failed", "AsyncError"));
+        throw ThrowException(ManualError("Async function failed", "AsyncError"));
     }
 }

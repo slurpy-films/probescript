@@ -2,12 +2,15 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "utils.hpp"
 #include <iostream>
+#include "utils.hpp"
+#include "context.hpp"
 
-namespace Lexer {
+namespace Lexer
+{
 
-enum TokenType {
+enum TokenType
+{
     Probe,
     Number,
     Identifier,
@@ -64,36 +67,44 @@ enum TokenType {
     Await,
 };
 
-struct Token {
+struct Token
+{
     std::string value;
     TokenType type;
 
-    int line;
-    int col;
+    int line = 0;
+    int col = 0;
     std::string file;
+    std::shared_ptr<Context> ctx = std::make_shared<Context>();
 };
 
-inline Token token(const std::string& value, const TokenType type, const std::pair<int, int> pos) {
+inline Token token(const std::string& value, const TokenType type, const std::pair<int, int> pos)
+{
     int line = pos.first;
     int col = pos.second;
     
     return { value, type, line, col };
 }
 
-inline bool isAlpha(const std::string& str) {
+inline bool isAlpha(const std::string& str)
+{
     return (str[0] >= 'a' && str[0] <= 'z') || (str[0] >= 'A' && str[0] <= 'Z');
 }
 
-inline bool isInt(const std::string& str) {
+inline bool isInt(const std::string& str)
+{
     return str.length() == 1 && isdigit(str[0]);
 }
 
-inline bool isSkippable(const std::string str) {
+inline bool isSkippable(const std::string str)
+{
     return str == " " || str == "\t" || str == "\r" || str == "";
 }
 
-inline std::unordered_map<std::string, TokenType> getKeyWords() {
-    static std::unordered_map<std::string, TokenType> keywords = {
+inline std::unordered_map<std::string, TokenType> getKeyWords()
+{
+    static std::unordered_map<std::string, TokenType> keywords =
+    {
         { "var", Var },
         { "null", Null },
         { "const", Const },

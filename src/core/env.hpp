@@ -2,9 +2,13 @@
 #include <unordered_map>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
+
 #include "types.hpp"
 #include "runtime/values.hpp"
-#include <stdexcept>
+#include "utils.hpp"
+#include "frontend/lexer.hpp"
+#include "errors.hpp"
 
 extern std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals;
 
@@ -22,23 +26,16 @@ public:
 
     std::unordered_map<std::string, Val> variables = {};
 
-    Val declareVar(std::string varName, Val value, bool constant = false);
+    Val declareVar(std::string varName, Val value, Lexer::Token tk);
 
-    Val assignVar(std::string varName, Val value);
+    Val assignVar(std::string varName, Val value, Lexer::Token tk);
 
-    Val lookupVar(std::string varName);
+    Val lookupVar(std::string varName, Lexer::Token tk);
 
-    EnvPtr resolve(std::string varname);
+    EnvPtr resolve(std::string varname, Lexer::Token tk);
 
-    std::shared_ptr<ReturnSignal> throwErr(std::string err);
-
-    void setCatch(Val fn);
-
-    Val catcher;
-    bool hasCatch = false;
 private:
     EnvPtr parent;
-    std::unordered_map<std::string, bool> constants;
     bool m_ready = false;
 
     void init();

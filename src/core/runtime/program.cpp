@@ -43,7 +43,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
 
         std::shared_ptr<ProbeValue> probe = std::static_pointer_cast<ProbeValue>(evalProbeDeclaration(probeDeclaration, scope));
 
-        Val lastEval = evalProbeCall(probe->name, scope);
+        Val lastEval = evalProbeCall(probe, scope);
 
         return lastEval;
     } else if (config->type == RuntimeType::REPL) {

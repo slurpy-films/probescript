@@ -9,7 +9,7 @@ Val getValRandomModule() {
             "randInt",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
                 if (args.size() < 2) {
-                    return env->throwErr(ArgumentError("randInt expects two arguments"));
+                    throw ThrowException(ArgumentError("randInt expects two arguments"));
                 }
 
                 std::uniform_int_distribution<> distrib(args[0]->toNum(), args[1]->toNum());

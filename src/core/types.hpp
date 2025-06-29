@@ -89,8 +89,9 @@ class TypeEnv
 public:
     TypeEnv(std::shared_ptr<TypeEnv> parent = nullptr);
 
-    TypePtr declareVar(std::string name, TypePtr type);
-    TypePtr lookUp(std::string name);
+    TypePtr declareVar(std::string name, TypePtr type, Lexer::Token tk);
+    TypePtr lookUp(std::string name, Lexer::Token tk);
+
     void massDeclare(std::unordered_map<std::string, TypePtr> vars);
 
     std::unordered_map<std::string, TypePtr> getVars();

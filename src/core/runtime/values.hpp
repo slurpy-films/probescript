@@ -9,6 +9,7 @@
 #include <future>
 #include "frontend/ast.hpp"
 #include "utils.hpp"
+#include "frontend/lexer.hpp"
 
 class Env;
 using EnvPtr = std::shared_ptr<Env>;
@@ -38,6 +39,7 @@ using Val = std::shared_ptr<RuntimeVal>;
 
 struct RuntimeVal {
     ValueType type;
+    Lexer::Token token = Lexer::Token();
     std::string value;
     std::unordered_map<std::string, Val> exports;
     std::unordered_map<std::string, Val> properties;
@@ -82,6 +84,14 @@ struct RuntimeVal {
     virtual Val div(Val o) const;
     virtual Val mod(Val o) const;
 };
+
+template<typename T, typename... Args>
+std::shared_ptr<T> makeVal(Lexer::Token tk, Args&&... args)
+{
+    std::shared_ptr<T> val = std::make_shared<T>(std::forward<Args>(args)...);
+    val->token = tk;
+    return val;
+}
 
 Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env);
 

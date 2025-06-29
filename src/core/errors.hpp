@@ -36,3 +36,13 @@ inline std::string ArgumentError(const std::string& m) {
 inline std::string ManualError(const std::string& m, const std::string& n) {
     return ConsoleColors::RED + "[" + n + "]: " + ConsoleColors::RESET + m + "\n";
 }
+
+inline std::string ManualError(const std::string& m, const std::string& n, Lexer::Token tk) {
+    std::string line = split(tk.ctx->file, "\n")[tk.line - 1];
+    if (line.empty())
+        return ConsoleColors::RED + "[" + n + "]: " + ConsoleColors::RESET + m + "\n";
+    else
+    {        
+        return ConsoleColors::RED + "[" + n + "]: " + ConsoleColors::RESET + m + "\n\n" + "At " + tk.ctx->filename + ":" + std::to_string(tk.line) + ":" + std::to_string(tk.col) + "\n" + line + "\n";
+    }
+}

@@ -13,11 +13,11 @@ std::unordered_map<std::string, TypePtr> TypeEnv::getVars()
     return m_variables;
 }
 
-TypePtr TypeEnv::declareVar(std::string name, TypePtr type)
+TypePtr TypeEnv::declareVar(std::string name, TypePtr type, Lexer::Token tk)
 {
     if (m_variables.find(name) != m_variables.end())
     {
-        throw std::runtime_error(ManualError("Variable " + name + " is already defined", "RedefinitionError"));
+        throw std::runtime_error(ManualError("Variable " + name + " is already defined", "RedefinitionError", tk));
     }
 
     m_variables[name] = type;
@@ -25,15 +25,15 @@ TypePtr TypeEnv::declareVar(std::string name, TypePtr type)
     return type;
 }
 
-TypePtr TypeEnv::lookUp(std::string name)
+TypePtr TypeEnv::lookUp(std::string name, Lexer::Token tk)
 {
     if (m_variables.find(name) != m_variables.end())
         return m_variables[name];
     else if (m_parent)
-        return m_parent->lookUp(name);
+        return m_parent->lookUp(name, tk);
     else
     {
-        throw std::runtime_error(ManualError("Variable " + name + " is not defined", "ReferenceError"));
+        throw std::runtime_error(ManualError("Variable " + name + " is not defined", "ReferenceError", tk));
     }
 }
 
@@ -148,7 +148,7 @@ TypePtr TC::checkTemplateCall(TemplateCallType* call, TypeEnvPtr env)
 
     for (size_t i = 0; i < caller->val->templateparams.size(); i++)
     {
-        env->declareVar(caller->val->templateparams[i]->identifier, (call->templateArgs.size() > i ? getType(call->templateArgs[i], env) : std::make_shared<Type>(TypeKind::Any, "any")));
+        env->declareVar(caller->val->templateparams[i]->identifier, (call->templateArgs.size() > i ? getType(call->templateArgs[i], env) : std::make_shared<Type>(TypeKind::Any, "any")), caller->val->templateparams[i]->token);
     }
 
     if (caller->type == TypeKind::Function)
@@ -156,9 +156,8 @@ TypePtr TC::checkTemplateCall(TemplateCallType* call, TypeEnvPtr env)
         if (caller->val->returntype && caller->val->returntype->templateSub && caller->val->returntype->val->sourcenode)
         {
             VarDeclarationType* src = caller->val->returntype->val->sourcenode;
-            TypePtr type = env->lookUp(src->identifier);
+            TypePtr type = env->lookUp(src->identifier, src->token);
             
-
             caller->val->returntype = type;
         }
     }
@@ -281,9 +280,9 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 
     TypePtr thisobj = std::make_shared<Type>(TypeKind::Object, cls->name);
 
-    scope->declareVar("this", thisobj);
+    scope->declareVar("this", thisobj, cls->token);
     
-    if (cls->doesExtend) scope->declareVar("super", std::make_shared<Type>(TypeKind::Any, "any"));
+    if (cls->doesExtend) scope->declareVar("super", std::make_shared<Type>(TypeKind::Any, "any"), cls->extends->token);
 
     TypePtr type = std::make_shared<Type>(TypeKind::Class, "class");
 
@@ -322,7 +321,7 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 
     type->val->props = thisobj->val->props;
 
-    return env->declareVar(cls->name, type);
+    return env->declareVar(cls->name, type, cls->token);
 }
 
 void TC::checkClassInheritance(TypePtr cls, TypeEnvPtr env, TypePtr thisobj)
@@ -351,14 +350,14 @@ TypePtr TC::checkVarDecl(VarDeclarationType* decl, TypeEnvPtr env)
     }
 
     check(decl->value, env);
-    env->declareVar(decl->identifier, decl->staticType ? getType(decl->type, env) : std::make_shared<Type>(TypeKind::Any, "any"));
+    env->declareVar(decl->identifier, decl->staticType ? getType(decl->type, env) : std::make_shared<Type>(TypeKind::Any, "any"), decl->token);
 
     return std::make_shared<Type>(TypeKind::Any, "any");
 }
 
 TypePtr TC::checkIdent(IdentifierType* ident, TypeEnvPtr env)
 {
-    return env->lookUp(ident->symbol);
+    return env->lookUp(ident->symbol, ident->token);
 }
 
 TypePtr TC::checkBinExpr(BinaryExprType* expr, TypeEnvPtr env)
@@ -411,7 +410,7 @@ TypePtr TC::checkProbe(ProbeDeclarationType* prb, TypeEnvPtr env)
             check(stmt, scope);
     }
 
-    return env->declareVar(prb->name, std::make_shared<Type>(TypeKind::Probe, "probe", std::make_shared<TypeVal>(props)));
+    return env->declareVar(prb->name, std::make_shared<Type>(TypeKind::Probe, "probe", std::make_shared<TypeVal>(props)), prb->token);
 }
 
 void TC::checkProbeInheritance(TypePtr prb, TypeEnvPtr env)
@@ -431,12 +430,12 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
         type->templateSub = true;
         type->val->sourcenode = param;
 
-        scope->declareVar(param->identifier, type);
+        scope->declareVar(param->identifier, type, param->token);
     }
 
     for (VarDeclarationType* param : fn->parameters)
     {
-        scope->declareVar(param->identifier, param->staticType ? getType(param->type, scope) : std::make_shared<Type>(TypeKind::Any, "any"));
+        scope->declareVar(param->identifier, param->staticType ? getType(param->type, scope) : std::make_shared<Type>(TypeKind::Any, "any"), param->token);
     }
 
     m_currentret = fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any");
@@ -444,7 +443,7 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
     TypePtr type =
         std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters, fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any"), fn->templateparams));
 
-    env->declareVar(fn->name, type);
+    env->declareVar(fn->name, type, fn->token);
     
     for (Stmt* stmt : fn->body)
     {
@@ -593,7 +592,7 @@ TypePtr TC::checkArrowFunction(ArrowFunctionType* fn, TypeEnvPtr env)
 
     for (VarDeclarationType* param : fn->params)
     {
-        scope->declareVar(param->identifier, param->staticType ? getType(param->type, env) : std::make_shared<Type>(TypeKind::Any, "any"));
+        scope->declareVar(param->identifier, param->staticType ? getType(param->type, env) : std::make_shared<Type>(TypeKind::Any, "any"), param->token);
     }
 
     for (Stmt* stmt : fn->body)
@@ -615,19 +614,19 @@ TypePtr TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, std::shared_pt
         TypePtr lib = stdlib[stmt->name];
         if (!stmt->hasMember)
         {
-            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, lib);
+            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, lib, stmt->token);
         }
 
-        TypeEnvPtr mockenv = std::make_shared<TypeEnv>();
-        mockenv->declareVar(stmt->name, lib);
-        TypePtr member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), mockenv);
+        TypeEnvPtr tempenv = std::make_shared<TypeEnv>();
+        tempenv->declareVar(stmt->name, lib, stmt->module->token);
+        TypePtr member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), tempenv);
 
-        return env->declareVar(stmt->customIdent ? stmt->ident : static_cast<MemberExprType*>(stmt->module)->lastProp, member);
+        return env->declareVar(stmt->customIdent ? stmt->ident : static_cast<MemberExprType*>(stmt->module)->lastProp, member, stmt->module->token);
     } else
     {
         if (ctx->modules.find(stmt->name) == ctx->modules.end())
         {
-            throw std::runtime_error(ManualError("Module " + stmt->name + " not found", "ImportError"));
+            throw std::runtime_error(ManualError("Module " + stmt->name + " not found", "ImportError", stmt->token));
         }
 
         fs::path path = ctx->modules[stmt->name];
@@ -647,14 +646,14 @@ TypePtr TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, std::shared_pt
 
         if (!stmt->hasMember)
         {
-            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, std::make_shared<Type>(TypeKind::Module, "module", std::make_shared<TypeVal>(exports)));
+            return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, std::make_shared<Type>(TypeKind::Module, "module", std::make_shared<TypeVal>(exports)), stmt->token);
         }
 
-        TypeEnvPtr mockenv = std::make_shared<TypeEnv>();
-        mockenv->declareVar(stmt->name, std::make_shared<Type>(TypeKind::Module, "module", std::make_shared<TypeVal>(exports)));
-        TypePtr member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), mockenv);
+        TypeEnvPtr tempenv = std::make_shared<TypeEnv>();
+        tempenv->declareVar(stmt->name, std::make_shared<Type>(TypeKind::Module, "module", std::make_shared<TypeVal>(exports)), stmt->module->token);
+        TypePtr member = checkMemberExpr(static_cast<MemberExprType*>(stmt->module), tempenv);
 
-        return env->declareVar(stmt->customIdent ? stmt->ident : static_cast<MemberExprType*>(stmt->module)->lastProp, member);
+        return env->declareVar(stmt->customIdent ? stmt->ident : static_cast<MemberExprType*>(stmt->module)->lastProp, member, stmt->module->token);
     }
 
     return std::make_shared<Type>(TypeKind::Any, "module");

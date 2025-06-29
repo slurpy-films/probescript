@@ -163,7 +163,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
     std::regex urlRegex(R"(^(http?://)?([^:/]+)(:(\d+))?(/.*)?$)");
     std::smatch match;
     if (!std::regex_match(url, match, urlRegex)) {
-        return env->throwErr("[HttpError]: Invalid URL format: " + url);
+        throw ThrowException("[HttpError]: Invalid URL format: " + url);
     }
 
     int port = 80;
@@ -171,7 +171,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
         try {
             port = std::stoi(match[4]);
         } catch (...) {
-            return env->throwErr("[HttpError]: Invalid port number in URL: " + match[4].str());
+            throw ThrowException("[HttpError]: Invalid port number in URL: " + match[4].str());
         }
     }
 
@@ -191,12 +191,12 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
 
     struct hostent *server = gethostbyname(host.c_str());
     if (!server) {
-        return env->throwErr("[HttpError]: Failed to resolve host: " + host);
+        throw ThrowException("[HttpError]: Failed to resolve host: " + host);
     }
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        return env->throwErr("[HttpError]: Socket creation failed");
+        throw ThrowException("[HttpError]: Socket creation failed");
     }
 
     sockaddr_in serverAddr{};
@@ -205,7 +205,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
     serverAddr.sin_addr.s_addr = *(unsigned long*)server->h_addr;
 
     if (connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        return env->throwErr("[HttpError]: Connection to " + host + ":" + std::to_string(port) + " failed");
+        throw ThrowException("[HttpError]: Connection to " + host + ":" + std::to_string(port) + " failed");
     }
 
     send(sock, req.c_str(), req.size(), 0);
@@ -227,7 +227,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
 
     size_t headerEnd = res.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
-        return env->throwErr("[HttpError]: Malformed HTTP response");
+        throw ThrowException("[HttpError]: Malformed HTTP response");
     }
 
     std::string headerPart = res.substr(0, headerEnd);
@@ -246,7 +246,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
     try {
         statusCode = std::stoi(statusCodeStr);
     } catch (...) {
-        return env->throwErr("[HttpError]: Invalid status code: " + statusCodeStr);
+        throw ThrowException("[HttpError]: Invalid status code: " + statusCodeStr);
     }
 
     std::unordered_map<std::string, Val> props = {
@@ -272,7 +272,7 @@ Val getValHttpModule()
                     || args[0]->properties.find("handler") == args[0]->properties.end()
                     || args[0]->properties["port"]->type != ValueType::Number
                     || args[0]->properties["handler"]->type != ValueType::Function
-                ) return env->throwErr(ArgumentError("Usage: http.Serve({ port: number, handler: function })"));
+                ) throw ThrowException(ArgumentError("Usage: http.Serve({ port: number, handler: function })"));
 
                 startServer(
                     std::static_pointer_cast<NumberVal>(args[0]->properties["port"])->number,
@@ -303,7 +303,7 @@ Val getValHttpModule()
 
                         res->properties["content_type"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, EnvPtr env) -> Val
                         {
-                            if (args.empty()) return env->throwErr(ArgumentError("Usage: res.content_type(type: str)"));
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.content_type(type: str)"));
 
                             (*resheaders)["Content-Type"] = args[0]->toString();
 
@@ -312,7 +312,7 @@ Val getValHttpModule()
 
                         res->properties["send"] = std::make_shared<NativeFnValue>([resheaders, response](std::vector<Val> args, EnvPtr env) -> Val
                         {
-                            if (args.empty()) return env->throwErr(ArgumentError("Usage: res.send(value: str)"));
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.send(value: str)"));
 
                             response.send(args[0]->toString(), (*resheaders));
 
@@ -321,7 +321,7 @@ Val getValHttpModule()
 
                         res->properties["html"] = std::make_shared<NativeFnValue>([resheaders, response](std::vector<Val> args, EnvPtr env) -> Val
                         {
-                            if (args.empty()) return env->throwErr(ArgumentError("Usage: res.html(html: str)"));
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.html(html: str)"));
 
                             (*resheaders)["Content-Type"] = "text/html";
                             response.send(args[0]->toString(), (*resheaders));
@@ -331,7 +331,7 @@ Val getValHttpModule()
 
                         res->properties["json"] = std::make_shared<NativeFnValue>([resheaders, response](std::vector<Val> args, EnvPtr env) -> Val
                         {
-                            if (args.empty() || args[0]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: res.html(object: object)"));
+                            if (args.empty() || args[0]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: res.html(object: object)"));
 
                             (*resheaders)["Content-Type"] = "application/json";
                             response.send(args[0]->toString(), (*resheaders));
@@ -349,7 +349,7 @@ Val getValHttpModule()
         {
             "get",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.get(\"http://example.com\", { body: \"body\", headers: {}})"));
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.get(\"http://example.com\", { body: \"body\", headers: {}})"));
 
                 return sendReq("GET", std::static_pointer_cast<StringVal>(args[0])->string, std::static_pointer_cast<ObjectVal>(args[1]), env);
             })
@@ -357,7 +357,7 @@ Val getValHttpModule()
         {
             "post",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {}})"));
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {}})"));
 
                 return sendReq("POST", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
             })

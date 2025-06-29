@@ -1,5 +1,13 @@
 #include "utils.hpp"
 
+ThrowException::ThrowException(const std::string& m)
+    : m_msg(m) {}
+
+const char* ThrowException::what() const noexcept
+{
+    return m_msg.c_str();
+}
+
 bool isNum(const std::string& str)
 {
     if (str.empty()) return false;

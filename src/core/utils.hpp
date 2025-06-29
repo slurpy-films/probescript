@@ -4,6 +4,16 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <stdexcept>
+
+class ThrowException : public std::exception
+{
+public:
+    ThrowException(const std::string& m);
+    const char* what() const noexcept;
+private:
+    std::string m_msg;
+};
 
 bool isNum(const std::string& str);
 

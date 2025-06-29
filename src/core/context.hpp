@@ -2,15 +2,19 @@
 #include <string>
 #include <filesystem>
 #include <unordered_map>
-#include "runtime/values.hpp"
 
-enum class RuntimeType {
+enum class RuntimeType
+{
     Normal,
     REPL,
     Exports,
 };
 
-struct Context {
+struct RuntimeVal;
+using Val = std::shared_ptr<RuntimeVal>;
+
+struct Context
+{
     Context(RuntimeType type = RuntimeType::Normal, std::string probeName = "Main") : type(type), probeName(probeName) {} 
     RuntimeType type;
     std::string probeName = "Main";

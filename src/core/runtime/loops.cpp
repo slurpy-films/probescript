@@ -19,11 +19,7 @@ Val evalForStmt(ForStmtType* forstmt, EnvPtr env) {
         bool breaking = false;  
 
         for (Val cond : conds) {
-            if (cond->type != ValueType::Boolean) {
-                return env->throwErr(ManualError("For loop condition must evaluate to a boolean", "ForLoopError"));
-            }
-
-            if (!std::static_pointer_cast<BooleanVal>(cond)->toBool()) {
+            if (!cond->toBool()) {
                 breaking = true;
                 break;
             }
@@ -48,7 +44,7 @@ Val evalWhileStmt(WhileStmtType* stmt, EnvPtr env) {
     while (true) {
         Val result = eval(stmt->condition, env);
         if (result->type != ValueType::Boolean) {
-            return env->throwErr(ManualError("While condition must evaluate to a boolean", "WhileError"));
+            throw ThrowException(ManualError("While condition must evaluate to a boolean", "WhileError"));
         }
 
         if (std::static_pointer_cast<BooleanVal>(result)->getValue()) {
