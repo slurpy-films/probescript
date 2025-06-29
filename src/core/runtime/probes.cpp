@@ -23,10 +23,10 @@ Val evalProbeCall(Val val, EnvPtr declarationEnv, std::vector<Val> args) {
             case NodeType::AssignmentExpr: {
                 AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
                 if (assign->op != "=") {
-                    throw std::runtime_error(ManualError("Only = assignment is allowed in probe bodies", "ProbeBodyError"));
+                    throw std::runtime_error(CustomError("Only = assignment is allowed in probe bodies", "ProbeBodyError"));
                 }
                 if (assign->assigne->kind != NodeType::Identifier) {
-                    throw std::runtime_error(ManualError("Only identifiers can be assigned to in probe bodies", "ProbeBodyError"));
+                    throw std::runtime_error(CustomError("Only identifiers can be assigned to in probe bodies", "ProbeBodyError"));
                 }
                 env->variables[static_cast<IdentifierType*>(assign->assigne)->symbol] = eval(assign->value, env);
                 break;
@@ -43,7 +43,7 @@ Val evalProbeCall(Val val, EnvPtr declarationEnv, std::vector<Val> args) {
     Val runfnval = env->lookupVar("run", val->token);
 
     if (runfnval->type != ValueType::Function) {
-        throw std::runtime_error(ManualError("Expected 'run' to be of type function", "ProbeError"));
+        throw std::runtime_error(CustomError("Expected 'run' to be of type function", "ProbeError"));
     }
 
     evalCallWithFnVal(runfnval, args, env);
@@ -71,7 +71,7 @@ void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env)
             return;
         } else
         {
-            throw std::runtime_error(ManualError("Probes can only inherit from probes", "ProbeInheritanceError"));
+            throw std::runtime_error(CustomError("Probes can only inherit from probes", "ProbeInheritanceError"));
         }
     } else
         parentenv = std::static_pointer_cast<ProbeValue>(extends)->declarationEnv;

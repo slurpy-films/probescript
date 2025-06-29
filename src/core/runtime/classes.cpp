@@ -50,7 +50,7 @@ Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
             case NodeType::AssignmentExpr: {
                 AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
                 if (assign->op != "=") {
-                    throw ThrowException(ManualError("Only = assignment is allowed in class bodies", "ClassBodyError"));
+                    throw ThrowException(CustomError("Only = assignment is allowed in class bodies", "ClassBodyError"));
                 }
 
                 EnvPtr assignEnv = std::make_shared<Env>();
@@ -85,7 +85,7 @@ void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<Obj
     Val extendsVal = eval(cls->extends, cls->parentEnv);
     if (extendsVal->type != ValueType::Class)
     {
-        throw ThrowException(ManualError("Superclass must be a class", "ClassInheritanceError"));
+        throw ThrowException(CustomError("Superclass must be a class", "ClassInheritanceError"));
         return;
     }
 

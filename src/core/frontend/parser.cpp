@@ -819,13 +819,11 @@ Expr* Parser::parsePrimaryExpr()
             break;
 
         case Lexer::Null:
-            eat();
-            primary = new NullLiteralType();
+            primary = newnode<NullLiteralType>(eat());
             break;
 
         case Lexer::END:
-            eat();
-            primary = new UndefinedLiteralType();
+            primary = newnode<UndefinedLiteralType>(eat());
             break;
 
         default:

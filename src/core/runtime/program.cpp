@@ -31,13 +31,13 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                         eval(stmt, scope, config);
                         break;
                     default:
-                        throw std::runtime_error(ManualError("Only variable, function, class, and probe declarations are allowed in program bodies", "ProgramError"));
+                        throw std::runtime_error(CustomError("Only variable, function, class, and probe declarations are allowed in program bodies", "ProgramError"));
                 }
             }
         }
 
         if (!foundProbe) {
-            throw std::runtime_error(ManualError("Probe " + config->probeName + " is not defined", "MainError"));
+            throw std::runtime_error(CustomError("Probe " + config->probeName + " is not defined", "MainError"));
         }
 
 
@@ -81,7 +81,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     case NodeType::AssignmentExpr: {
                         AssignmentExprType* a = static_cast<AssignmentExprType*>(exportstmt->exporting);
                         if (a->assigne->kind != NodeType::Identifier) {
-                            std::cerr << ManualError("Cannot export non identifier assignment", "ExportError");
+                            std::cerr << CustomError("Cannot export non identifier assignment", "ExportError");
                         }
                         exportname = static_cast<IdentifierType*>(a->assigne)->symbol;
                         lasteval = exporting = eval(a->value, exportenv);
@@ -119,7 +119,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     }
 
                     default:
-                        throw std::runtime_error(ManualError("Unknown export type", "ExportError"));
+                        throw std::runtime_error(CustomError("Unknown export type", "ExportError"));
                 }
 
                 exports[exportname] = exporting;

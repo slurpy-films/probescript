@@ -17,7 +17,7 @@ Val Env::declareVar(std::string varname, Val value, Lexer::Token tk)
     if (!m_ready) init();
     if (variables.find(varname) != variables.end())
     {
-        throw std::runtime_error(ManualError("Variable " + varname + " is already defined", "ReferenceError", tk));
+        throw std::runtime_error(CustomError("Variable " + varname + " is already defined", "ReferenceError", tk));
     }
 
     variables[varname] = value;
@@ -53,7 +53,7 @@ EnvPtr Env::resolve(std::string varname, Lexer::Token tk)
 
     if (!parent)
     {
-        throw std::runtime_error(ManualError("Cannot resolve variable " + varname + " as it does not exist", "ReferenceError", tk));
+        throw std::runtime_error(CustomError("Cannot resolve variable " + varname + " as it does not exist", "ReferenceError", tk));
     }
 
     return parent->resolve(varname, tk);

@@ -15,7 +15,7 @@ Val evalCall(CallExprType* call, EnvPtr env) {
 Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
 
     if (fn == nullptr) {
-        throw ThrowException(ManualError("Function call target is null", "FunctionCallError"));
+        throw ThrowException(CustomError("Function call target is null", "FunctionCallError"));
     }
 
     if (fn->type == ValueType::NativeFn) {
@@ -68,7 +68,7 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
         return evalProbeCall(fn, env, args);
     }
 
-    throw ThrowException(ManualError("Cannot call value that is not a function", "FunctionCallError"));
+    throw ThrowException(CustomError("Cannot call value that is not a function", "FunctionCallError"));
 }
 
 Val evalAwaitExpr(AwaitExprType* expr, EnvPtr env) {
@@ -83,6 +83,6 @@ Val evalAwaitExpr(AwaitExprType* expr, EnvPtr env) {
     try {
         return future->future.get();
     } catch (...) {
-        throw ThrowException(ManualError("Async function failed", "AsyncError"));
+        throw ThrowException(CustomError("Async function failed", "AsyncError"));
     }
 }

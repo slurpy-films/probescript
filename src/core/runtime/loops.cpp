@@ -44,7 +44,7 @@ Val evalWhileStmt(WhileStmtType* stmt, EnvPtr env) {
     while (true) {
         Val result = eval(stmt->condition, env);
         if (result->type != ValueType::Boolean) {
-            throw ThrowException(ManualError("While condition must evaluate to a boolean", "WhileError"));
+            throw ThrowException(CustomError("While condition must evaluate to a boolean", "WhileError"));
         }
 
         if (std::static_pointer_cast<BooleanVal>(result)->getValue()) {

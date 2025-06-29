@@ -81,12 +81,16 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode)
         if (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1])))
         {
             std::string num = "";
+            int tokenLine = line;
+            int tokenCol = col;
+
             while (!src.empty() && (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1]))))
             {
                 col++;
                 num += shift(src);
             }
-            tokens.push_back(token(num, Number, { line, col }));
+
+            tokens.push_back(token(num, Number, { tokenLine, tokenCol }));
             continue;
         }
 
@@ -101,12 +105,15 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode)
 
                 if (joined == symbol)
                 {
+                    int tokenLine = line;
+                    int tokenCol = col;
+
                     for (size_t i = 0; i < symbol.length(); ++i)
                     {
                         col++;
                         shift(src);
                     }
-                    tokens.push_back(token(symbol, type, { line, col }));
+                    tokens.push_back(token(symbol, type, { tokenLine, tokenCol }));
                     matchedMulti = true;
                     break;
                 }
@@ -125,6 +132,8 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode)
         if (src[0] == "\"" || src[0] == "'")
         {
             col++;
+            int tokenLine = line;
+            int tokenCol = col;
             std::string quoteType = shift(src);
             std::string value = "";
         
@@ -151,7 +160,7 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode)
             }
         
             if (!src.empty()) { shift(src); col++; }
-            tokens.push_back(token(value, String, { line, col }));
+            tokens.push_back(token(value, String, { tokenLine, tokenCol }));
             continue;
         }
 

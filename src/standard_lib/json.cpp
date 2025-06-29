@@ -24,7 +24,7 @@ bool JSONParser::tokenize() {
             }
 
             if (src.empty()) {
-                throw ThrowException(ManualError("Expected end \" after string", "JsonError"));
+                throw ThrowException(CustomError("Expected end \" after string", "JsonError"));
                 return true;
             }
 
@@ -81,7 +81,7 @@ bool JSONParser::tokenize() {
         } else if (src[0] == "]") {
             tokens.push_back(Token(shift(src), CloseBracket));
         } else {
-            throw ThrowException(ManualError("Unknown sign in JSON: '" + src[0] + "'", "JsonError"));
+            throw ThrowException(CustomError("Unknown sign in JSON: '" + src[0] + "'", "JsonError"));
             return true;
         }
     }
@@ -103,7 +103,7 @@ Val JSONParser::parseValue() {
         case TokenType::OpenBracket:
             return parseArray();
         default:
-            throw ThrowException(ManualError("Unknown value type in JSON", "JsonError"));
+            throw ThrowException(CustomError("Unknown value type in JSON", "JsonError"));
     }
 }
 
@@ -116,7 +116,7 @@ Val JSONParser::parseObject() {
     }
 
     if (tokens[0].type != TokenType::String) {
-        throw ThrowException(ManualError("Expected object key to be of type string", "JsonError"));
+        throw ThrowException(CustomError("Expected object key to be of type string", "JsonError"));
     }
     std::string key = eat().val;
 
@@ -125,11 +125,11 @@ Val JSONParser::parseObject() {
     o->properties[key] = val;
     while (tokens[0].type != TokenType::ClosedBrace) {
         if (tokens[0].type != TokenType::Comma) {
-            throw ThrowException(ManualError("Expected comma after object property", "JsonError"));
+            throw ThrowException(CustomError("Expected comma after object property", "JsonError"));
         }
         eat();
         if (tokens[0].type != TokenType::String) {
-            throw ThrowException(ManualError("Expected object key to be of type string", "JsonError"));
+            throw ThrowException(CustomError("Expected object key to be of type string", "JsonError"));
         }
         std::string key = eat().val;
         eat();
@@ -151,7 +151,7 @@ Val JSONParser::parseArray() {
     }
 
     if (tokens[0].type != TokenType::CloseBracket) {
-        throw ThrowException(ManualError("Expected closing bracket after array", "JsonError"));
+        throw ThrowException(CustomError("Expected closing bracket after array", "JsonError"));
     }
     eat();
 

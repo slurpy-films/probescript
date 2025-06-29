@@ -43,7 +43,7 @@ Val evalAssignment(AssignmentExprType* assignment, EnvPtr env)
 {
     if (assignment->assigne->kind != NodeType::Identifier)
     {
-        throw ThrowException(ManualError("Expected Identifier in assignment", "AssignmentError", assignment->token));
+        throw ThrowException(CustomError("Expected Identifier in assignment", "AssignmentError", assignment->token));
     }
 
     std::string varName = static_cast<IdentifierType*>(assignment->assigne)->symbol;
@@ -63,7 +63,7 @@ Val evalAssignment(AssignmentExprType* assignment, EnvPtr env)
     else if (assignment->op == "/=") result = leftVal->div(rightVal);
     else if (assignment->op == "+=") result = leftVal->add(rightVal);
     else {
-        throw ThrowException(ManualError("Unsupported assignment operator: " + assignment->op, "AssignmentError", assignment->token));
+        throw ThrowException(CustomError("Unsupported assignment operator: " + assignment->op, "AssignmentError", assignment->token));
     }
 
     return env->assignVar(varName, result, assignment->token);
@@ -78,7 +78,7 @@ Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env)
 
         if (current->type != ValueType::Number)
         {
-            throw ThrowException(ManualError("Postfix operators only supported on numbers", "OperatorError", current->token));
+            throw ThrowException(CustomError("Postfix operators only supported on numbers", "OperatorError", current->token));
         }
 
         double value = std::static_pointer_cast<NumberVal>(current)->toNum();
@@ -88,7 +88,7 @@ Val evalUnaryPostfix(UnaryPostFixType* expr, EnvPtr env)
         else if (expr->op == "--") newValue = value - 1;
         else
         {
-            throw ThrowException(ManualError("Unknown postfix operator: " + expr->op, "OperatorError", expr->token));
+            throw ThrowException(CustomError("Unknown postfix operator: " + expr->op, "OperatorError", expr->token));
         }
 
         env->assignVar(varName, makeVal<NumberVal>(expr->token, newValue), expr->token);
@@ -147,7 +147,7 @@ Val evalBinExpr(BinaryExprType* binop, EnvPtr env) {
         return left->mod(right);
     }
 
-    throw ThrowException(ManualError("Invalid operants: " + left->toString() + " and " + right->toString(), "OperatorError", binop->token));
+    throw ThrowException(CustomError("Invalid operants: " + left->toString() + " and " + right->toString(), "OperatorError", binop->token));
 }
 
 Val evalBody(std::vector<Stmt*> body, EnvPtr env, bool isLoop)
@@ -208,7 +208,7 @@ Val evalBooleanBinExpr(BinaryExprType* binop, EnvPtr env)
         return makeVal<BooleanVal>(binop->token, result);
     }
 
-    throw ThrowException(ManualError("Invalid binary boolean operator: " + op, "OperatorError", binop->token));
+    throw ThrowException(CustomError("Invalid binary boolean operator: " + op, "OperatorError", binop->token));
 }
 
 Val evalFunctionDeclaration(FunctionDeclarationType* declaration, EnvPtr env, bool onlyValue)
@@ -269,7 +269,7 @@ Val evalImportStmt(ImportStmtType* importstmt, EnvPtr envptr, std::shared_ptr<Co
 
     if (config->modules.find(modulename) == config->modules.end())
     {
-        throw ThrowException(ManualError("Cannot find module " + modulename, "ImportError", importstmt->token));
+        throw ThrowException(CustomError("Cannot find module " + modulename, "ImportError", importstmt->token));
     }
 
     fs::path filepath = config->modules[modulename];
@@ -358,13 +358,13 @@ Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env)
             }
             else
             {
-                throw ThrowException(ManualError("Cannot use numeric index on non-array object", "MemberError", propValue->token));
+                throw ThrowException(CustomError("Cannot use numeric index on non-array object", "MemberError", propValue->token));
             }
         }
 
         if (propValue->type != ValueType::String)
         {
-            throw ThrowException(ManualError("Computed property must evaluate to a string or number", "MemberError", expr->token));
+            throw ThrowException(CustomError("Computed property must evaluate to a string or number", "MemberError", expr->token));
         }
 
         key = std::static_pointer_cast<StringVal>(propValue)->string;
@@ -409,7 +409,7 @@ Val evalMemberAssignment(MemberAssignmentType* expr, EnvPtr env)
         return objectVal;
     }
 
-    throw ThrowException(ManualError("Cannot assign member to non-object/non-array value", "TypeError", expr->token));
+    throw ThrowException(CustomError("Cannot assign member to non-object/non-array value", "TypeError", expr->token));
 }
 
 Val evalMemberExpr(MemberExprType* expr, EnvPtr env)
@@ -426,7 +426,7 @@ Val evalMemberExpr(MemberExprType* expr, EnvPtr env)
     
             if (propValue->type != ValueType::String)
             {
-                throw ThrowException(ManualError("Computed property must evaluate to a string", "TypeError", expr->token));
+                throw ThrowException(CustomError("Computed property must evaluate to a string", "TypeError", expr->token));
             }
     
             key = std::static_pointer_cast<StringVal>(propValue)->string;
@@ -452,7 +452,7 @@ Val evalMemberExpr(MemberExprType* expr, EnvPtr env)
 
         if (indexval->type != ValueType::Number)
         {
-            throw ThrowException(ManualError("Array index must evaluate to a number", "TypeError", expr->token));
+            throw ThrowException(CustomError("Array index must evaluate to a number", "TypeError", expr->token));
         }
 
         std::shared_ptr<NumberVal> index = std::static_pointer_cast<NumberVal>(indexval);

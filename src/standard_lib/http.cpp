@@ -43,13 +43,13 @@ void startServer(const int port, std::function<void(Request, Response)> handler)
     {
         closesocket(serverSocket);
         WSACleanup();
-        throw std::runtime_error(ManualError("Bind failed", "HttpError"));
+        throw std::runtime_error(CustomError("Bind failed", "HttpError"));
     }
 #else
     if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
     {
         close(serverSocket);
-        throw std::runtime_error(ManualError("Bind failed", "HttpError"));
+        throw std::runtime_error(CustomError("Bind failed", "HttpError"));
     }
 #endif
 
