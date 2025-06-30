@@ -13,7 +13,9 @@ struct Request
     std::string method;
     std::string path;
     std::string raw;
-    std::string body;
+
+    std::function<void(std::string)> ondata;
+    std::function<void()> end;
     
     std::unordered_map<std::string, std::string> headers = {};
     std::unordered_map<std::string, std::string> cookies = {};

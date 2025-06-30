@@ -18,9 +18,11 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
         throw ThrowException(CustomError("Function call target is null", "FunctionCallError"));
     }
 
-    if (fn->type == ValueType::NativeFn) {
+    if (fn->type == ValueType::NativeFn)
+    {
+        auto nativefn = std::static_pointer_cast<NativeFnValue>(fn);
 
-        Val result = std::static_pointer_cast<NativeFnValue>(fn)->call(args, env);
+        Val result = nativefn->call(args, env);
 
         return result;
     }

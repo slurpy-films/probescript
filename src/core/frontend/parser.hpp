@@ -95,7 +95,7 @@ private:
 
     // Utility methods
 
-    std::vector<Expr*> parseArgs(bool braces = false);
+    std::vector<Expr*> parseArgs();
 
     std::vector<Expr*> parseArgList();
 

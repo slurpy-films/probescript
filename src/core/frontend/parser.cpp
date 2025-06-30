@@ -715,10 +715,19 @@ Expr* Parser::parseNewExpr()
     }
 
     Token tk = eat();
+    std::vector<Expr*> args;
 
     Expr* constructor = parseMemberExpr();
-
-    std::vector<Expr*> args = parseArgs(true);
+    if (constructor->kind == NodeType::CallExpr)
+    {
+        CallExprType* call = static_cast<CallExprType*>(constructor);
+        args = call->args;
+        constructor = call->calee;
+    }
+    else
+    {
+        args = parseArgs();
+    }
     
     return newnode<NewExprType>(tk, constructor, args);
 }
@@ -869,17 +878,17 @@ Expr* Parser::parseArrayExpr()
     return newnode<ArrayLiteralType>(tk, items);
 }
 
-std::vector<Expr*> Parser::parseArgs(bool braces)
+std::vector<Expr*> Parser::parseArgs()
 {
-    expect((!braces ? Lexer::OpenParen : Lexer::OpenBrace), "Expected open " + std::string(!braces ? "parentheses" : "brace"));
+    expect(Lexer::OpenParen, "Expected open parentheses");
 
     std::vector<Expr*> args; 
-    if (at().type != (!braces ? Lexer::ClosedParen : Lexer::ClosedBrace))
+    if (at().type != (Lexer::ClosedParen))
     {
         args = parseArgList();
     }
 
-    expect((!braces ? Lexer::ClosedParen : Lexer::ClosedBrace), "Expected closing " + std::string(!braces ? "parentheses" : "brace"));
+    expect(Lexer::ClosedParen, "Expected closing parentheses");
     
     return args;
 }

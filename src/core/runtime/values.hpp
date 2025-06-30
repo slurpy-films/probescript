@@ -208,12 +208,22 @@ struct NullVal : public RuntimeVal {
     }
 };
 
-struct NativeFnValue : public RuntimeVal {
+struct NativeFnValue : public RuntimeVal
+{
     NativeFunction call;
+
     NativeFnValue(NativeFunction fn) : RuntimeVal(ValueType::NativeFn), call(fn) {}
-    std::string toString() const override {
+    
+    std::string toString() const override
+    {
         return "[native function]";
     }
+
+    std::string toConsole() const override
+    {
+        return ConsoleColors::CYAN + "[native function]" + ConsoleColors::RESET;
+    }
+    
     bool toBool() const override { return true; }
 
     bool compare(const RuntimeVal& other) const override
@@ -301,6 +311,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+
     bool toBool() const override { return true; }
 
     Val add(Val o) const override {
@@ -355,8 +366,10 @@ struct FunctionValue : public RuntimeVal {
     std::vector<VarDeclarationType*> templateparams;
     EnvPtr declarationEnv;
     std::vector<Stmt*> body;
+
     FunctionValue (std::string name, std::vector<VarDeclarationType*> params, EnvPtr declarationEnv, std::vector<Stmt*> body, bool isAsync = false) 
         : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body), isAsync(isAsync) {}
+
     std::string toString() const override {
         return "[function " + name + "]";
     }
@@ -366,6 +379,7 @@ struct FunctionValue : public RuntimeVal {
     std::string toConsole() const override {
         return ConsoleColors::CYAN + "[function " + name + "]" + ConsoleColors::RESET;
     }
+
     bool toBool() const override { return true; }
     bool isAsync = false;
 };
@@ -468,14 +482,7 @@ struct StringVal : public RuntimeVal {
 struct ObjectVal : public RuntimeVal
 {
     ObjectVal(std::unordered_map<std::string, Val> properties = {})
-        : RuntimeVal(ValueType::Object, properties)
-        {
-            this->properties["has_property"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<BooleanVal>(false);
-
-                return std::make_shared<BooleanVal>(this->hasProperty(std::static_pointer_cast<StringVal>(args[0])->string));
-            });
-        }
+        : RuntimeVal(ValueType::Object, properties) {}
 
     bool hasProperty(const std::string& prop)
     {

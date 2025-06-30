@@ -159,7 +159,8 @@ StringVal::StringVal(std::string val) : RuntimeVal(ValueType::String), string(va
             "find",
             std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _env) -> Val
             {
-                return std::make_shared<NumberVal>(!args.empty() ? this->string.find(args[0]->toString()) : -1);
+                double pos = !args.empty() ? this->string.find(args[0]->toString()) : -1;
+                return std::make_shared<NumberVal>(pos == std::string::npos ? -1 : pos);
             })
         },
         {
