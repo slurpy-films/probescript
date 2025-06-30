@@ -542,8 +542,8 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config)
 
         case NodeType::ReturnStmt:
         {
-            Val value = eval(static_cast<ReturnStmtType*>(astNode)->stmt, env);
-            return std::make_shared<ReturnSignal>(value);
+            Val value = eval(static_cast<ReturnStmtType*>(astNode)->val, env);
+            throw ReturnSignal(value, CustomError("Did not expect return statement", "ReturnError", astNode->token));
         }
         
         case NodeType::ClassDefinition:
@@ -613,10 +613,10 @@ Val eval(Stmt* astNode, EnvPtr env, std::shared_ptr<Context> config)
             return evalArrowFunction(static_cast<ArrowFunctionType*>(astNode), env);
 
         case NodeType::BreakStmt:
-            return std::make_shared<BreakSignal>();
+            throw BreakSignal(CustomError("Did not expect break statement", "BreakError", astNode->token));
         
         case NodeType::ContinueStmt:
-            return std::make_shared<ContinueSignal>();
+            throw ContinueSignal(CustomError("Did not expect continue statement", "ContinueError", astNode->token));
 
         case NodeType::ImportStmt:
             return evalImportStmt(static_cast<ImportStmtType*>(astNode), env, config);

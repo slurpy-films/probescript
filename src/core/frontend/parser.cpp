@@ -691,7 +691,8 @@ Expr* Parser::parseArrowFunction()
 
     std::vector<VarDeclarationType*> params = parseParams();
 
-    expect(Lexer::Arrow, "Expected arrow after arrow function parameters");
+    if (at().type == Lexer::Arrow)
+        eat();
 
     std::vector<Stmt*> body;
     if (at().type == Lexer::OpenBrace)

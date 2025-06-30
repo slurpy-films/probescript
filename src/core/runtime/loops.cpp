@@ -1,60 +1,83 @@
 #include "runtime/interpreter.hpp"
 
-Val evalForStmt(ForStmtType* forstmt, EnvPtr env) {
+Val evalForStmt(ForStmtType* forstmt, EnvPtr env)
+{
     EnvPtr parent = std::make_shared<Env>(env);
 
-    for (Stmt* stmt : forstmt->declarations) {
+    for (Stmt* stmt : forstmt->declarations)
+    {
         eval(stmt, parent);
     }
 
     Val result = std::make_shared<UndefinedVal>();
 
-    while (true) {
+    while (true)
+    {
         EnvPtr scope = std::make_shared<Env>(parent);
         std::vector<Val> conds;
-        for (Expr* expr : forstmt->conditions) {
+        for (Expr* expr : forstmt->conditions)
+        {
             conds.push_back(eval(expr, scope));
         }
 
         bool breaking = false;  
 
-        for (Val cond : conds) {
-            if (!cond->toBool()) {
+        for (Val cond : conds)
+        {
+            if (!cond->toBool())
+            {
                 breaking = true;
                 break;
             }
         }
 
         if (breaking) break;
+        try
+        {
+            evalBody(forstmt->body, scope, true);
+        }
+        catch (const BreakSignal& signal)
+        {
+            break;
+        }
+        catch (const ContinueSignal& signal)
+        {
+            for (Expr* expr : forstmt->updates)
+            {
+                eval(expr, scope);
+            }
+            continue;
+        }
 
-        result = evalBody(forstmt->body, scope, true);
-        if (result->type == ValueType::ReturnSignal) break;
-        else if (result->type == ValueType::BreakSignal) break;
-
-        for (Expr* expr : forstmt->updates) {
+        for (Expr* expr : forstmt->updates)
+        {
             eval(expr, scope);
         }
     }
 
-    return result->type == ValueType::ReturnSignal ? result : std::make_shared<UndefinedVal>();
+    return std::make_shared<UndefinedVal>();
 }
 
 Val evalWhileStmt(WhileStmtType* stmt, EnvPtr env) {
-    Val res = std::make_shared<UndefinedVal>();
     while (true) {
         Val result = eval(stmt->condition, env);
-        if (result->type != ValueType::Boolean) {
-            throw ThrowException(CustomError("While condition must evaluate to a boolean", "WhileError"));
-        }
 
-        if (std::static_pointer_cast<BooleanVal>(result)->getValue()) {
+        if (result->toBool()) {
             EnvPtr scope = std::make_shared<Env>(env);
-            res = evalBody(stmt->body, scope, true);
-            if (res->type == ValueType::ReturnSignal) break;
-            else if (res->type == ValueType::BreakSignal) break;
-
+            try
+            {
+                evalBody(stmt->body, scope);
+            }
+            catch (const BreakSignal& signal)
+            {
+                break;
+            }
+            catch (const ContinueSignal& signal)
+            {
+                continue;
+            }
         } else break;
     }
 
-    return res;
+    return std::make_shared<UndefinedVal>();
 }

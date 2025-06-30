@@ -10,6 +10,7 @@
 #include "env.hpp"
 #include "context.hpp"
 #include "frontend/parser.hpp"
+#include "errors.hpp"
 
 namespace fs = std::filesystem;
 

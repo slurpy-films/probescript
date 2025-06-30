@@ -172,11 +172,11 @@ TypePtr TC::checkReturnStmt(ReturnStmtType* stmt, TypeEnvPtr env)
         throw std::runtime_error(TypeError("Did not expect return statement", stmt->token));
     }
 
-    TypePtr rettype = check(stmt->stmt, env);
+    TypePtr rettype = check(stmt->val, env);
 
     if (!compare(m_currentret, rettype, env))
     {
-        throw std::runtime_error(TypeError(rettype->name + " does not match expected return type, " + m_currentret->name, stmt->token));
+        throw std::runtime_error(TypeError(rettype->name + " does not match expected return type, " + m_currentret->name, stmt->val->token));
     }
 
     return std::make_shared<Type>(TypeKind::Any, "any");
@@ -433,8 +433,16 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
         scope->declareVar(param->identifier, type, param->token);
     }
 
+    std::unordered_set<std::string> usedParams;
+
     for (VarDeclarationType* param : fn->parameters)
     {
+        if (usedParams.count(param->identifier))
+        {
+            throw std::runtime_error(CustomError("Duplicate parameter " + param->identifier, "ParameterError", param->token));
+        }
+        
+        usedParams.insert(param->identifier);
         scope->declareVar(param->identifier, param->staticType ? getType(param->type, scope) : std::make_shared<Type>(TypeKind::Any, "any"), param->token);
     }
 

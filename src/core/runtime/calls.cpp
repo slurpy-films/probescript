@@ -42,9 +42,18 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
                     scope->declareVar(varname, value, Lexer::Token());
                 }
 
-                Val result = evalBody(func->body, scope);
+                Val result = std::make_shared<UndefinedVal>();
 
-                return (result->type == ValueType::ReturnSignal ? std::static_pointer_cast<ReturnSignal>(result)->val : std::make_shared<UndefinedVal>());
+                try
+                {
+                    evalBody(func->body, scope);
+                }
+                catch (const ReturnSignal& ret)
+                {
+                    result = ret.get(); 
+                }
+                
+                return result;
             }));
         }
         else
@@ -57,10 +66,18 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
                 Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
                 scope->declareVar(varname, value, fn->token);
             }
-            
-            Val result = evalBody(func->body, scope);
+            Val result = std::make_shared<UndefinedVal>();
 
-            return (result->type == ValueType::ReturnSignal ? std::static_pointer_cast<ReturnSignal>(result)->val : std::make_shared<UndefinedVal>());;
+            try
+            {
+                evalBody(func->body, scope);
+            }
+            catch (const ReturnSignal& ret)
+            {
+                result = ret.get(); 
+            }
+            
+            return result;
         }
     }
 

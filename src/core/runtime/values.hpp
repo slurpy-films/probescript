@@ -271,30 +271,6 @@ struct BooleanVal : public RuntimeVal {
     }
 };
 
-
-struct ReturnSignal : public RuntimeVal {
-    Val val;
-    ReturnSignal(Val val)
-    : RuntimeVal(ValueType::ReturnSignal), val(val) {}
-    std::string toJSON() const override {
-        return "null";
-    }
-};
-
-struct BreakSignal : public RuntimeVal {
-    std::string toJSON() const override {
-        return "null";
-    }
-    BreakSignal() : RuntimeVal(ValueType::BreakSignal) {}
-};
-
-struct ContinueSignal : public RuntimeVal {
-    std::string toJSON() const override {
-        return "null";
-    }
-    ContinueSignal() : RuntimeVal(ValueType::ContinueSignal) {}
-};
-
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
     ArrayVal(std::vector<Val> items = {});
@@ -352,7 +328,26 @@ struct ArrayVal : public RuntimeVal {
     }
 };
 
+class ReturnSignal : public std::runtime_error
+{
+public:
+    ReturnSignal(Val val, std::string unexpectedMsg);
+    Val get() const;
+private:
+    Val m_val;
+};
 
+class BreakSignal : public std::runtime_error
+{
+public:
+    BreakSignal(std::string unexpectedMsg);
+};
+
+class ContinueSignal : public std::runtime_error
+{
+public:
+    ContinueSignal(std::string unexpectedMsg);
+};
 
 struct FunctionValue : public RuntimeVal {
     std::string name;

@@ -29,12 +29,12 @@ void showHelp(char* argv[])
 {
     std::cout << ConsoleColors::CYAN << "Probescript v" << __PROBESCRIPTVERSION__ << "\n" << ConsoleColors::RESET
               << "Usage:\n"
-              << ConsoleColors::YELLOW << "  " << argv[0] << " [command] [args]\n\n" << ConsoleColors::RESET
+              << ConsoleColors::YELLOW << "  probescript " << ConsoleColors::RESET << ConsoleColors::GREEN << "[command] [args]\n\n" << ConsoleColors::RESET
               << "Available Commands:\n"
-                << ConsoleColors::BLUE <<  "  run     Run a probescript file\n" << ConsoleColors::RESET
-                << ConsoleColors::GREEN << "  repl    Start the probescript REPL\n" << ConsoleColors::RESET
-                << ConsoleColors::RED <<   "  help    Shows this help menu\n" << ConsoleColors::RESET
-                << ConsoleColors::YELLOW <<  "  init    Initialize a new probescript project\n" << ConsoleColors::RESET;
+                << ConsoleColors::BLUE << "  run " << ConsoleColors::RESET << "  Run a probescript file\n"
+                << ConsoleColors::BLUE << "  repl" << ConsoleColors::RESET << "  Start the probescript REPL\n"
+                << ConsoleColors::BLUE << "  test" << ConsoleColors::RESET << "  Run tests on a probescript file using the 'prbtest' standard library\n"
+                << ConsoleColors::BLUE << "  init" << ConsoleColors::RESET << "  Initialize a new probescript project\n";
 }
 
 Application::Application(int argc, char* argv[])
@@ -110,9 +110,64 @@ void Application::run()
 
             Val result = eval(program, env, context);
 
-            delete program;
-
             return;
+        }
+        catch (const std::runtime_error& err)
+        {
+            std::cerr << err.what();
+            exit(1);
+        }
+        catch (const ThrowException& err)
+        {
+            std::cerr << err.what();
+            exit(1);
+        }
+    }
+    else if (m_command == "test")
+    {
+        if (m_args.empty())
+        {
+            std::cerr << "Run command expects 1 argument, 0 given";
+            exit(1);
+        }
+
+        fs::path fileName(m_args[0]);
+        try
+        {
+            Parser parser;
+            std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
+            EnvPtr env = std::make_shared<Env>();
+
+            if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
+            {
+                fileName = fileName / indexedPair.second->properties["main"]->toString();
+            }
+
+            std::ifstream stream(fileName);
+            std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+            std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
+
+            g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
+            context->filename = std::filesystem::absolute(fileName).string();
+            context->file = file;
+            context->modules = indexedPair.first;
+            context->project = indexedPair.second;
+            
+            ProgramType* program = parser.parse(file, context);
+
+            std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
+
+            if (std::find(m_flags.begin(), m_flags.end(), "--skip-tc") == m_flags.end())
+            {
+                TC tc;
+                tc.checkProgram(program, typeenv, context);
+            }
+
+            Val result = eval(program, env, context);
+
+            runTests(fileName.string());
         }
         catch (const std::runtime_error& err)
         {

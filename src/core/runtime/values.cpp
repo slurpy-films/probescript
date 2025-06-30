@@ -171,3 +171,17 @@ StringVal::StringVal(std::string val) : RuntimeVal(ValueType::String), string(va
         }
     };
 }
+
+ReturnSignal::ReturnSignal(Val val, std::string msg)
+    : m_val(val), std::runtime_error(msg) {}
+
+Val ReturnSignal::get() const
+{
+    return m_val;
+}
+
+BreakSignal::BreakSignal(std::string msg)
+    : std::runtime_error(msg) {};
+
+ContinueSignal::ContinueSignal(std::string msg)
+    : std::runtime_error(msg) {};

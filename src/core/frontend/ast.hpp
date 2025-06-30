@@ -46,6 +46,8 @@ enum NodeType {
     AwaitExpr,
 };
 
+struct Expr;
+
 struct Stmt {
     Lexer::Token token = Lexer::Token();
     NodeType kind;
@@ -68,10 +70,9 @@ struct ProgramType : public Stmt {
 };
 
 struct ReturnStmtType : public Stmt {
-    Stmt* stmt;
-    ReturnStmtType(Stmt* stmt)
-        : Stmt(NodeType::ReturnStmt), stmt(stmt) {}
-    
+    Expr* val;
+    ReturnStmtType(Expr* val)
+        : Stmt(NodeType::ReturnStmt), val(val) {}
 };
 
 struct Expr : public Stmt { 

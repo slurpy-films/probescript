@@ -114,5 +114,12 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_stdlib =
                 }
             })))
         }
+    },
+    {
+        "prbtest",
+        {
+            getValTestLib(),
+            getTypeTestLib()
+        }
     }
 };
