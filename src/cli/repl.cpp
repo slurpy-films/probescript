@@ -17,12 +17,11 @@ void REPL::start()
         if (src.find("exit") == 0) break;
         try
         {
-            ProgramType* program = parser.parse(src);
+            std::shared_ptr<ProgramType> program = parser.parse(src);
 
             Val result = eval(program, env, context);
 
             std::cout << result->toConsole() << "\n";
-            delete program;
         }
         catch (const std::runtime_error& err)
         {

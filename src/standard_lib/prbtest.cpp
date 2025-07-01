@@ -37,11 +37,11 @@ TypePtr getTypeTestLib()
     {
         {
             "assert",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "expression"), new VarDeclarationType(new StringLiteralType("Assertion failed"), "failmessage") })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "expression"), std::make_shared<VarDeclarationType>(std::make_shared<StringLiteralType>("Assertion failed"), "failmessage") })))
         },
         {
             "test",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "name", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "fn") })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "name", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "fn") })))
         }
     })));
 }

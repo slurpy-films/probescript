@@ -1,16 +1,16 @@
 #include "runtime/interpreter.hpp"
 
-Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> config) {
+Val evalProgram(std::shared_ptr<ProgramType> program, EnvPtr env, std::shared_ptr<Context> config) {
     if (config->type == RuntimeType::Normal) {
         EnvPtr scope = std::make_shared<Env>(env);
-        ProbeDeclarationType* probeDeclaration;
+        std::shared_ptr<ProbeDeclarationType> probeDeclaration;
         bool foundProbe = false;
-        for (Stmt* stmt : program->body) {
+        for (std::shared_ptr<Stmt> stmt : program->body) {
             if (
                 stmt->kind == NodeType::ProbeDeclaration
-                && static_cast<ProbeDeclarationType*>(stmt)->name == config->probeName
+                && std::static_pointer_cast<ProbeDeclarationType>(stmt)->name == config->probeName
             ) {
-                probeDeclaration = static_cast<ProbeDeclarationType*>(stmt);
+                probeDeclaration = std::static_pointer_cast<ProbeDeclarationType>(stmt);
                 foundProbe = true;
                 break;
             } else {
@@ -48,7 +48,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
         return lastEval;
     } else if (config->type == RuntimeType::REPL) {
         Val lastEval = std::make_shared<UndefinedVal>();
-        for (Stmt* stmt : program->body) {
+        for (std::shared_ptr<Stmt> stmt : program->body) {
             lastEval = eval(stmt, env, config);
         }
 
@@ -60,9 +60,9 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
 
         Val lasteval;
 
-        for (Stmt* stmt : program->body) {
+        for (std::shared_ptr<Stmt> stmt : program->body) {
             if (stmt->kind == NodeType::ExportStmt) {
-                ExportStmtType* exportstmt = static_cast<ExportStmtType*>(stmt);
+                std::shared_ptr<ExportStmtType> exportstmt = std::static_pointer_cast<ExportStmtType>(stmt);
                 
                 std::string exportname;
                 Val exporting;
@@ -70,7 +70,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
 
                 switch (exportstmt->exporting->kind) {
                     case NodeType::Identifier: {
-                        IdentifierType* ident = static_cast<IdentifierType*>(exportstmt->exporting);
+                        std::shared_ptr<IdentifierType> ident = std::static_pointer_cast<IdentifierType>(exportstmt->exporting);
                         exportname = ident->symbol;
                         lasteval = exporting = eval(ident, exportenv);
                         found = true;
@@ -79,11 +79,11 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     }
 
                     case NodeType::AssignmentExpr: {
-                        AssignmentExprType* a = static_cast<AssignmentExprType*>(exportstmt->exporting);
+                        std::shared_ptr<AssignmentExprType> a = std::static_pointer_cast<AssignmentExprType>(exportstmt->exporting);
                         if (a->assigne->kind != NodeType::Identifier) {
                             std::cerr << CustomError("Cannot export non identifier assignment", "ExportError");
                         }
-                        exportname = static_cast<IdentifierType*>(a->assigne)->symbol;
+                        exportname = std::static_pointer_cast<IdentifierType>(a->assigne)->symbol;
                         lasteval = exporting = eval(a->value, exportenv);
                         found = true;
 
@@ -91,7 +91,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     }
 
                     case NodeType::ProbeDeclaration: {
-                        ProbeDeclarationType* probe = static_cast<ProbeDeclarationType*>(exportstmt->exporting);
+                        std::shared_ptr<ProbeDeclarationType> probe = std::static_pointer_cast<ProbeDeclarationType>(exportstmt->exporting);
                         exportname = probe->name;
                         lasteval = exporting = eval(probe, exportenv);
 
@@ -101,7 +101,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     }
 
                     case NodeType::FunctionDeclaration: {
-                        FunctionDeclarationType* fn = static_cast<FunctionDeclarationType*>(exportstmt->exporting);
+                        std::shared_ptr<FunctionDeclarationType> fn = std::static_pointer_cast<FunctionDeclarationType>(exportstmt->exporting);
                         exportname = fn->name;
                         found = true;
                         lasteval = exporting = eval(fn, exportenv);
@@ -110,7 +110,7 @@ Val evalProgram(ProgramType* program, EnvPtr env, std::shared_ptr<Context> confi
                     }
 
                     case NodeType::ClassDefinition: {
-                        ClassDefinitionType* cls = static_cast<ClassDefinitionType*>(exportstmt->exporting);
+                        std::shared_ptr<ClassDefinitionType> cls = std::static_pointer_cast<ClassDefinitionType>(exportstmt->exporting);
                         exportname = cls->name;
                         found = true;
                         lasteval = exporting = eval(cls, exportenv);

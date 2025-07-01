@@ -283,6 +283,7 @@ struct BooleanVal : public RuntimeVal {
 
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
+
     ArrayVal(std::vector<Val> items = {});
     std::string toString() const override {
         std::string result = "[";
@@ -293,6 +294,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+
     std::string toJSON() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -302,6 +304,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+
     std::string toConsole() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -362,12 +365,12 @@ public:
 
 struct FunctionValue : public RuntimeVal {
     std::string name;
-    std::vector<VarDeclarationType*> params;
-    std::vector<VarDeclarationType*> templateparams;
+    std::vector<std::shared_ptr<VarDeclarationType>> params;
+    std::vector<std::shared_ptr<VarDeclarationType>> templateparams;
     EnvPtr declarationEnv;
-    std::vector<Stmt*> body;
+    std::vector<std::shared_ptr<Stmt>> body;
 
-    FunctionValue (std::string name, std::vector<VarDeclarationType*> params, EnvPtr declarationEnv, std::vector<Stmt*> body, bool isAsync = false) 
+    FunctionValue (std::string name, std::vector<std::shared_ptr<VarDeclarationType>> params, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, bool isAsync = false) 
         : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body), isAsync(isAsync) {}
 
     std::string toString() const override {
@@ -386,13 +389,13 @@ struct FunctionValue : public RuntimeVal {
 
 struct ProbeValue : public RuntimeVal {
     std::string name;
-    Expr* extends;
+    std::shared_ptr<Expr> extends;
     bool doesExtend = false;
     EnvPtr declarationEnv;
-    std::vector<Stmt*> body;
-    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body) 
+    std::vector<std::shared_ptr<Stmt>> body;
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
-    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<Expr> extends) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[probe " + name + "]";
@@ -406,12 +409,12 @@ struct ProbeValue : public RuntimeVal {
 struct ClassVal : public RuntimeVal {
     std::string name;
     EnvPtr parentEnv;
-    std::vector<Stmt*> body;
-    Expr* extends;
+    std::vector<std::shared_ptr<Stmt>> body;
+    std::shared_ptr<Expr> extends;
     bool doesExtend = false;
-    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body) {}
-    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<Expr> extends) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[class " + name + "]";
@@ -450,7 +453,9 @@ struct StringVal : public RuntimeVal {
         }
         return val;
     }
+
     bool toBool() const override { return !string.empty(); }
+
     std::string toConsole() const override {
         return ConsoleColors::GREEN + "\"" + string + "\"" + ConsoleColors::RESET;
     }
@@ -502,6 +507,7 @@ struct ObjectVal : public RuntimeVal
         result += " }";
         return result;
     }
+
     std::string toJSON() const override
     {
         std::string result = "{ ";
@@ -515,6 +521,7 @@ struct ObjectVal : public RuntimeVal
         result += " }";
         return result;
     }
+    
     std::string toConsole() const override
     {
         std::string result = "{ ";

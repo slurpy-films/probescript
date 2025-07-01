@@ -9,7 +9,7 @@ extern "C"
         try
         {
             std::string code = std::string(raw);
-            ProgramType* program = Parser().parse(code);
+            std::shared_ptr<ProgramType> program = Parser().parse(code);
             eval(program, std::make_shared<Env>());
 
             return "";
@@ -34,7 +34,7 @@ void showHelp(char* argv[])
                 << ConsoleColors::BLUE << "  run " << ConsoleColors::RESET << "  Run a probescript file\n"
                 << ConsoleColors::BLUE << "  repl" << ConsoleColors::RESET << "  Start the probescript REPL\n"
                 << ConsoleColors::BLUE << "  test" << ConsoleColors::RESET << "  Run tests on a probescript file using the 'prbtest' standard library\n"
-                << ConsoleColors::BLUE << "  init" << ConsoleColors::RESET << "  Initialize a new probescript project\n";
+                << ConsoleColors::BLUE << "  init" << ConsoleColors::RESET << "  Initialize a std::make_shared<probescript project\n";
 }
 
 Application::Application(int argc, char* argv[])
@@ -98,7 +98,7 @@ void Application::run()
             context->modules = indexedPair.first;
             context->project = indexedPair.second;
             
-            ProgramType* program = parser.parse(file, context);
+            std::shared_ptr<ProgramType> program = parser.parse(file, context);
 
             std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
 
@@ -155,7 +155,7 @@ void Application::run()
             context->modules = indexedPair.first;
             context->project = indexedPair.second;
             
-            ProgramType* program = parser.parse(file, context);
+            std::shared_ptr<ProgramType> program = parser.parse(file, context);
 
             std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
 

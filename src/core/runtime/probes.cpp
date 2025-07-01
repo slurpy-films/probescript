@@ -1,6 +1,6 @@
 #include "runtime/interpreter.hpp"
 
-Val evalProbeDeclaration(ProbeDeclarationType* probe, EnvPtr env) {
+Val evalProbeDeclaration(std::shared_ptr<ProbeDeclarationType> probe, EnvPtr env) {
     std::shared_ptr<ProbeValue> probeval = probe->doesExtend ? std::make_shared<ProbeValue>(probe->name, env, probe->body, probe->extends) : std::make_shared<ProbeValue>(probe->name, env, probe->body);
 
     return env->declareVar(probe->name, probeval, probe->token);
@@ -18,17 +18,17 @@ Val evalProbeCall(Val val, EnvPtr declarationEnv, std::vector<Val> args) {
 
     inheritProbe(probe, env);
 
-    for (Stmt* stmt : probe->body) {
+    for (std::shared_ptr<Stmt> stmt : probe->body) {
         switch (stmt->kind) {
             case NodeType::AssignmentExpr: {
-                AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
+                std::shared_ptr<AssignmentExprType> assign = std::static_pointer_cast<AssignmentExprType>(stmt);
                 if (assign->op != "=") {
                     throw std::runtime_error(CustomError("Only = assignment is allowed in probe bodies", "ProbeBodyError"));
                 }
                 if (assign->assigne->kind != NodeType::Identifier) {
                     throw std::runtime_error(CustomError("Only identifiers can be assigned to in probe bodies", "ProbeBodyError"));
                 }
-                env->variables[static_cast<IdentifierType*>(assign->assigne)->symbol] = eval(assign->value, env);
+                env->variables[std::static_pointer_cast<IdentifierType>(assign->assigne)->symbol] = eval(assign->value, env);
                 break;
             }
             case NodeType::FunctionDeclaration:
@@ -82,11 +82,11 @@ void inheritProbe(std::shared_ptr<ProbeValue> prb, EnvPtr env)
 
     bool hasRun = false;
     Val run = std::make_shared<UndefinedVal>();
-    for (Stmt* stmt : superProbe->body)
+    for (std::shared_ptr<Stmt> stmt : superProbe->body)
     {
         if (stmt->kind == NodeType::FunctionDeclaration)
         {
-            std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), parentenv, true));
+            std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(std::static_pointer_cast<FunctionDeclarationType>(stmt), parentenv, true));
             if (fn->name == "run")
             {
                 hasRun = true;

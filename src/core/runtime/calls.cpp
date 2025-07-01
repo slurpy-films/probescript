@@ -1,10 +1,10 @@
 #include "runtime/interpreter.hpp"
 
-Val evalCall(CallExprType* call, EnvPtr env)
+Val evalCall(std::shared_ptr<CallExprType> call, EnvPtr env)
 {
     std::vector<Val> args;
 
-    for (Expr* arg : call->args)
+    for (std::shared_ptr<Expr> arg : call->args)
     {
         args.push_back(eval(arg, env));
     };
@@ -95,7 +95,7 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
     throw ThrowException(CustomError("Cannot call value that is not a function", "FunctionCallError"));
 }
 
-Val evalAwaitExpr(AwaitExprType* expr, EnvPtr env) {
+Val evalAwaitExpr(std::shared_ptr<AwaitExprType> expr, EnvPtr env) {
     Val result = eval(expr->caller, env);
     
     if (result->type != ValueType::Future) {

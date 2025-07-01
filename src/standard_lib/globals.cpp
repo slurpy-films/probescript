@@ -89,7 +89,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
         "function",
         {
             std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.empty() || args[0]->type == ValueType::Function) throw ThrowException(ArgumentError("Usage: new function(fn: function)"));
+                if (args.empty() || args[0]->type == ValueType::Function) throw ThrowException(ArgumentError("Usage: std::make_shared<function(fn: function)"));
 
                 return std::static_pointer_cast<FunctionValue>(args[0]);
             }),
@@ -143,7 +143,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return array;
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "obj", new IdentifierType("map")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<std::shared_ptr<VarDeclarationType>>({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "obj", std::make_shared<IdentifierType>("map")) })))
         }
     },
     {
@@ -162,7 +162,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return array;
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "obj", new IdentifierType("map")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<std::shared_ptr<VarDeclarationType>>({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "obj", std::make_shared<IdentifierType>("map")) })))
         }
     },
     {
@@ -174,7 +174,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return std::make_shared<RuntimeVal>(*args[0]);
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "val") })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<std::shared_ptr<VarDeclarationType>>({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "val") })))
         }
     },
     {
@@ -196,7 +196,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return std::make_shared<UndefinedVal>();
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "code", new IdentifierType("str")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<std::shared_ptr<VarDeclarationType>>({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "input", std::make_shared<IdentifierType>("str")) })))
         }
     },
     {
@@ -211,7 +211,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
 
                 return std::make_shared<UndefinedVal>();
             }),
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "milliseconds", new IdentifierType("num")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<std::shared_ptr<VarDeclarationType>>({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "milliseconds", std::make_shared<IdentifierType>("num")) })))
         }
     },
     {
@@ -219,7 +219,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
         {
             std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val
             {
-                if (args.empty()) throw ThrowException(ArgumentError("Usage: new Regex(expr: string)"));
+                if (args.empty()) throw ThrowException(ArgumentError("Usage: std::make_shared<Regex(expr: string)"));
 
                 std::regex regex(args[0]->toString());
                 std::shared_ptr<ObjectVal> obj = std::make_shared<ObjectVal>();
@@ -237,7 +237,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals =
                 {
                     {
                         "match",
-                        std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "input", new IdentifierType("str")) })))
+                        std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<std::shared_ptr<VarDeclarationType>>({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "input", std::make_shared<IdentifierType>("str")) })))
                     }
                 }
             )), "Regex")

@@ -49,7 +49,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_stdlib =
             std::make_shared<Type>(TypeKind::Module, "native module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({
                 {
                     "randint",
-                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "x"), new VarDeclarationType(new UndefinedLiteralType(), "y") })))
+                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "x"), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "y") })))
                 },
                 {
                     "rand",
@@ -155,7 +155,7 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_stdlib =
             std::make_shared<Type>(TypeKind::Module, "native module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({
                 {
                     "stamp",
-                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "format", new IdentifierType("str")) })))
+                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "format", std::make_shared<IdentifierType>("str")) })))
                 },
                 {
                     "now",
@@ -163,11 +163,11 @@ std::unordered_map<std::string, std::pair<Val, TypePtr>> g_stdlib =
                 },
                 {
                     "is_leapyear",
-                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "year", new IdentifierType("num")) })))
+                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "year", std::make_shared<IdentifierType>("num")) })))
                 },
                 {
                     "days_in_month",
-                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector<VarDeclarationType*>({ new VarDeclarationType(new UndefinedLiteralType(), "year", new IdentifierType("num")), new VarDeclarationType(new UndefinedLiteralType(), "month", new IdentifierType("num")) })))
+                    std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "year", std::make_shared<IdentifierType>("num")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "month", std::make_shared<IdentifierType>("num")) })))
                 }
             })))
         }
