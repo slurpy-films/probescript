@@ -57,6 +57,5 @@ private:
     std::unordered_map<std::string, TypePtr> getExports(ProgramType* program, std::shared_ptr<Context> ctx);
 
     TypePtr getType(Expr* name, TypeEnvPtr env);
-    TypePtr getType(TypePtr type);
     bool compare(TypePtr left, TypePtr right, TypeEnvPtr env);
 };

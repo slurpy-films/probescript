@@ -1,9 +1,11 @@
 #include "runtime/interpreter.hpp"
 
-Val evalCall(CallExprType* call, EnvPtr env) {
+Val evalCall(CallExprType* call, EnvPtr env)
+{
     std::vector<Val> args;
 
-    for (Expr* arg : call->args) {
+    for (Expr* arg : call->args)
+    {
         args.push_back(eval(arg, env));
     };
 
@@ -12,10 +14,12 @@ Val evalCall(CallExprType* call, EnvPtr env) {
     return evalCallWithFnVal(fn, args, env);
 }
 
-Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
+Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
+{
 
-    if (fn == nullptr) {
-        throw ThrowException(CustomError("Function call target is null", "FunctionCallError"));
+    if (fn == nullptr)
+    {
+        throw ThrowException(CustomError("Function call target is null", "FunctionCallError", fn->token));
     }
 
     if (fn->type == ValueType::NativeFn)
@@ -83,7 +87,8 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env) {
         }
     }
 
-    if (fn->type == ValueType::Probe) {
+    if (fn->type == ValueType::Probe)
+    {
         return evalProbeCall(fn, env, args);
     }
 

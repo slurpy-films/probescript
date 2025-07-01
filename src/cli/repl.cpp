@@ -31,7 +31,6 @@ void REPL::start()
         catch (const ThrowException& err)
         {
             std::cerr << err.what();
-            exit(1);
         }
     }
 }

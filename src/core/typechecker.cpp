@@ -153,13 +153,49 @@ TypePtr TC::checkTemplateCall(TemplateCallType* call, TypeEnvPtr env)
 
     if (caller->type == TypeKind::Function)
     {
-        if (caller->val->returntype && caller->val->returntype->templateSub && caller->val->returntype->val->sourcenode)
+        if (
+            caller->val->returntype
+            && caller->val->returntype->templateSub
+            && caller->val->returntype->val->sourcenode
+        )
         {
             VarDeclarationType* src = caller->val->returntype->val->sourcenode;
             TypePtr type = env->lookUp(src->identifier, src->token);
             
             caller->val->returntype = type;
         }
+    }
+
+    if (
+        caller->type == TypeKind::Class
+        && caller->val->returntype
+        && caller->val->returntype->type == TypeKind::Function
+    )
+    {
+        TypePtr signature = std::make_shared<Type>(*caller->val->returntype);
+        signature->val->params = {};
+
+        if (call->templateArgs.empty())
+        {
+            throw std::runtime_error(CustomError("'function' template call requires one argument", "TemplateError", call->token));
+        }
+
+        std::string paramNames = ", ";
+        signature->val->returntype = getType(call->templateArgs[0], env);
+
+        for (size_t i = 1; i < call->templateArgs.size(); i++)
+        {
+            signature->val->params.push_back(new VarDeclarationType(new UndefinedLiteralType(), "_arg", call->templateArgs[i]));
+            paramNames += getType(call->templateArgs[i], env)->name;
+            if (i + 1 < call->templateArgs.size())
+            {
+                paramNames += ", ";
+            }
+        }
+
+        signature->name = "function<" + (signature->val->returntype ? signature->val->returntype->name : "any") + paramNames + ">";
+
+        return signature;
     }
 
     return caller;
@@ -294,6 +330,8 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 
     checkClassInheritance(type, scope, thisobj);
 
+    env->declareVar(cls->name, type, cls->token);
+
     for (Stmt* stmt : cls->body)
     {
         if (stmt->kind == NodeType::VarDeclaration)
@@ -321,7 +359,7 @@ TypePtr TC::checkClassDeclaration(ClassDefinitionType* cls, TypeEnvPtr env)
 
     type->val->props = thisobj->val->props;
 
-    return env->declareVar(cls->name, type, cls->token);
+    return type;
 }
 
 void TC::checkClassInheritance(TypePtr cls, TypeEnvPtr env, TypePtr thisobj)
@@ -441,7 +479,7 @@ TypePtr TC::checkFunction(FunctionDeclarationType* fn, TypeEnvPtr env)
         {
             throw std::runtime_error(CustomError("Duplicate parameter " + param->identifier, "ParameterError", param->token));
         }
-        
+
         usedParams.insert(param->identifier);
         scope->declareVar(param->identifier, param->staticType ? getType(param->type, scope) : std::make_shared<Type>(TypeKind::Any, "any"), param->token);
     }
@@ -608,7 +646,7 @@ TypePtr TC::checkArrowFunction(ArrowFunctionType* fn, TypeEnvPtr env)
         check(stmt, scope);
     }
 
-    return std::make_shared<Type>(TypeKind::Function, "arrow function", std::make_shared<TypeVal>(fn->params));
+    return std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->params));
 }
 
 TypePtr TC::checkImportStmt(ImportStmtType* stmt, TypeEnvPtr env, std::shared_ptr<Context> ctx)
@@ -770,20 +808,6 @@ TypePtr TC::getType(Expr* name, TypeEnvPtr env)
     return type;
 }
 
-TypePtr TC::getType(TypePtr tp)
-{
-    if (!tp) return std::make_shared<Type>(TypeKind::Any, "any");
-
-    TypePtr type = std::make_shared<Type>(tp);
-
-    if (type->type == TypeKind::Class)
-    {
-        type->type = TypeKind::Module;
-        type->name = type->typeName;
-    }
-
-    return type;
-}
 
 bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
 {
@@ -815,6 +839,31 @@ bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
             }
 
             return false;
+        }
+
+        if (right->type == TypeKind::Function && left->type == TypeKind::Function)
+        {
+            if (right->val->params.size() != left->val->params.size())
+            {
+                return false;
+            }
+
+            if (left->val->returntype && right->val->returntype && !compare(left->val->returntype, right->val->returntype, env))
+            {
+                return false;
+            }
+
+            size_t size = right->val->params.size();
+
+            for (size_t i = 0; i < size; i++)
+            {
+                if (!compare(getType(right->val->params[i]->type, env), getType(left->val->params[i]->type, env), env))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         return (left->type == right->type);
