@@ -8,6 +8,24 @@
 #include "utils.hpp"
 #include "types.hpp"
 
+struct Request
+{
+    std::string method;
+    std::string path;
+    std::string raw;
+
+    std::function<void(std::string)> ondata;
+    std::function<void()> end;
+    
+    std::unordered_map<std::string, std::string> headers = {};
+    std::unordered_map<std::string, std::string> cookies = {};
+};
+
+struct Response
+{
+    std::function<void(std::string, std::unordered_map<std::string, std::string>)> send;
+};
+
 Val getValHttpModule();
 TypePtr getTypeHttpModule();
 
@@ -63,7 +81,7 @@ inline std::unordered_map<std::string, std::string> parseCookies(const std::stri
 }
 
 
-void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, EnvPtr env);
+void startServer(const int port, std::function<void(Request, Response)> handler);
 
 inline std::pair<std::string, std::string> parseMethodAndPath(const std::string& request)
 {

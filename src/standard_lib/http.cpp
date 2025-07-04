@@ -1,6 +1,6 @@
 #include "http.hpp"
 
-void startServer(const int port, std::shared_ptr<std::unordered_map<std::string, std::unordered_map<std::string, Val>>> routes, EnvPtr env)
+void startServer(const int port, std::function<void(std::shared_ptr<Request>, std::shared_ptr<Response>)> handler)
 {
     struct sockaddr_in serverAddr;
 #ifdef _WIN32
@@ -41,17 +41,15 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 #ifdef _WIN32
     if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
     {
-        std::cerr << "Bind failed\n";
         closesocket(serverSocket);
         WSACleanup();
-        return;
+        throw std::runtime_error(CustomError("Bind failed", "HttpError"));
     }
 #else
-        if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
+    if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
     {
-        std::cerr << "Bind failed\n";
         close(serverSocket);
-        return;
+        throw std::runtime_error(CustomError("Bind failed", "HttpError"));
     }
 #endif
 
@@ -68,140 +66,115 @@ void startServer(const int port, std::shared_ptr<std::unordered_map<std::string,
 #else
         socklen_t clientLen = sizeof(clientAddr);
         int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientLen);
-        if (clientLen < 0) continue;
+        if (clientSocket < 0) continue;
 #endif
 
-        std::thread([clientSocket, routes, env]()
+        std::thread([clientSocket, handler]()
         {
-            char buffer[4096];
-            int bytesRecieved = recv(clientSocket, buffer, sizeof(buffer), 0);
-            if (bytesRecieved <= 0)
+            std::string request = "";
+            bool headersParsed = false;
+            size_t contentLength = 0;
+            size_t headerEnd = 0;
+            size_t bodyReceived = 0;
+            std::string bufferedBody = ""; // Buffer for body data received before handler sets ondata
+            
+            auto req = std::make_shared<Request>();
+            auto res = std::make_shared<Response>();
+            
+            res->send = [clientSocket](std::string body, std::unordered_map<std::string, std::string> headers) -> void
             {
+                std::ostringstream response;
+                response << "HTTP/1.1 200\r\n"
+                        << "Content-Length: " << body.size() << "\r\n"
+                        << "Connection: close\r\n";
+
+                for (const auto& [key, val] : headers)
+                {
+                    response << key << ": " << val << "\r\n";
+                }
+
+                response << "\r\n" << body;
+
+                std::string resStr = response.str();
+                send(clientSocket, resStr.c_str(), resStr.size(), 0);
+
 #ifdef _WIN32
                 closesocket(clientSocket);
 #else
                 close(clientSocket);
 #endif
-                return;
-            }
-
-            std::string request(buffer, bytesRecieved);
-            auto [method, path] = parseMethodAndPath(request);
-
-            auto routeMap = routes->find(method);
-            if (routeMap != routes->end())
+            };
+            
+            while (true)
             {
-                auto handlerIt = routeMap->second.find(path);
-                if (handlerIt != routeMap->second.end()) {
-                    Val handler = handlerIt->second;
-
-                    std::shared_ptr<ObjectVal> req = std::make_shared<ObjectVal>();
-                    req->properties["path"] = std::make_shared<StringVal>(path);
-                    req->properties["method"] = std::make_shared<StringVal>(method);
-                    req->properties["raw"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, EnvPtr env) -> Val
+                char buffer[4096];
+                int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+                if (bytesReceived <= 0) break;
+                
+                if (!headersParsed)
+                {
+                    request.append(buffer, bytesReceived);
+                    headerEnd = request.find("\r\n\r\n");
+                    if (headerEnd != std::string::npos)
                     {
-                        return std::make_shared<StringVal>(request);
-                    });
-
-                    std::shared_ptr<ObjectVal> headersMap = std::make_shared<ObjectVal>();
-                    for (const auto& [key, value] : parseHeaders(request))
-                    {
-                        headersMap->properties[key] = std::make_shared<StringVal>(value);
-                    }
-
-                    req->properties["headers"] = headersMap;
-                    if (headersMap->hasProperty("Cookie")) {
-                        std::unordered_map<std::string, std::string> raw = parseCookies(headersMap->properties["Cookie"]->toString());
-                        auto cookies = std::make_shared<ObjectVal>();
-
-                        for (auto& pair : raw)
-                        {
-                            cookies->properties[pair.first] = std::make_shared<StringVal>(pair.second);
-                        }
-
-                        req->properties["cookies"] = cookies;
-                    }
-                    else req->properties["cookies"] = std::make_shared<ObjectVal>();
-
-                    auto resheaders = std::make_shared<std::string>();
-                    auto contype = std::make_shared<std::string>("text/plain");
-
-                    std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
-                    res->properties["content_type"] = std::make_shared<NativeFnValue>([contype](std::vector<Val> args, EnvPtr env) -> Val
-                    {
-                        if (args.empty()) return env->throwErr(ArgumentError("Usage: res.contentType(type)"));
-                        (*contype) = args[0]->toString();
+                        headersParsed = true;
+                        std::string headerPart = request.substr(0, headerEnd);
                         
-                        return std::make_shared<UndefinedVal>();
-                    });
-
-                    res->properties["send"] = std::make_shared<NativeFnValue>([clientSocket, resheaders, contype](std::vector<Val> args, EnvPtr _) -> Val
-                    {
-                        if (args.empty()) return std::make_shared<UndefinedVal>();
-                        std::string body = args[0]->toString();
-                        std::ostringstream response;
-                        response << "HTTP/1.1 200\r\n"
-                                << "Content-Type: " << *contype << "\r\n"
-                                << "Content-Length: " << body.size() << "\r\n"
-                                << "Connection: close\r\n"
-                                << *resheaders << "\r\n"
-                                << body;
-
-                        std::string resStr = response.str();
-                        send(clientSocket, resStr.c_str(), resStr.size(), 0);
-
-#ifdef _WIN32
-                        closesocket(clientSocket);
-#else
-                        close(clientSocket);
-#endif
-                        return std::make_shared<UndefinedVal>();
-                    });
-
-                    res->properties["html"] = std::make_shared<NativeFnValue>([clientSocket, resheaders](std::vector<Val> args, EnvPtr _) -> Val 
-                    {
-                        if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
-                        std::string body = args[0]->toString();
-                        std::ostringstream response;
-                        response << "HTTP/1.1 200\r\n"
-                                 << "Content-Type: text/html\r\n"
-                                 << "Content-Length: " << body.size() << "\r\n"
-                                 << "Connection: close\r\n"
-                                 << *resheaders << "\r\n"
-                                 << body;
-
-                        std::string resStr = response.str();
-                        send(clientSocket, resStr.c_str(), resStr.size(), 0);
-#ifdef _WIN32
-                        closesocket(clientSocket);
-#else
-                        close(clientSocket);
-#endif
-                        return std::make_shared<UndefinedVal>();
-                    });
-
-                    res->properties["cookie"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, EnvPtr env) -> Val
-                    {
-                        if (args.size() < 2) return env->throwErr(ArgumentError("Usage: cookie(name, value)"));
-
-                        *resheaders += "Set-Cookie: " + args[0]->toString() + "=" + args[1]->toString() + "\r\n";
-
-                        return std::make_shared<UndefinedVal>();
-                    });
-
-                    evalCallWithFnVal(handler, { req, res }, env);
+                        auto [method, path] = parseMethodAndPath(headerPart);
+                        req->path = path;
+                        req->method = method;
+                        req->raw = headerPart;
+                        
+                        std::unordered_map<std::string, std::string> headersMap = {};
+                        for (const auto& [key, value] : parseHeaders(headerPart))
+                        {
+                            headersMap[key] = value;
+                        }
+                        
+                        req->headers = headersMap;
+                        if (headersMap.find("Cookie") != headersMap.end())
+                        {
+                            std::unordered_map<std::string, std::string> cookies = parseCookies(headersMap["Cookie"]);
+                            req->cookies = cookies;
+                        }
+                        
+                        if (headersMap.find("Content-Length") != headersMap.end())
+                        {
+                            contentLength = std::stoul(headersMap["Content-Length"]);
+                        }
+                        
+                        handler(req, res);
+                        
+                        if (request.length() > headerEnd + 4)
+                        {
+                            std::string bodyPart = request.substr(headerEnd + 4);
+                            bufferedBody += bodyPart;
+                            bodyReceived += bodyPart.length();
+                        }
+                        
+                        if (!bufferedBody.empty() && req->ondata)
+                        {
+                            req->ondata(bufferedBody);
+                        }
+                    }
                 }
                 else
                 {
-                    const char* notFound = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                    send(clientSocket, notFound, strlen(notFound), 0);
-#ifdef _WIN32
-                closesocket(clientSocket);
-#else
-                close(clientSocket);
-#endif
+                    std::string bodyPart(buffer, bytesReceived);
+                    
+                    if (req->ondata)
+                    {
+                        req->ondata(bodyPart);
+                    }
+                    bodyReceived += bytesReceived;
                 }
+                
+                if (headersParsed && bodyReceived >= contentLength) break;
+                if (headersParsed && contentLength == 0) break;
             }
+            
+            if (req->end) req->end();
+
         }).detach();
     }
 
@@ -235,7 +208,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
     std::regex urlRegex(R"(^(http?://)?([^:/]+)(:(\d+))?(/.*)?$)");
     std::smatch match;
     if (!std::regex_match(url, match, urlRegex)) {
-        return env->throwErr("[HttpError]: Invalid URL format: " + url);
+        throw ThrowException("[HttpError]: Invalid URL format: " + url);
     }
 
     int port = 80;
@@ -243,7 +216,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
         try {
             port = std::stoi(match[4]);
         } catch (...) {
-            return env->throwErr("[HttpError]: Invalid port number in URL: " + match[4].str());
+            throw ThrowException("[HttpError]: Invalid port number in URL: " + match[4].str());
         }
     }
 
@@ -263,12 +236,12 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
 
     struct hostent *server = gethostbyname(host.c_str());
     if (!server) {
-        return env->throwErr("[HttpError]: Failed to resolve host: " + host);
+        throw ThrowException("[HttpError]: Failed to resolve host: " + host);
     }
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        return env->throwErr("[HttpError]: Socket creation failed");
+        throw ThrowException("[HttpError]: Socket creation failed");
     }
 
     sockaddr_in serverAddr{};
@@ -277,7 +250,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
     serverAddr.sin_addr.s_addr = *(unsigned long*)server->h_addr;
 
     if (connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        return env->throwErr("[HttpError]: Connection to " + host + ":" + std::to_string(port) + " failed");
+        throw ThrowException("[HttpError]: Connection to " + host + ":" + std::to_string(port) + " failed");
     }
 
     send(sock, req.c_str(), req.size(), 0);
@@ -299,7 +272,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
 
     size_t headerEnd = res.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
-        return env->throwErr("[HttpError]: Malformed HTTP response");
+        throw ThrowException("[HttpError]: Malformed HTTP response");
     }
 
     std::string headerPart = res.substr(0, headerEnd);
@@ -318,7 +291,7 @@ Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectV
     try {
         statusCode = std::stoi(statusCodeStr);
     } catch (...) {
-        return env->throwErr("[HttpError]: Invalid status code: " + statusCodeStr);
+        throw ThrowException("[HttpError]: Invalid status code: " + statusCodeStr);
     }
 
     std::unordered_map<std::string, Val> props = {
@@ -335,101 +308,119 @@ Val getValHttpModule()
 {
     return std::make_shared<ObjectVal>(std::unordered_map<std::string, Val>({
         {
-            "Server",
-            std::make_shared<NativeClassVal>([](std::vector<Val> args, EnvPtr env) -> Val {
+            "Serve",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (
+                    args.empty()
+                    || args[0]->type != ValueType::Object
+                    || args[0]->properties.find("port") == args[0]->properties.end()
+                    || args[0]->properties.find("handler") == args[0]->properties.end()
+                    || args[0]->properties["port"]->type != ValueType::Number
+                    || args[0]->properties["handler"]->type != ValueType::Function
+                ) throw ThrowException(ArgumentError("Usage: http.Serve({ port: number, handler: function })"));
 
-                std::shared_ptr<ObjectVal> t = std::make_shared<ObjectVal>();
+                startServer(
+                    std::static_pointer_cast<NumberVal>(args[0]->properties["port"])->number,
+                    [args, env](std::shared_ptr<Request> request, std::shared_ptr<Response> response) -> void
+                    {
+                        std::shared_ptr<ObjectVal> req = std::make_shared<ObjectVal>();
+                        std::shared_ptr<ObjectVal> res = std::make_shared<ObjectVal>();
 
-                auto routeHandlers = std::make_shared<std::unordered_map<std::string, std::unordered_map<std::string, Val>>>();
+                        req->properties["path"] = std::make_shared<StringVal>(request->path);
+                        req->properties["method"] = std::make_shared<StringVal>(request->method);
+                        req->properties["headers"] = std::make_shared<ObjectVal>();
+                        req->properties["cookies"] = std::make_shared<ObjectVal>();
 
-                t->properties["get"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
-                        return env->throwErr(ArgumentError("Usage: get('/path', handlerFn)"));
+                        req->properties["ondata"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, EnvPtr env) -> Val
+                        {
+                            if (args.empty() || args[0]->type != ValueType::Function) 
+                                throw ThrowException(ArgumentError("Usage: req.ondata(callback: function)"));
+                            
+                            request->ondata = std::function<void(std::string)>([args, env](std::string data)
+                            {
+                                evalCallWithFnVal(args[0], { std::make_shared<StringVal>(data) }, env);
+                            });
+
+                            return std::make_shared<UndefinedVal>();
+                        });
+
+                        req->properties["end"] = std::make_shared<NativeFnValue>([request](std::vector<Val> args, EnvPtr _env) -> Val
+                        {
+                            if (args.empty() || args[0]->type != ValueType::Function) 
+                                throw ThrowException(ArgumentError("Usage: req.end(callback: function)"));
+                            
+                            request->end = std::function<void()>([args, _env]()
+                            {
+                                evalCallWithFnVal(args[0], {}, _env);
+                            });
+
+                            return std::make_shared<UndefinedVal>();
+                        });
+
+                        for (const auto& [key, val] : request->headers)
+                            req->properties["headers"]->properties[key] = std::make_shared<StringVal>(val);
+
+                        for (const auto& [key, val] : request->cookies)
+                            req->properties["cookies"]->properties[key] = std::make_shared<StringVal>(val);
+
+                        req->properties["raw"] =
+                        std::make_shared<NativeFnValue>([request](std::vector<Val> _args, EnvPtr _env) -> Val
+                        {
+                            return std::make_shared<StringVal>(request->raw);
+                        });
+
+                        auto resheaders = std::make_shared<std::unordered_map<std::string, std::string>>();
+                        (*resheaders)["Content-Type"] = "text/plain";
+
+                        res->properties["content_type"] = std::make_shared<NativeFnValue>([resheaders](std::vector<Val> args, EnvPtr env) -> Val
+                        {
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.content_type(type: str)"));
+
+                            (*resheaders)["Content-Type"] = args[0]->toString();
+
+                            return std::make_shared<UndefinedVal>();
+                        });
+
+                        res->properties["send"] = std::make_shared<NativeFnValue>([resheaders, response](std::vector<Val> args, EnvPtr env) -> Val
+                        {
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.send(value: str)"));
+
+                            response->send(args[0]->toString(), (*resheaders));
+
+                            return std::make_shared<UndefinedVal>();
+                        });
+
+                        res->properties["html"] = std::make_shared<NativeFnValue>([resheaders, response](std::vector<Val> args, EnvPtr env) -> Val
+                        {
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.html(html: str)"));
+
+                            (*resheaders)["Content-Type"] = "text/html";
+                            response->send(args[0]->toString(), (*resheaders));
+
+                            return std::make_shared<UndefinedVal>();
+                        });
+
+                        res->properties["json"] = std::make_shared<NativeFnValue>([resheaders, response](std::vector<Val> args, EnvPtr env) -> Val
+                        {
+                            if (args.empty() || args[0]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: res.html(object: object)"));
+
+                            (*resheaders)["Content-Type"] = "application/json";
+                            response->send(args[0]->toString(), (*resheaders));
+
+                            return std::make_shared<UndefinedVal>();
+                        });
+
+                        evalCallWithFnVal(args[0]->properties["handler"], { req, res }, env);
                     }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
-                    (*routeHandlers)["GET"][path] = args[1];
-                    return std::make_shared<UndefinedVal>();
-                });
-                
-                t->properties["post"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
-                        return env->throwErr(ArgumentError("Usage: post('/path', handlerFn)"));
-                    }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
-                    (*routeHandlers)["POST"][path] = args[1];
-                    return std::make_shared<UndefinedVal>();
-                });
+                );
 
-                t->properties["put"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
-                        return env->throwErr(ArgumentError("Usage: put('/path', handlerFn)"));
-                    }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
-                    (*routeHandlers)["PUT"][path] = args[1];
-                    return std::make_shared<UndefinedVal>();
-                });
-
-                t->properties["delete"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
-                        return env->throwErr(ArgumentError("Usage: delete('/path', handlerFn)"));
-                    }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
-                    (*routeHandlers)["DELETE"][path] = args[1];
-                    return std::make_shared<UndefinedVal>();
-                });
-
-                t->properties["patch"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
-                        return env->throwErr(ArgumentError("Usage: patch('/path', handlerFn)"));
-                    }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
-                    (*routeHandlers)["PATCH"][path] = args[1];
-                    return std::make_shared<UndefinedVal>();
-                });
-
-                t->properties["head"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Function) {
-                        return env->throwErr(ArgumentError("Usage: head('/path', handlerFn)"));
-                    }
-                    std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
-                    (*routeHandlers)["GET"][path] = args[1];
-                    return std::make_shared<UndefinedVal>();
-                });
-                
-                t->properties["listen"] = std::make_shared<NativeFnValue>([routeHandlers](std::vector<Val> args, EnvPtr env) -> Val {
-                    if (args.empty()) {
-                        return env->throwErr(ArgumentError("Usage: listen(port, callback (optional))"));
-                    }
-                    if (args[0]->type != ValueType::Number) {
-                        return env->throwErr(ArgumentError("Usage: listen(port, callback (optional))"));
-                    }
-                    
-                    const int port = std::static_pointer_cast<NumberVal>(args[0])->number;
-
-                    std::thread serverThread([port, routeHandlers, env]() {
-                        try {
-                            startServer(port, routeHandlers, env);
-                        } catch (...) {
-                            env->throwErr(ManualError("Exception in server", "HttpError"));
-                        }
-                    });
-
-                    threadManager.registerThread(std::move(serverThread));
-
-                    if (args.size() >= 2 && args[1]->type == ValueType::Function) {
-                        return evalCallWithFnVal(args[1], std::vector<Val>(), env);
-                    }
-
-                    return std::make_shared<UndefinedVal>();
-                });
-
-                return t;
+                return std::make_shared<UndefinedVal>();
             })
         },
         {
             "get",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.get(\"http://example.com\", { body: \"body\", headers: {}})"));
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.get(\"http://example.com\", { headers: {} })"));
 
                 return sendReq("GET", std::static_pointer_cast<StringVal>(args[0])->string, std::static_pointer_cast<ObjectVal>(args[1]), env);
             })
@@ -437,11 +428,51 @@ Val getValHttpModule()
         {
             "post",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) return env->throwErr(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {}})"));
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {} })"));
 
                 return sendReq("POST", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
             })
-        }
+        },
+        {
+            "delete",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.delete(\"http://example.com\", { body: \"body\", headers: {} })"));
+
+                return sendReq("DELETE", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
+            })
+        },
+        {
+            "put",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.put(\"http://example.com\", { body: \"body\", headers: {} })"));
+
+                return sendReq("PUT", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
+            })
+        },
+        {
+            "patch",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.patch(\"http://example.com\", { body: \"body\", headers: {} })"));
+
+                return sendReq("PATCH", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
+            })
+        },
+        {
+            "options",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.options(\"http://example.com\", { headers: {} })"));
+
+                return sendReq("OPTIONS", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
+            })
+        },
+        {
+            "head",
+            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val {
+                if (args.size() < 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::Object) throw ThrowException(ArgumentError("Usage: http.head(\"http://example.com\", { headers: {}})"));
+
+                return sendReq("HEAD", std::static_pointer_cast<StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == ValueType::Object) ? std::static_pointer_cast<ObjectVal>(args[1]) : std::make_shared<ObjectVal>()), env);
+            })
+        },
     }));
 };
 
@@ -449,45 +480,40 @@ TypePtr getTypeHttpModule()
 {
     return std::make_shared<Type>(TypeKind::Module, "native module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({
         {
-            "Server",
-            std::make_shared<Type>(TypeKind::Class, "native class", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({
-                {
-                    "listen",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "port", new IdentifierType("num")) })))
-                },
-                {
-                    "get",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "handler", new IdentifierType("function")) })))
-                },
-                {
-                    "post",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "handler", new IdentifierType("function")) })))
-                },
-                {
-                    "put",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "handler", new IdentifierType("function")) })))
-                },
-                {
-                    "delete",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "handler", new IdentifierType("function")) })))
-                },
-                {
-                    "patch",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "handler", new IdentifierType("function")) })))
-                },
-                {
-                    "head",
-                    std::make_shared<Type>(TypeKind::Function, "native method", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "handler", new IdentifierType("function")) })))
-                }
-            })), "httpServer")
+            "Serve",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "context", std::make_shared<IdentifierType>("map")) })))
         },
         {
             "get",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "url", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "req", new IdentifierType("map")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
         },
         {
             "post",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "url", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "req", new IdentifierType("map")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
+        },
+        {
+            "put",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
+        },
+        {
+            "patch",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
+        },
+        {
+            "delete",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
+        },
+        {
+            "patch",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
+        },
+        {
+            "options",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
+        },
+        {
+            "head",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "url", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "req", std::make_shared<IdentifierType>("map")) })))
         }
     })));
 };

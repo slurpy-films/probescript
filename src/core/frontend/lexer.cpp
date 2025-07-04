@@ -2,7 +2,8 @@
 
 using namespace Lexer;
 
-std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
+std::vector<Token> Lexer::tokenize(const std::string& sourceCode)
+{
     std::vector<Token> tokens;
     std::vector<std::string> src = splitToChars(sourceCode);
     int line = 1;
@@ -10,9 +11,10 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
 
     std::unordered_map<std::string, TokenType> keywords = getKeyWords();
 
-    std::unordered_map<std::string, TokenType> singleCharTokens = {
+    std::unordered_map<std::string, TokenType> singleCharTokens =
+    {
         { "(", OpenParen }, { ")", ClosedParen },
-        { "{", Openbrace }, { "}", ClosedBrace },
+        { "{", OpenBrace }, { "}", ClosedBrace },
         { "[", OpenBracket }, { "]", CloseBracket },
         { ",", Comma }, { ":", Colon }, { ".", Dot },
         { "+", BinaryOperator }, { "-", BinaryOperator },
@@ -22,7 +24,8 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
         { "!", Bang }, { "?", Ternary },
     };
 
-    std::vector<std::pair<std::string, TokenType>> multiCharTokens = {
+    std::vector<std::pair<std::string, TokenType>> multiCharTokens =
+    {
         { "&&", AndOperator },
         { "||", OrOperator },
         { "==", DoubleEquals },
@@ -78,30 +81,39 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
         if (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1])))
         {
             std::string num = "";
+            int tokenLine = line;
+            int tokenCol = col;
+
             while (!src.empty() && (isInt(src[0]) || ((src[0] == "-" || src[0] == ".") && isInt(src[1]))))
             {
                 col++;
                 num += shift(src);
             }
-            tokens.push_back(token(num, Number, { line, col }));
+
+            tokens.push_back(token(num, Number, { tokenLine, tokenCol }));
             continue;
         }
 
         bool matchedMulti = false;
         for (const auto& [symbol, type] : multiCharTokens)
         {
-            if (src.size() >= symbol.length()) {
+            if (src.size() >= symbol.length())
+            {
                 std::string joined = "";
                 for (size_t i = 0; i < symbol.length(); ++i)
                     joined += src[i];
 
-                if (joined == symbol) {
+                if (joined == symbol)
+                {
+                    int tokenLine = line;
+                    int tokenCol = col;
+
                     for (size_t i = 0; i < symbol.length(); ++i)
                     {
                         col++;
                         shift(src);
                     }
-                    tokens.push_back(token(symbol, type, { line, col }));
+                    tokens.push_back(token(symbol, type, { tokenLine, tokenCol }));
                     matchedMulti = true;
                     break;
                 }
@@ -109,19 +121,24 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
         }
         if (matchedMulti) continue;
 
-        if (singleCharTokens.find(src[0]) != singleCharTokens.end()) {
+        if (singleCharTokens.find(src[0]) != singleCharTokens.end())
+        {
             tokens.push_back(token(src[0], singleCharTokens[src[0]], { line, col }));
             shift(src);
             col++;
             continue;
         }
 
-        if (src[0] == "\"" || src[0] == "'") {
+        if (src[0] == "\"" || src[0] == "'")
+        {
             col++;
+            int tokenLine = line;
+            int tokenCol = col;
             std::string quoteType = shift(src);
             std::string value = "";
         
-            while (!src.empty() && src[0] != quoteType) {
+            while (!src.empty() && src[0] != quoteType)
+            {
                 std::string val = shift(src);
                 col++;
                 if (val == "\\") {
@@ -143,10 +160,9 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
             }
         
             if (!src.empty()) { shift(src); col++; }
-            tokens.push_back(token(value, String, { line, col }));
+            tokens.push_back(token(value, String, { tokenLine, tokenCol }));
             continue;
         }
-        
 
         if (isAlpha(src[0]) || src[0] == "_")
         {
@@ -160,7 +176,8 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
             if (keywords.find(ident) != keywords.end())
             {
                 tokens.push_back(token(ident, keywords[ident], { line, col }));
-            } else
+            }
+            else
             {
                 tokens.push_back(token(ident, Identifier, { line, col }));
             }
@@ -168,8 +185,7 @@ std::vector<Token> Lexer::tokenize(const std::string& sourceCode) {
             continue;
         }
 
-        std::cout << "Unrecognized character in source: '" << src[0] << "'" << std::endl;
-        exit(1);
+        throw std::runtime_error("Unrecognized character in source: '" + src[0] + "'\n");
     }
 
     tokens.push_back(token("EndOfFile", END, { line, col }));

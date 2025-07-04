@@ -11,6 +11,7 @@
 #include "repl.hpp"
 #include "modules.hpp"
 #include "context.hpp"
+#include "prbtest.hpp"
 
 extern char __PROBESCRIPTVERSION__[];
 

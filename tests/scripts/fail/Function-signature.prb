@@ -1,0 +1,12 @@
+fn run_function(func: function<null, str>, arg: str)
+{
+    func(arg);
+}
+
+probe Main
+{
+    Main()
+    {
+        run_function(fn() => null, "test");
+    }
+}

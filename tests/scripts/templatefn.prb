@@ -12,7 +12,7 @@ probe Main
 {
     template<A, B>(): A
     {
-        return new B;
+        return new B();
     }
 
     Main()

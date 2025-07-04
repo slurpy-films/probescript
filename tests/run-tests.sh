@@ -39,7 +39,7 @@ while IFS= read -r -d '' file; do
     
     printf "Testing %-50s " "$rel_path"
     
-    if output=$(../probescript run "$file" 2>&1); then
+    if output=$(../probescript test "$file" 2>&1); then
         exit_code=0
     else
         exit_code=1

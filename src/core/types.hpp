@@ -5,6 +5,9 @@
 #include <memory>
 #include "frontend/ast.hpp"
 
+class TypeEnv;
+using TypeEnvPtr = std::shared_ptr<TypeEnv>;
+
 struct Type;
 using TypePtr = std::shared_ptr<Type>;
 
@@ -30,17 +33,22 @@ enum class TypeKind
 
 struct TypeVal
 {
-    std::vector<VarDeclarationType*> params = {};
-    std::vector<VarDeclarationType*> templateparams = {};
+    std::vector<std::shared_ptr<VarDeclarationType>> params = {};
+    std::vector<std::shared_ptr<VarDeclarationType>> templateparams = {};
     std::unordered_map<std::string, TypePtr> props = {};
     TypePtr returntype;
-    VarDeclarationType* sourcenode;
 
-    TypeVal(std::vector<VarDeclarationType*> params)
+    // Used for re-checking the source of a template function
+    std::shared_ptr<Stmt> sourcenode;
+    TypeEnvPtr declenv;
+
+    TypeVal(std::vector<std::shared_ptr<VarDeclarationType>> params)
         : params(params) {}
-    TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype)
+    TypeVal(TypePtr returntype)
+        : returntype(returntype) {}
+    TypeVal(std::vector<std::shared_ptr<VarDeclarationType>> params, TypePtr returntype)
         : params(params), returntype(returntype) {}
-    TypeVal(std::vector<VarDeclarationType*> params, TypePtr returntype, std::vector<VarDeclarationType*> templateparams)
+    TypeVal(std::vector<std::shared_ptr<VarDeclarationType>> params, TypePtr returntype, std::vector<std::shared_ptr<VarDeclarationType>> templateparams)
         : params(params), returntype(returntype), templateparams(templateparams) {}
     TypeVal(std::unordered_map<std::string, TypePtr> props)
         : props(props) {}
@@ -87,8 +95,9 @@ class TypeEnv
 public:
     TypeEnv(std::shared_ptr<TypeEnv> parent = nullptr);
 
-    TypePtr declareVar(std::string name, TypePtr type);
-    TypePtr lookUp(std::string name);
+    TypePtr declareVar(std::string name, TypePtr type, Lexer::Token tk);
+    TypePtr lookUp(std::string name, Lexer::Token tk);
+
     void massDeclare(std::unordered_map<std::string, TypePtr> vars);
 
     std::unordered_map<std::string, TypePtr> getVars();
@@ -99,5 +108,3 @@ private:
     std::unordered_map<std::string, TypePtr> m_variables;
     std::shared_ptr<TypeEnv> m_parent;
 };
-
-using TypeEnvPtr = std::shared_ptr<TypeEnv>;

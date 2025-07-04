@@ -4,28 +4,15 @@
 #include <cmath>
 #include <vector>
 #include <functional>
+#include <algorithm>
+#include <cctype>
+#include <future>
 #include "frontend/ast.hpp"
 #include "utils.hpp"
+#include "frontend/lexer.hpp"
 
 class Env;
 using EnvPtr = std::shared_ptr<Env>;
-
-namespace ConsoleColors {
-    const std::string RESET   = "\033[0m";
-    const std::string RED     = "\033[31m";
-    const std::string GREEN   = "\033[32m";
-    const std::string YELLOW  = "\033[33m";
-    const std::string BLUE    = "\033[34m";
-    const std::string MAGENTA = "\033[35m";
-    const std::string CYAN    = "\033[36m";
-    const std::string WHITE   = "\033[37m";
-    const std::string BOLD    = "\033[1m";
-    
-    const std::string DARK_GRAY  = "\033[90m";
-    const std::string LIGHT_GRAY = "\033[37m";
-    const std::string GRAY       = "\033[2;37m";
-    const std::string DIM        = "\033[2m";
-}
 
 enum class ValueType {
     Probe,
@@ -43,6 +30,7 @@ enum class ValueType {
     NativeClass,
     BreakSignal,
     ContinueSignal,
+    Future,
 };
 
 struct RuntimeVal;
@@ -51,6 +39,7 @@ using Val = std::shared_ptr<RuntimeVal>;
 
 struct RuntimeVal {
     ValueType type;
+    Lexer::Token token = Lexer::Token();
     std::string value;
     std::unordered_map<std::string, Val> exports;
     std::unordered_map<std::string, Val> properties;
@@ -79,12 +68,32 @@ struct RuntimeVal {
         return toString();
     }
 
+    virtual bool compare(const RuntimeVal& other) const
+    {
+        return false;
+    }
+
+    bool operator == (const RuntimeVal& other) const
+    {
+        return this->compare(other);
+    }
+
     virtual Val add(Val o) const;
     virtual Val sub(Val o) const;
     virtual Val mul(Val o) const;
     virtual Val div(Val o) const;
     virtual Val mod(Val o) const;
 };
+
+template<typename T, typename... Args>
+std::shared_ptr<T> makeVal(Lexer::Token tk, Args&&... args)
+{
+    std::shared_ptr<T> val = std::make_shared<T>(std::forward<Args>(args)...);
+    val->token = tk;
+    return val;
+}
+
+Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env);
 
 using NativeFunction = std::function<Val(std::vector<Val>, EnvPtr)>;
 
@@ -136,6 +145,15 @@ struct NumberVal : public RuntimeVal {
     Val mod(Val o) const override {
         return std::make_shared<NumberVal>(fmod(number, o->toNum()));
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::Number)
+            return false;
+    
+        const NumberVal& num = static_cast<const NumberVal&>(other);
+        return num.number == number;
+    }
 };
 
 struct UndefinedVal : public RuntimeVal {
@@ -158,6 +176,10 @@ struct UndefinedVal : public RuntimeVal {
         return std::make_shared<NumberVal>(0 - o->toNum());
     }
 
+    bool compare(const RuntimeVal& other) const override
+    {
+        return other.type == ValueType::Undefined;
+    }
 };
 
 struct NullVal : public RuntimeVal {
@@ -179,15 +201,35 @@ struct NullVal : public RuntimeVal {
     Val sub(Val o) const override {
         return std::make_shared<NumberVal>(0 - o->toNum());
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        return other.type == ValueType::Null;
+    }
 };
 
-struct NativeFnValue : public RuntimeVal {
+struct NativeFnValue : public RuntimeVal
+{
     NativeFunction call;
+
     NativeFnValue(NativeFunction fn) : RuntimeVal(ValueType::NativeFn), call(fn) {}
-    std::string toString() const override {
+    
+    std::string toString() const override
+    {
         return "[native function]";
     }
+
+    std::string toConsole() const override
+    {
+        return ConsoleColors::CYAN + "[native function]" + ConsoleColors::RESET;
+    }
+    
     bool toBool() const override { return true; }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        return false;
+    }
 };
 
 struct BooleanVal : public RuntimeVal {
@@ -228,34 +270,20 @@ struct BooleanVal : public RuntimeVal {
     Val mod(Val o) const override {
         return std::make_shared<NumberVal>(fmod((value ? 1 : 0), o->toNum()));
     }
-};
 
-
-struct ReturnSignal : public RuntimeVal {
-    Val val;
-    ReturnSignal(Val val)
-    : RuntimeVal(ValueType::ReturnSignal), val(val) {}
-    std::string toJSON() const override {
-        return "null";
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::Boolean)
+            return false;
+    
+        const BooleanVal& boolean = static_cast<const BooleanVal&>(other);
+        return boolean.value == value;
     }
-};
-
-struct BreakSignal : public RuntimeVal {
-    std::string toJSON() const override {
-        return "null";
-    }
-    BreakSignal() : RuntimeVal(ValueType::BreakSignal) {}
-};
-
-struct ContinueSignal : public RuntimeVal {
-    std::string toJSON() const override {
-        return "null";
-    }
-    ContinueSignal() : RuntimeVal(ValueType::ContinueSignal) {}
 };
 
 struct ArrayVal : public RuntimeVal {
     std::vector<Val> items;
+
     ArrayVal(std::vector<Val> items = {});
     std::string toString() const override {
         std::string result = "[";
@@ -266,6 +294,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+
     std::string toJSON() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -275,6 +304,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+
     std::string toConsole() const override {
         std::string result = "[";
         for (size_t i = 0; i < items.size(); ++i) {
@@ -284,6 +314,7 @@ struct ArrayVal : public RuntimeVal {
         result += "]";
         return result;
     }
+
     bool toBool() const override { return true; }
 
     Val add(Val o) const override {
@@ -291,18 +322,57 @@ struct ArrayVal : public RuntimeVal {
         citems.push_back(o);
         return std::make_shared<ArrayVal>(citems);
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::Array)
+            return false;
+    
+        const ArrayVal& arr = static_cast<const ArrayVal&>(other);
+        if (arr.items.size() != items.size())
+            return false;
+
+        for (size_t i = 0; i < items.size(); i++)
+        {
+            if (!(*arr.items[i] == *items[i]))
+                return false;
+        }
+
+        return true;
+    }
 };
 
+class ReturnSignal : public std::runtime_error
+{
+public:
+    ReturnSignal(Val val, std::string unexpectedMsg);
+    Val get() const;
+private:
+    Val m_val;
+};
 
+class BreakSignal : public std::runtime_error
+{
+public:
+    BreakSignal(std::string unexpectedMsg);
+};
+
+class ContinueSignal : public std::runtime_error
+{
+public:
+    ContinueSignal(std::string unexpectedMsg);
+};
 
 struct FunctionValue : public RuntimeVal {
     std::string name;
-    std::vector<VarDeclarationType*> params;
-    std::vector<VarDeclarationType*> templateparams;
+    std::vector<std::shared_ptr<VarDeclarationType>> params;
+    std::vector<std::shared_ptr<VarDeclarationType>> templateparams;
     EnvPtr declarationEnv;
-    std::vector<Stmt*> body;
-    FunctionValue (std::string name, std::vector<VarDeclarationType*> params, EnvPtr declarationEnv, std::vector<Stmt*> body) 
-        : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body) {}
+    std::vector<std::shared_ptr<Stmt>> body;
+
+    FunctionValue (std::string name, std::vector<std::shared_ptr<VarDeclarationType>> params, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, bool isAsync = false) 
+        : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body), isAsync(isAsync) {}
+
     std::string toString() const override {
         return "[function " + name + "]";
     }
@@ -312,18 +382,20 @@ struct FunctionValue : public RuntimeVal {
     std::string toConsole() const override {
         return ConsoleColors::CYAN + "[function " + name + "]" + ConsoleColors::RESET;
     }
+
     bool toBool() const override { return true; }
+    bool isAsync = false;
 };
 
 struct ProbeValue : public RuntimeVal {
     std::string name;
-    Expr* extends;
+    std::shared_ptr<Expr> extends;
     bool doesExtend = false;
     EnvPtr declarationEnv;
-    std::vector<Stmt*> body;
-    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body) 
+    std::vector<std::shared_ptr<Stmt>> body;
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
-    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<Expr> extends) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[probe " + name + "]";
@@ -337,12 +409,12 @@ struct ProbeValue : public RuntimeVal {
 struct ClassVal : public RuntimeVal {
     std::string name;
     EnvPtr parentEnv;
-    std::vector<Stmt*> body;
-    Expr* extends;
+    std::vector<std::shared_ptr<Stmt>> body;
+    std::shared_ptr<Expr> extends;
     bool doesExtend = false;
-    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body) {}
-    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<Stmt*> body, Expr* extends) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<Expr> extends) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[class " + name + "]";
@@ -366,44 +438,7 @@ struct NativeClassVal : public RuntimeVal {
 
 struct StringVal : public RuntimeVal {
     std::string string;
-    StringVal(std::string val) : RuntimeVal(ValueType::String), string(val) {
-        properties = 
-        {
-            {
-                "length",
-                std::make_shared<NativeFnValue>([this](std::vector<Val> _args, EnvPtr _env) -> Val {
-                    return std::make_shared<NumberVal>(this->string.length());
-                })
-            },
-            {
-                "split",
-                std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _) -> Val {
-                    if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<UndefinedVal>();
-                    std::string str = this->string;
-                    std::string deli = std::static_pointer_cast<StringVal>(args[0])->string;
-
-                    std::vector<Val> result;
-                    if (deli == "") {
-                        std::vector<std::string> chars = splitToChars(str);
-
-                        for (auto& c : chars) {
-                            result.push_back(std::make_shared<StringVal>(c));
-                        }
-
-                        return std::make_shared<ArrayVal>(result);
-                    }
-                    size_t pos = 0;
-                    std::string token;
-                    while ((pos = str.find(deli)) != std::string::npos) {
-                        token = str.substr(0, pos);
-                        result.push_back(std::make_shared<StringVal>(token));
-                        str.erase(0, pos + deli.length());
-                    }
-                    return std::make_shared<ArrayVal>(result);
-                })
-            }
-        };
-    }
+    StringVal(std::string val);
     std::string toString() const override { return string; }
     std::string toJSON() const override { return "\"" + string + "\""; }
     double toNum() const override
@@ -418,7 +453,9 @@ struct StringVal : public RuntimeVal {
         }
         return val;
     }
+
     bool toBool() const override { return !string.empty(); }
+
     std::string toConsole() const override {
         return ConsoleColors::GREEN + "\"" + string + "\"" + ConsoleColors::RESET;
     }
@@ -435,27 +472,34 @@ struct StringVal : public RuntimeVal {
 
         return std::make_shared<StringVal>(r);
     }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        if (other.type != ValueType::String)
+            return false;
+    
+        const StringVal& str = static_cast<const StringVal&>(other);
+        return str.string == string;
+    }
 };
 
 
-struct ObjectVal : public RuntimeVal {
+struct ObjectVal : public RuntimeVal
+{
     ObjectVal(std::unordered_map<std::string, Val> properties = {})
-        : RuntimeVal(ValueType::Object, properties) {
-            properties["hasProperty"] = std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr env) -> Val {
-                if (args.empty() || args[0]->type != ValueType::String) return std::make_shared<BooleanVal>(false);
+        : RuntimeVal(ValueType::Object, properties) {}
 
-                return std::make_shared<BooleanVal>(this->hasProperty(std::static_pointer_cast<StringVal>(args[0])->string));
-            });
-        }
-
-    bool hasProperty(const std::string& prop) {
+    bool hasProperty(const std::string& prop)
+    {
         return (properties.find(prop) != properties.end());
     }
 
-    std::string toString() const override {
+    std::string toString() const override
+    {
         std::string result = "{ ";
         bool first = true;
-        for (const auto& [key, val] : properties) {
+        for (const auto& [key, val] : properties)
+        {
             if (!first) result += ", ";
             result += key + ": " + val->toString();
             first = false;
@@ -463,10 +507,13 @@ struct ObjectVal : public RuntimeVal {
         result += " }";
         return result;
     }
-    std::string toJSON() const override {
+
+    std::string toJSON() const override
+    {
         std::string result = "{ ";
         bool first = true;
-        for (const auto& [key, val] : properties) {
+        for (const auto& [key, val] : properties)
+        {
             if (!first) result += ", ";
             result += "\"" + key + "\"" + ": " + val->toJSON();
             first = false;
@@ -474,10 +521,13 @@ struct ObjectVal : public RuntimeVal {
         result += " }";
         return result;
     }
-    std::string toConsole() const override {
+    
+    std::string toConsole() const override
+    {
         std::string result = "{ ";
         bool first = true;
-        for (const auto& [key, val] : properties) {
+        for (const auto& [key, val] : properties)
+        {
             if (!first) result += ", ";
             result += "\"" + key + "\"" + ": " + val->toConsole();
             first = false;
@@ -485,5 +535,34 @@ struct ObjectVal : public RuntimeVal {
         result += " }";
         return result;
     }
+
     bool toBool() const override { return true; }
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        return false;
+    }
+};
+
+struct FutureVal : public RuntimeVal
+{
+    std::shared_future<Val> future;
+
+    bool compare(const RuntimeVal& other) const override
+    {
+        return false;
+    }
+
+    std::string toString() const override
+    {
+        std::string status = "pending";
+
+        if (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+            status = "done";
+
+        return "[Future (" + status + ")]";
+    }
+
+    FutureVal(std::shared_future<Val> fut)
+        : RuntimeVal(ValueType::Future), future(fut) {}
 };

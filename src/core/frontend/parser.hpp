@@ -2,21 +2,15 @@
 #include "frontend/ast.hpp"
 #include "frontend/lexer.hpp"
 #include <iostream>
+#include <stdexcept>
 #include "utils.hpp"
 #include "errors.hpp"
 #include "context.hpp"
 
-template<typename T, typename... Args>
-T* newNode(Lexer::Token tok, Args&&... args) {
-    T* node = new T(std::forward<Args>(args)...);
-    node->token = tok;
-    return node;
-}
-
 class Parser
 {
 public:
-    ProgramType* parse(std::string& sourceCode, std::shared_ptr<Context> ctx = std::make_shared<Context>());
+    std::shared_ptr<ProgramType> parse(std::string& sourceCode, std::shared_ptr<Context> ctx = std::make_shared<Context>());
 
 private:
     std::vector<Lexer::Token> tokens;
@@ -25,87 +19,89 @@ private:
 
     // Statement methods
 
-    Stmt* parseStmt();
+    std::shared_ptr<Stmt> parseStmt();
 
-    Stmt* parseProbeDeclaration();
+    std::shared_ptr<Stmt> parseProbeDeclaration();
 
-    Stmt* parseTryStmt();
+    std::shared_ptr<Stmt> parseTryStmt();
 
-    Stmt* parseForStmt();
+    std::shared_ptr<Stmt> parseForStmt();
     
-    Stmt* parseThrowStmt();
+    std::shared_ptr<Stmt> parseThrowStmt();
 
-    Stmt* parseReturnStmt();
+    std::shared_ptr<Stmt> parseReturnStmt();
 
-    Stmt* parseClassDeclaration();
+    std::shared_ptr<Stmt> parseClassDeclaration();
 
-    Stmt* parseModuleDeclaration();
+    std::shared_ptr<Stmt> parseModuleDeclaration();
 
-    Stmt* parseWhileStmt();
+    std::shared_ptr<Stmt> parseWhileStmt();
 
-    Stmt* parseImportStmt();
+    std::shared_ptr<Stmt> parseImportStmt();
 
-    Stmt* parseExportStmt();
+    std::shared_ptr<Stmt> parseExportStmt();
 
-    Stmt* parseFunctionDeclaration(bool tkEaten = false);
+    std::shared_ptr<Stmt> parseFunctionDeclaration(bool tkEaten = false);
 
-    Stmt* parseIfStmt();
+    std::shared_ptr<Stmt> parseIfStmt();
 
-    VarDeclarationType* parseVarDeclaration(bool isConstant = false, bool tkEaten = false);
+    std::shared_ptr<VarDeclarationType> parseVarDeclaration(bool isConstant = false, bool tkEaten = false);
 
     // Expression methods
 
-    Expr* parseExpr();
+    std::shared_ptr<Expr> parseExpr();
 
-    Expr* parseAssignmentExpr();
+    std::shared_ptr<Expr> parseAssignmentExpr();
 
-    Expr* parseTernaryExpr();
+    std::shared_ptr<Expr> parseTernaryExpr();
 
-    Expr* parseAsExpr();
+    std::shared_ptr<Expr> parseAsExpr();
 
-    Expr* parseMemberExpr();
+    std::shared_ptr<Expr> parseTemplateCall(std::shared_ptr<Expr> caller);
 
-    Expr* parseTemplateCall(Expr* caller);
+    std::shared_ptr<Expr> parseTemplateArg();
 
-    Expr* parseTemplateArg();
+    std::shared_ptr<Expr> parseLogicalExpr();
 
-    Expr* parseLogicalExpr();
+    std::shared_ptr<Expr> parseEqualityExpr();
 
-    Expr* parseEqualityExpr();
+    std::shared_ptr<Expr> parseRelationalExpr();
 
-    Expr* parseRelationalExpr();
+    std::shared_ptr<Expr> parseObjectExpr();
 
-    Expr* parseObjectExpr();
+    std::shared_ptr<Expr> parseAdditiveExpr();
 
-    Expr* parseAdditiveExpr();
+    std::shared_ptr<Expr> parseMultiplicativeExpr();
 
-    Expr* parseMultiplicativeExpr();
+    std::shared_ptr<Expr> parseUnaryExpr();
 
-    Expr* parseUnaryExpr();
+    std::shared_ptr<Expr> parseAwaitExpr();
 
-    Expr* parseCallMemberExpr();
+    std::shared_ptr<Expr> parseCallMemberExpr();
 
-    Expr* parseCallexpr(Expr* caller);
+    std::shared_ptr<Expr> parseMemberExpr();
 
-    Expr* parseArrowFunction();
+    std::shared_ptr<Expr> parseCallExpr(std::shared_ptr<Expr> caller);
 
-    Expr* parseNewExpr();
+    std::shared_ptr<Expr> parseArrowFunction();
+
+    std::shared_ptr<Expr> parseNewExpr();
         
-    Expr* parseMemberChain(Expr* expr);
+    std::shared_ptr<Expr> parseMemberChain(std::shared_ptr<Expr> expr);
 
-    Expr* parsePrimaryExpr();
+    std::shared_ptr<Expr> parsePrimaryExpr();
     
-    Expr* parseArrayExpr();
+    std::shared_ptr<Expr> parseArrayExpr();
 
     // Utility methods
 
-    std::vector<Expr*> parseArgs();
+    std::vector<std::shared_ptr<Expr>> parseArgs();
 
-    std::vector<Expr*> parseArgList();
+    std::vector<std::shared_ptr<Expr>> parseArgList();
 
-    std::vector<VarDeclarationType*> parseParams();
+    std::vector<std::shared_ptr<VarDeclarationType>> parseParams();
 
-    VarDeclarationType* parseParam();
+    std::shared_ptr<VarDeclarationType> parseParam();
 
     Lexer::Token at(int index = 0);
 
@@ -118,5 +114,13 @@ private:
     bool notEOF();
     std::string getCurrentLine(Lexer::Token at);
 
-    std::vector<Stmt*> parseBody(bool methods = false, std::string prbname = "");
+    std::vector<std::shared_ptr<Stmt>> parseBody(bool methods = false, std::string prbname = "");
+
+    template<typename T, typename... Args>
+    std::shared_ptr<T> newnode(Lexer::Token tok, Args&&... args) {
+        std::shared_ptr<T> node = std::make_shared<T>(std::forward<Args>(args)...);
+        tok.ctx = context;
+        node->token = tok;
+        return node;
+    }
 };

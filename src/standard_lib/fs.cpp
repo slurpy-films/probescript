@@ -5,29 +5,29 @@ Val getValFsModule()
     return std::make_shared<ObjectVal>(std::unordered_map<std::string, Val>(
     {
         {
-            "readFile",
+            "read_file",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
                 {
-                    return env->throwErr(ArgumentError("readFile: Expected one string argument (file path)"));
+                    throw ThrowException(ArgumentError("readFile: Expected one string argument (file path)"));
                 }
 
                 fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<StringVal>(args[0])->string);
 
                 if (!fs::exists(filePath))
                 {
-                    return env->throwErr(ArgumentError("File does not exist: " + filePath.string()));
+                    throw ThrowException(ArgumentError("File does not exist: " + filePath.string()));
                 }
 
                 if (!fs::is_regular_file(filePath))
                 {
-                    return env->throwErr(ArgumentError("Provided path is not a file: " + filePath.string()));
+                    throw ThrowException(ArgumentError("Provided path is not a file: " + filePath.string()));
                 }
 
                 std::ifstream file(filePath);
                 if (!file.is_open()) {
-                    return env->throwErr(ArgumentError("Failed to open file: " + filePath.string()));
+                    throw ThrowException(ArgumentError("Failed to open file: " + filePath.string()));
                 }
 
                 std::string fileContent, line;
@@ -41,12 +41,12 @@ Val getValFsModule()
         })
         },
         {
-            "writeFile",
+            "write_file",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 2 || args[0]->type != ValueType::String || args[1]->type != ValueType::String)
                 {
-                    return env->throwErr(ArgumentError("writeFile: Expected two string arguments (path, content)"));
+                    throw ThrowException(ArgumentError("writeFile: Expected two string arguments (path, content)"));
                 }
 
                 fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<StringVal>(args[0])->string);
@@ -55,7 +55,7 @@ Val getValFsModule()
                 std::ofstream file(filePath);
                 if (!file.is_open())
                 {
-                    return env->throwErr(ArgumentError("Failed to open file for writing: " + filePath.string()));
+                    throw ThrowException(ArgumentError("Failed to open file for writing: " + filePath.string()));
                 }
 
                 file << content;
@@ -71,7 +71,7 @@ Val getValFsModule()
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
                 {
-                    return env->throwErr(ArgumentError("exists: Expected one string argument (path)"));
+                    throw ThrowException(ArgumentError("exists: Expected one string argument (path)"));
                 }
 
                 std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
@@ -79,12 +79,12 @@ Val getValFsModule()
             })
         },
         {
-            "isDirectory",
+            "is_directory",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
                 {
-                    return env->throwErr(ArgumentError("isDirectory: Expected one string argument (path)"));
+                    throw ThrowException(ArgumentError("isDirectory: Expected one string argument (path)"));
                 }
 
                 std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
@@ -92,19 +92,19 @@ Val getValFsModule()
             })
         },
         {
-            "listDir",
+            "list_dir",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
                 if (args.size() != 1 || args[0]->type != ValueType::String)
                 {
-                    return env->throwErr(ArgumentError("listDir: Expected one string argument (path)"));
+                    throw ThrowException(ArgumentError("listDir: Expected one string argument (path)"));
                 }
 
                 std::string path = std::static_pointer_cast<StringVal>(args[0])->string;
 
                 if (!fs::is_directory(path))
                 {
-                    return env->throwErr(ArgumentError("Provided path is not a directory: " + path));
+                    throw ThrowException(ArgumentError("Provided path is not a directory: " + path));
                 }
 
                 auto array = std::make_shared<ArrayVal>();
@@ -123,24 +123,24 @@ TypePtr getTypeFsModule()
 {
     return std::make_shared<Type>(TypeKind::Module, "native module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>({
         {
-            "readFile",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
+            "read_file",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "path", std::make_shared<IdentifierType>("str")) })))
         },
         {
-            "writeFile",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")), new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
+            "write_file",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "path", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "path", std::make_shared<IdentifierType>("str")) })))
         },
         {
             "exists",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "path", std::make_shared<IdentifierType>("str")) })))
         },
         {
-            "isDirectory",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
+            "is_directory",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "path", std::make_shared<IdentifierType>("str")) })))
         },
         {
-            "listDir",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "path", new IdentifierType("str")) })))
+            "list_dir",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "path", std::make_shared<IdentifierType>("str")) })))
         }
     })));
 }

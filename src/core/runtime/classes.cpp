@@ -1,17 +1,17 @@
 #include "runtime/interpreter.hpp"
 
-Val evalClassDefinition(ClassDefinitionType* def, EnvPtr env) {
-    return env->declareVar(def->name, def->doesExtend ? std::make_shared<ClassVal>(def->name, env, def->body, def->extends) : std::make_shared<ClassVal>(def->name, env, def->body));
+Val evalClassDefinition(std::shared_ptr<ClassDefinitionType> def, EnvPtr env) {
+    return env->declareVar(def->name, def->doesExtend ? makeVal<ClassVal>(def->token, def->name, env, def->body, def->extends) : makeVal<ClassVal>(def->token, def->name, env, def->body), def->token);
 }
 
-Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
+Val evalNewExpr(std::shared_ptr<NewExprType> newexpr, EnvPtr env) {
     Val rawcls = eval(newexpr->constructor, env);
 
     if (rawcls->type == ValueType::NativeClass) {
         std::shared_ptr<NativeClassVal> natcls = std::static_pointer_cast<NativeClassVal>(rawcls);
         std::vector<Val> args;
 
-        for (Expr* expr : newexpr->args) {
+        for (std::shared_ptr<Expr> expr : newexpr->args) {
             args.push_back(eval(expr, env));
         }
 
@@ -19,54 +19,47 @@ Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
     }
 
     if (rawcls->type != ValueType::Class) {
-        return env->throwErr("Cannot construct non class value");
+        throw ThrowException("Cannot construct non class value");
     }
 
     std::shared_ptr<ClassVal> cls = std::static_pointer_cast<ClassVal>(rawcls);
     std::vector<Val> args;
 
-    for (Expr* expr : newexpr->args) {
+    for (std::shared_ptr<Expr> expr : newexpr->args) {
         args.push_back(eval(expr, env));
     }
     
     EnvPtr scope = std::make_shared<Env>(env);
     std::shared_ptr<ObjectVal> thisObj = std::make_shared<ObjectVal>();
-    scope->declareVar("this", thisObj);
+    scope->declareVar("this", thisObj, cls->token);
 
     inheritClass(cls, scope, thisObj, args);
 
-    for (Stmt* stmt : cls->body) {
+    for (std::shared_ptr<Stmt> stmt : cls->body) {
         switch (stmt->kind) {
             case NodeType::FunctionDeclaration: {
-                std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), scope, true));
-                std::shared_ptr<ObjectVal> thisobj = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"));
-                thisobj->properties[fnval->name] = fnval;
-                scope->assignVar("this", thisobj);
+                std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(std::static_pointer_cast<FunctionDeclarationType>(stmt), scope, true));
+                thisObj->properties[fnval->name] = fnval;
                 break;
             }
             case NodeType::VarDeclaration: {
-                VarDeclarationType* var = static_cast<VarDeclarationType*>(stmt);
-                std::shared_ptr<ObjectVal> thisobj = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"));
-                thisobj->properties[var->identifier] = eval(var->value, scope);
-                scope->assignVar("this", thisobj);
+                std::shared_ptr<VarDeclarationType> var = std::static_pointer_cast<VarDeclarationType>(stmt);
+                thisObj->properties[var->identifier] = eval(var->value, scope);
                 break;
             }
             case NodeType::AssignmentExpr: {
-                AssignmentExprType* assign = static_cast<AssignmentExprType*>(stmt);
+                std::shared_ptr<AssignmentExprType> assign = std::static_pointer_cast<AssignmentExprType>(stmt);
                 if (assign->op != "=") {
-                    return env->throwErr(ManualError("Only = assignment is allowed in class bodies", "ClassBodyError"));
+                    throw ThrowException(CustomError("Only = assignment is allowed in class bodies", "ClassBodyError"));
                 }
 
                 EnvPtr assignEnv = std::make_shared<Env>();
 
-                assignEnv->declareVar(static_cast<IdentifierType*>(assign->assigne)->symbol, std::make_shared<UndefinedVal>());
+                assignEnv->declareVar(std::static_pointer_cast<IdentifierType>(assign->assigne)->symbol, std::make_shared<UndefinedVal>(), assign->token);
 
                 evalAssignment(assign, assignEnv);
 
-                std::shared_ptr<ObjectVal> thisObj = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"));
-
-                thisObj->properties[static_cast<IdentifierType*>(assign->assigne)->symbol] = assignEnv->variables[static_cast<IdentifierType*>(assign->assigne)->symbol];
-                scope->assignVar("this", thisObj);
+                thisObj->properties[std::static_pointer_cast<IdentifierType>(assign->assigne)->symbol] = assignEnv->variables[std::static_pointer_cast<IdentifierType>(assign->assigne)->symbol];
                 break;
             }
         
@@ -78,11 +71,11 @@ Val evalNewExpr(NewExprType* newexpr, EnvPtr env) {
 
     if (std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.find("new") != std::static_pointer_cast<ObjectVal>(scope->variables["this"])->properties.end())
     {
-        Val constructor = std::static_pointer_cast<ObjectVal>(scope->lookupVar("this"))->properties["new"];
+        Val constructor = thisObj->properties["new"];
         evalCallWithFnVal(constructor, args, scope);
     }
 
-    return scope->lookupVar("this");
+    return scope->lookupVar("this", newexpr->token);
 }
 
 void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<ObjectVal> thisObj, std::vector<Val> args)
@@ -92,24 +85,24 @@ void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<Obj
     Val extendsVal = eval(cls->extends, cls->parentEnv);
     if (extendsVal->type != ValueType::Class)
     {
-        env->throwErr(ManualError("Superclass must be a class", "ClassInheritanceError"));
+        throw ThrowException(CustomError("Superclass must be a class", "ClassInheritanceError"));
         return;
     }
 
     EnvPtr superScope = std::make_shared<Env>(cls->parentEnv);
     std::shared_ptr<ClassVal> superClass = std::static_pointer_cast<ClassVal>(extendsVal);
-    superScope->declareVar("this", thisObj);
+    superScope->declareVar("this", thisObj, superClass->token);
 
     inheritClass(superClass, superScope, thisObj, args);
 
     Val cons;
     bool hasCons = false;
 
-    for (Stmt* stmt : superClass->body)
+    for (std::shared_ptr<Stmt> stmt : superClass->body)
     {
         if (stmt->kind == NodeType::FunctionDeclaration)
         {
-            std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(static_cast<FunctionDeclarationType*>(stmt), superScope, true));
+            std::shared_ptr<FunctionValue> fnval = std::static_pointer_cast<FunctionValue>(evalFunctionDeclaration(std::static_pointer_cast<FunctionDeclarationType>(stmt), superScope, true));
             if (fnval->name == "new")
             {
                 cons = fnval;
@@ -117,7 +110,7 @@ void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<Obj
             } else thisObj->properties[fnval->name] = fnval;
         } else if (stmt->kind == NodeType::VarDeclaration)
         {
-            VarDeclarationType* decl = static_cast<VarDeclarationType*>(stmt);
+            std::shared_ptr<VarDeclarationType> decl = std::static_pointer_cast<VarDeclarationType>(stmt);
 
             thisObj->properties[decl->identifier] = eval(decl->value, superScope);
         } else
@@ -129,6 +122,6 @@ void inheritClass(std::shared_ptr<ClassVal> cls, EnvPtr env, std::shared_ptr<Obj
 
     if (hasCons)
     {
-        env->declareVar("super", cons);
+        env->declareVar("super", cons, cls->extends->token);
     }
 }

@@ -9,66 +9,40 @@ void Env::init()
 {
     m_ready = true;
     for (const auto& [key, pair] : g_globals)
-        declareVar(key, pair.first);
+        declareVar(key, pair.first, Lexer::Token());
 }
 
-Val Env::declareVar(std::string varname, Val value, bool constant)
+Val Env::declareVar(std::string varname, Val value, Lexer::Token tk)
 {
     if (!m_ready) init();
     if (variables.find(varname) != variables.end())
     {
-        std::cout << "Variable " << varname << " is already defined" << std::endl;
-        exit(1);
+        throw std::runtime_error(CustomError("Variable " + varname + " is already defined", "ReferenceError", tk));
     }
 
     variables[varname] = value;
-    constants[varname] = constant;
     return value;
 }
 
-Val Env::assignVar(std::string varname, Val value)
+Val Env::assignVar(std::string varname, Val value, Lexer::Token tk)
 {
     if (!m_ready) init();
-    EnvPtr env = resolve(varname);
-
-    if (env->constants.find(varname) != env->constants.end() && env->constants[varname])
-    {
-        std::cout << "Assignment to constant variable " << varname << std::endl;
-        exit(1);
-    }
+    EnvPtr env = resolve(varname, tk);
 
     env->variables[varname] = value;
 
     return value;
 }
 
-Val Env::lookupVar(std::string varname)
+Val Env::lookupVar(std::string varname, Lexer::Token tk)
 {
     if (!m_ready) init();
-    EnvPtr env = resolve(varname);
+    EnvPtr env = resolve(varname, tk);
 
     return env->variables[varname];
 }
 
-std::shared_ptr<ReturnSignal> Env::throwErr(std::string err)
-{
-    if (!m_ready) init();
-    if (hasCatch)
-    {
-        evalCallWithFnVal(catcher, { std::make_shared<StringVal>(err) }, shared_from_this());
-    } else if (parent)
-    {
-        return parent->throwErr(err);
-    } else
-    {
-        std::cerr << err;
-        exit(1);
-    }
-
-    return std::make_shared<ReturnSignal>(std::make_shared<UndefinedVal>());
-}
-
-EnvPtr Env::resolve(std::string varname)
+EnvPtr Env::resolve(std::string varname, Lexer::Token tk)
 {
     if (!m_ready) init();
 
@@ -79,16 +53,8 @@ EnvPtr Env::resolve(std::string varname)
 
     if (!parent)
     {
-        std::cout << "Cannot resolve variable " << varname << " as it does not exist";
-        exit(1);
+        throw std::runtime_error(CustomError("Cannot resolve variable " + varname + " as it does not exist", "ReferenceError", tk));
     }
 
-    return parent->resolve(varname);
-}
-
-void Env::setCatch(Val fn)
-{
-    if (!m_ready) init();
-    hasCatch = true;
-    catcher = fn;
+    return parent->resolve(varname, tk);
 }

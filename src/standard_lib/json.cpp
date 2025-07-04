@@ -24,7 +24,7 @@ bool JSONParser::tokenize() {
             }
 
             if (src.empty()) {
-                env->throwErr(ManualError("Expected end \" after string", "JsonError"));
+                throw ThrowException(CustomError("Expected end \" after string", "JsonError"));
                 return true;
             }
 
@@ -81,7 +81,7 @@ bool JSONParser::tokenize() {
         } else if (src[0] == "]") {
             tokens.push_back(Token(shift(src), CloseBracket));
         } else {
-            env->throwErr(ManualError("Unknown sign in JSON: '" + src[0] + "'", "JsonError"));
+            throw ThrowException(CustomError("Unknown sign in JSON: '" + src[0] + "'", "JsonError"));
             return true;
         }
     }
@@ -103,7 +103,7 @@ Val JSONParser::parseValue() {
         case TokenType::OpenBracket:
             return parseArray();
         default:
-            return env->throwErr(ManualError("Unknown value type in JSON", "JsonError"));
+            throw ThrowException(CustomError("Unknown value type in JSON", "JsonError"));
     }
 }
 
@@ -116,7 +116,7 @@ Val JSONParser::parseObject() {
     }
 
     if (tokens[0].type != TokenType::String) {
-        return env->throwErr(ManualError("Expected object key to be of type string", "JsonError"));
+        throw ThrowException(CustomError("Expected object key to be of type string", "JsonError"));
     }
     std::string key = eat().val;
 
@@ -125,11 +125,11 @@ Val JSONParser::parseObject() {
     o->properties[key] = val;
     while (tokens[0].type != TokenType::ClosedBrace) {
         if (tokens[0].type != TokenType::Comma) {
-            return env->throwErr(ManualError("Expected comma after object property", "JsonError"));
+            throw ThrowException(CustomError("Expected comma after object property", "JsonError"));
         }
         eat();
         if (tokens[0].type != TokenType::String) {
-            return env->throwErr(ManualError("Expected object key to be of type string", "JsonError"));
+            throw ThrowException(CustomError("Expected object key to be of type string", "JsonError"));
         }
         std::string key = eat().val;
         eat();
@@ -151,7 +151,7 @@ Val JSONParser::parseArray() {
     }
 
     if (tokens[0].type != TokenType::CloseBracket) {
-        return env->throwErr(ManualError("Expected closing bracket after array", "JsonError"));
+        throw ThrowException(CustomError("Expected closing bracket after array", "JsonError"));
     }
     eat();
 
@@ -166,17 +166,17 @@ Val getValJsonModule()
             "parse",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
-                if (args.empty() || args[0]->type != ValueType::String) return env->throwErr(ArgumentError("Expected argument 1 to be of type string"));
+                if (args.empty() || args[0]->type != ValueType::String) throw ThrowException(ArgumentError("Expected argument 1 to be of type string"));
 
                 JSON::JSONParser parser(std::static_pointer_cast<StringVal>(args[0])->string, env);
                 return parser.parse();
             })
         },
         {
-            "stringify",
+            "to_string",
             std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
             {
-                if (args.empty() || args[0]->type != ValueType::Object) return env->throwErr(ArgumentError("Expected argument 1 to be of type object"));
+                if (args.empty() || args[0]->type != ValueType::Object) throw ThrowException(ArgumentError("Expected argument 1 to be of type object"));
                 return std::make_shared<StringVal>(args[0]->toJSON());
             })
         }
@@ -190,11 +190,11 @@ TypePtr getTypeJsonModule()
     {
         {
             "parse",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "raw", new IdentifierType("str")) })))
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "raw", std::make_shared<IdentifierType>("str")) })))
         },
         {
-            "stringify",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ new VarDeclarationType(new UndefinedLiteralType(), "object") })))
+            "to_string",
+            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "object") })))
         }
     })));
 }

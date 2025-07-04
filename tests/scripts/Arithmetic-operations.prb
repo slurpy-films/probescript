@@ -1,0 +1,27 @@
+import prbtest;
+
+probe Main
+{
+    Main()
+    {
+        prbtest.test("multiplication", fn()
+        {
+            prbtest.assert(3 * 8 == 24, "3 * 8 = " + (3 * 8));
+        });
+
+        prbtest.test("addition", fn()
+        {
+            prbtest.assert(3 + 5 == 8, "3 + 5 = " + (3 + 5));
+        });
+
+        prbtest.test("division", fn()
+        {
+            prbtest.assert(10 / 2 == 5, "10 / 2 = " + (10 / 2));
+        });
+
+        prbtest.test("all operators", fn()
+        {
+            prbtest.assert(10 + 3 * 5 / 2 == 17.5, "10 + 3 * 5 / 2 = " + (10 + 3 * 5 / 2));
+        });
+    }
+}

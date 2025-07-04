@@ -2,12 +2,12 @@
 
 using Lexer::Token;
 
-ProgramType* Parser::parse(std::string& sourceCode, std::shared_ptr<Context> ctx)
+std::shared_ptr<ProgramType> Parser::parse(std::string& sourceCode, std::shared_ptr<Context> ctx)
 {
     tokens = Lexer::tokenize(sourceCode);
     file = sourceCode;
     context = ctx;
-    ProgramType* program = new ProgramType();
+    auto program = std::make_shared<ProgramType>();
 
     while (notEOF())
     {
@@ -17,9 +17,9 @@ ProgramType* Parser::parse(std::string& sourceCode, std::shared_ptr<Context> ctx
     return program;
 }
 
-Stmt* Parser::parseStmt()
+std::shared_ptr<Stmt> Parser::parseStmt()
 {
-    Stmt* stmt;
+    std::shared_ptr<Stmt> stmt;
     switch (at().type)
     {
         case Lexer::Probe:
@@ -32,6 +32,9 @@ Stmt* Parser::parseStmt()
             stmt = parseVarDeclaration(true);
             break;
         case Lexer::Function:
+            stmt = parseFunctionDeclaration();
+            break;
+        case Lexer::Async:
             stmt = parseFunctionDeclaration();
             break;
         case Lexer::Module:
@@ -62,16 +65,16 @@ Stmt* Parser::parseStmt()
             stmt = parseThrowStmt();
             break;
         case Lexer::Break:
-            stmt = newNode<BreakStmtType>(eat());
+            stmt = newnode<BreakStmtType>(eat());
             break;
         case Lexer::Continue:
-            stmt = newNode<ContinueStmtType>(eat());
+            stmt = newnode<ContinueStmtType>(eat());
             break;
         case Lexer::Try:
             stmt = parseTryStmt();
             break;
         case Lexer::Semicolon:
-            stmt = newNode<UndefinedLiteralType>(eat());
+            stmt = newnode<UndefinedLiteralType>(eat());
             break;
         default:
             stmt = parseExpr();
@@ -82,7 +85,7 @@ Stmt* Parser::parseStmt()
 }
 
 
-Stmt* Parser::parseProbeDeclaration()
+std::shared_ptr<Stmt> Parser::parseProbeDeclaration()
 {
     Token token = eat();
     std::string name = expect(Lexer::Identifier, "Expected identifier").value;
@@ -90,38 +93,38 @@ Stmt* Parser::parseProbeDeclaration()
     if (at().type == Lexer::Extends)
     {
         Token tk = eat();
-        Expr* extends = parseExpr();
-        std::vector<Stmt*> body = parseBody(true, name);
+        std::shared_ptr<Expr> extends = parseExpr();
+        std::vector<std::shared_ptr<Stmt>> body = parseBody(true, name);
 
-        return newNode<ProbeDeclarationType>(tk, name, body, extends);
+        return newnode<ProbeDeclarationType>(tk, name, body, extends);
     }
 
-    std::vector<Stmt*> body = parseBody(true, name);
+    std::vector<std::shared_ptr<Stmt>> body = parseBody(true, name);
 
-    ProbeDeclarationType* prb = newNode<ProbeDeclarationType>(token, name, body);
+    std::shared_ptr<ProbeDeclarationType> prb = newnode<ProbeDeclarationType>(token, name, body);
 
     return prb;
 }
 
-Stmt* Parser::parseTryStmt()
+std::shared_ptr<Stmt> Parser::parseTryStmt()
 {
     Token tk = eat();
-    std::vector<Stmt*> body = parseBody();
+    std::vector<std::shared_ptr<Stmt>> body = parseBody();
 
     Token catchtk = expect(Lexer::Catch, "Expected catch after try body");
-    std::vector<VarDeclarationType*> params = parseParams();
+    std::vector<std::shared_ptr<VarDeclarationType>> params = parseParams();
 
-    std::vector<Stmt*> catchBody = parseBody();
+    std::vector<std::shared_ptr<Stmt>> catchBody = parseBody();
 
-    return newNode<TryStmtType>(tk, body, newNode<FunctionDeclarationType>(catchtk, params, "catch", catchBody));
+    return newnode<TryStmtType>(tk, body, newnode<FunctionDeclarationType>(catchtk, params, "catch", catchBody));
 }
 
-Stmt* Parser::parseForStmt()
+std::shared_ptr<Stmt> Parser::parseForStmt()
 {
     Token tk = eat();
     expect(Lexer::OpenParen, "Expected '(' after 'for'");
 
-    std::vector<Stmt*> decl;
+    std::vector<std::shared_ptr<Stmt>> decl;
     while (at().type != Lexer::Semicolon && at().type != Lexer::END)
     {
         decl.push_back(parseVarDeclaration());
@@ -131,7 +134,7 @@ Stmt* Parser::parseForStmt()
 
     expect(Lexer::Semicolon, "Expected semicolon after initializer in for loop");
 
-    std::vector<Expr*> cond;
+    std::vector<std::shared_ptr<Expr>> cond;
     while (at().type != Lexer::Semicolon && at().type != Lexer::END)
     {
         cond.push_back(parseExpr());
@@ -141,7 +144,7 @@ Stmt* Parser::parseForStmt()
 
     expect(Lexer::Semicolon, "Expected semicolon after condition in for loop");
 
-    std::vector<Expr*> update;
+    std::vector<std::shared_ptr<Expr>> update;
     while (at().type != Lexer::Semicolon && at().type != Lexer::END)
     {
         update.push_back(parseExpr());
@@ -150,23 +153,23 @@ Stmt* Parser::parseForStmt()
     }
 
     expect(Lexer::ClosedParen, "Expected closing parentheses after for loop updates");
-    std::vector<Stmt*> body = parseBody();
-    return newNode<ForStmtType>(tk, decl, cond, update, body);
+    std::vector<std::shared_ptr<Stmt>> body = parseBody();
+    return newnode<ForStmtType>(tk, decl, cond, update, body);
 }
 
-Stmt* Parser::parseThrowStmt()
+std::shared_ptr<Stmt> Parser::parseThrowStmt()
 {
     Token tk = eat();
-    return newNode<ThrowStmtType>(tk, parseExpr());
+    return newnode<ThrowStmtType>(tk, parseExpr());
 }
 
-Stmt* Parser::parseReturnStmt()
+std::shared_ptr<Stmt> Parser::parseReturnStmt()
 {
     Token tk = eat();
-    return newNode<ReturnStmtType>(tk, at().type == Lexer::Semicolon ? new UndefinedLiteralType() : parseExpr());
+    return newnode<ReturnStmtType>(tk, at().type == Lexer::Semicolon ? std::make_shared<UndefinedLiteralType>() : parseExpr());
 }
 
-Stmt* Parser::parseClassDeclaration()
+std::shared_ptr<Stmt> Parser::parseClassDeclaration()
 {
     Token tk = eat();
     std::string name = expect(Lexer::Identifier, "Expected identifier").value;
@@ -174,55 +177,55 @@ Stmt* Parser::parseClassDeclaration()
     if (at().type == Lexer::Extends)
     {
         eat();
-        Expr* extends = parseExpr();
-        std::vector<Stmt*> body = parseBody(true);
+        std::shared_ptr<Expr> extends = parseExpr();
+        std::vector<std::shared_ptr<Stmt>> body = parseBody(true);
 
-        return newNode<ClassDefinitionType>(tk, name, body, extends);
+        return newnode<ClassDefinitionType>(tk, name, body, extends);
     }
 
-    std::vector<Stmt*> body = parseBody(true);
+    std::vector<std::shared_ptr<Stmt>> body = parseBody(true);
 
-    return newNode<ClassDefinitionType>(tk, name, body);
+    return newnode<ClassDefinitionType>(tk, name, body);
 }
 
-Stmt* Parser::parseModuleDeclaration()
+std::shared_ptr<Stmt> Parser::parseModuleDeclaration()
 {
     Token tk = eat();
     expect(Lexer::Identifier, "Expected Identifier after module declaration");
 
-    return newNode<UndefinedLiteralType>(tk);
+    return newnode<UndefinedLiteralType>(tk);
 }
 
-Stmt* Parser::parseWhileStmt()
+std::shared_ptr<Stmt> Parser::parseWhileStmt()
 {
     Token tk = eat();
     expect(Lexer::OpenParen, "Expected open parentheses after while keyword");
 
-    Expr* condition = parseExpr();
+    std::shared_ptr<Expr> condition = parseExpr();
 
     expect(Lexer::ClosedParen, "Expected closing parentheses after while condition");
 
-    std::vector<Stmt*> body = parseBody();
-    return newNode<WhileStmtType>(tk, condition, body);
+    std::vector<std::shared_ptr<Stmt>> body = parseBody();
+    return newnode<WhileStmtType>(tk, condition, body);
 }
 
-Stmt* Parser::parseImportStmt()
+std::shared_ptr<Stmt> Parser::parseImportStmt()
 {   
     Token tk = eat();
     std::string name = at().value;
     if (at(1).type == Lexer::Dot)
     {
-        Expr* module = parseExpr();
+        std::shared_ptr<Expr> module = parseExpr();
 
         if (at().type == Lexer::As)
         {
             eat();
             std::string ident = expect(Lexer::Identifier, "Expected identifier after as keyword").value;
-            ImportStmtType* importstmt = newNode<ImportStmtType>(tk, name, module, ident);
+            std::shared_ptr<ImportStmtType> importstmt = newnode<ImportStmtType>(tk, name, module, ident);
             return importstmt;
         }
 
-        ImportStmtType* importstmt = newNode<ImportStmtType>(tk, name, module);
+        std::shared_ptr<ImportStmtType> importstmt = newnode<ImportStmtType>(tk, name, module);
         return importstmt;
     } else eat();
 
@@ -230,31 +233,33 @@ Stmt* Parser::parseImportStmt()
     {
         eat();
         std::string ident = expect(Lexer::Identifier, "Expected identifier after as keyword").value;
-        ImportStmtType* importstmt = newNode<ImportStmtType>(tk, name, ident);
+        std::shared_ptr<ImportStmtType> importstmt = newnode<ImportStmtType>(tk, name, ident);
         return importstmt;
     }
 
-    ImportStmtType* importstmt = newNode<ImportStmtType>(tk, name);
+    std::shared_ptr<ImportStmtType> importstmt = newnode<ImportStmtType>(tk, name);
 
     return importstmt;
 }
 
-Stmt* Parser::parseExportStmt()
+std::shared_ptr<Stmt> Parser::parseExportStmt()
 {
     Token tk = eat();
-    Stmt* value = parseStmt();
+    std::shared_ptr<Stmt> value = parseStmt();
 
-    ExportStmtType* exportstmt = newNode<ExportStmtType>(tk, value);
+    std::shared_ptr<ExportStmtType> exportstmt = newnode<ExportStmtType>(tk, value);
 
     return exportstmt;
 }
 
-Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
+std::shared_ptr<Stmt> Parser::parseFunctionDeclaration(bool tkEaten)
 {
     Token tk = at();
     if (!tkEaten) eat();
+    
+    bool isAsync = tk.type == Lexer::Async;
     std::string name = (at().type == Lexer::Identifier || at().type == Lexer::New ? eat().value : "anonymous");
-    std::vector<VarDeclarationType*> templateparams;
+    std::vector<std::shared_ptr<VarDeclarationType>> templateparams;
 
     if (at().value == "<")
     {
@@ -262,7 +267,7 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
         while (at().value != ">" && notEOF())
         {
             Token ident = expect(Lexer::Identifier, "Expected identifier");
-            Expr* value;
+            std::shared_ptr<Expr> value;
 
             if (at().type == Lexer::Equals)
             {
@@ -270,16 +275,16 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
                 value = parseExpr();
             }
 
-            templateparams.push_back(newNode<VarDeclarationType>(ident, value, ident.value));
+            templateparams.push_back(newnode<VarDeclarationType>(ident, value, ident.value, isAsync));
 
             if (at().type == Lexer::Comma) eat();
         }
         eat();
     }
 
-    std::vector<VarDeclarationType*> params = parseParams();
+    std::vector<std::shared_ptr<VarDeclarationType>> params = parseParams();
 
-    Expr* type = nullptr;
+    std::shared_ptr<Expr> type = nullptr;
 
     if (at().type == Lexer::Colon)
     {
@@ -288,32 +293,31 @@ Stmt* Parser::parseFunctionDeclaration(bool tkEaten)
         type = parseExpr();
     }
 
-    std::vector<Stmt*> body = parseBody();
+    std::vector<std::shared_ptr<Stmt>> body = parseBody();
 
-    FunctionDeclarationType* fn = (type ? newNode<FunctionDeclarationType>(tk, params, name, body, type) : newNode<FunctionDeclarationType>(tk, params, name, body));
+    std::shared_ptr<FunctionDeclarationType> fn = (type ? newnode<FunctionDeclarationType>(tk, params, name, body, type, isAsync) : newnode<FunctionDeclarationType>(tk, params, name, body, isAsync));
 
     fn->templateparams = templateparams;
 
     return fn;
 }
 
-Stmt* Parser::parseIfStmt()
+std::shared_ptr<Stmt> Parser::parseIfStmt()
 {
     Token tk = eat();
     expect(Lexer::OpenParen, "Expected opening parethesis");
 
-    Expr* condition = parseExpr();
+    std::shared_ptr<Expr> condition = parseExpr();
 
     Token lastToken = eat();
     if (lastToken.type != Lexer::ClosedParen)
     {
-        std::cerr << SyntaxError("Expected closing parentheses, recieved " + lastToken.value, lastToken, context);
-        exit(1);
+        throw std::runtime_error(SyntaxError("Expected closing parentheses, recieved " + lastToken.value, lastToken, context));
     }
 
-    std::vector<Stmt*> body = parseBody();
+    std::vector<std::shared_ptr<Stmt>> body = parseBody();
 
-    IfStmtType* ifStmt = newNode<IfStmtType>(tk, condition, body);
+    std::shared_ptr<IfStmtType> ifStmt = newnode<IfStmtType>(tk, condition, body);
 
     if (at().type == Lexer::Else)
     {
@@ -325,14 +329,14 @@ Stmt* Parser::parseIfStmt()
     return ifStmt;
 }
 
-VarDeclarationType* Parser::parseVarDeclaration(bool isConstant, bool tkEaten)
+std::shared_ptr<VarDeclarationType> Parser::parseVarDeclaration(bool isConstant, bool tkEaten)
 {
     Token tk = at();
     if (!tkEaten) eat();
     std::string ident = expect(Lexer::Identifier, "Expected identifier").value;
 
     bool hasType = false;
-    Expr* type;
+    std::shared_ptr<Expr> type;
 
     if (at().type == Lexer::Colon)
     {
@@ -345,149 +349,87 @@ VarDeclarationType* Parser::parseVarDeclaration(bool isConstant, bool tkEaten)
     {
         if (isConstant)
         {
-            std::cout << SyntaxError("Must assign value to constant variable", at(), context);
-            exit(1);
+            throw std::runtime_error(SyntaxError("Must assign value to constant variable", at(), context));
         }
 
         if (!hasType)
-            return newNode<VarDeclarationType>(tk, new UndefinedLiteralType(), ident);
+            return newnode<VarDeclarationType>(tk, std::make_shared<UndefinedLiteralType>(), ident);
         else
-            return newNode<VarDeclarationType>(tk, new UndefinedLiteralType(), ident, type);
+            return newnode<VarDeclarationType>(tk, std::make_shared<UndefinedLiteralType>(), ident, type);
     }
-
     
     eat();
     if (!hasType)
-        return newNode<VarDeclarationType>(tk, parseExpr(), ident);
+        return newnode<VarDeclarationType>(tk, parseExpr(), ident);
     else
-        return newNode<VarDeclarationType>(tk, parseExpr(), ident, type);
+        return newnode<VarDeclarationType>(tk, parseExpr(), ident, type);
 }
 
-Expr* Parser::parseExpr()
+std::shared_ptr<Expr> Parser::parseExpr()
 {
     return parseAssignmentExpr();
 }
 
-Expr* Parser::parseAssignmentExpr()
+std::shared_ptr<Expr> Parser::parseAssignmentExpr()
 {
-    Expr* left = parseTernaryExpr();
+    std::shared_ptr<Expr> left = parseTernaryExpr();
 
     if (at().type == Lexer::Increment || at().type == Lexer::Decrement)
     {
         Token op = eat();
-        return newNode<UnaryPostFixType>(op, op.value, left);
+        return newnode<UnaryPostFixType>(op, op.value, left);
     }
 
     if (at().type == Lexer::Equals || at().type == Lexer::AssignmentOperator)
     {
         Token op = eat();
-        Expr* value = parseExpr();
+        std::shared_ptr<Expr> value = parseExpr();
         if (left->kind == NodeType::MemberExpr)
         {
-            MemberExprType* expr = static_cast<MemberExprType*>(left);
-            return newNode<MemberAssignmentType>(op, expr->object, expr->property, value, expr->computed, op.value);
+            std::shared_ptr<MemberExprType> expr = std::static_pointer_cast<MemberExprType>(left);
+            return newnode<MemberAssignmentType>(op, expr->object, expr->property, value, expr->computed, op.value);
         }
         else
         {
-            return newNode<AssignmentExprType>(op, left, value, op.value);
+            return newnode<AssignmentExprType>(op, left, value, op.value);
         }
     }
 
     return left;
 }
 
-Expr* Parser::parseTernaryExpr()
+std::shared_ptr<Expr> Parser::parseTernaryExpr()
 {
-    Expr* cond = parseAsExpr();
+    std::shared_ptr<Expr> cond = parseAsExpr();
 
     if (at().type != Lexer::Ternary) return cond;
 
     Token tk = eat();
 
-    Expr* cons = parseExpr();
+    std::shared_ptr<Expr> cons = parseExpr();
     expect(Lexer::Colon, "Expected colon after ternary consequent");
-    Expr* alt = parseExpr();
+    std::shared_ptr<Expr> alt = parseExpr();
 
-    return newNode<TernaryExprType>(tk, cond, cons, alt);
+    return newnode<TernaryExprType>(tk, cond, cons, alt);
 }
 
-Expr* Parser::parseAsExpr()
+std::shared_ptr<Expr> Parser::parseAsExpr()
 {
-    Expr* left = parseCallMemberExpr();
+    std::shared_ptr<Expr> left = parseLogicalExpr();
 
     while (at().type == Lexer::As && at().type != Lexer::END)
     {
         Token tk = eat();
-        left = newNode<CastExprType>(tk, left, parseExpr());
+        left = newnode<CastExprType>(tk, left, parseExpr());
     }
 
     return left;
 }
 
-Expr* Parser::parseCallMemberExpr()
-{
-    Expr* member = parseMemberExpr();
-
-    if (at().type == Lexer::OpenParen)
-    {
-        return parseCallexpr(member);
-    } else return member;
-}
-
-Expr* Parser::parseMemberExpr()
-{
-    Expr* obj = parseLogicalExpr();
-
-    while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket || at().type == Lexer::LessThan)
-    {
-        if (at().type == Lexer::LessThan)
-        {
-            obj = parseTemplateCall(obj);
-            continue;
-        }
-
-        Token op = eat();
-        Expr* property;
-        bool computed;
-        std::string lastProp;
-
-        if (op.type == Lexer::Dot)
-        {
-            computed = false;
-            property = parsePrimaryExpr();
-
-            if (property->kind != NodeType::Identifier)
-            {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
-                exit(1);
-            }
-
-            lastProp = static_cast<IdentifierType*>(property)->symbol;
-
-        } else
-        {
-            computed = true;
-            property = parseExpr();
-            expect(Lexer::CloseBracket, "Expected closing bracket");
-
-            if (property->kind == NodeType::StringLiteral)
-            {
-                lastProp = static_cast<StringLiteralType*>(property)->strValue;
-            }
-        }
-
-        MemberExprType* member = newNode<MemberExprType>(op, obj, property, computed);
-        member->lastProp = lastProp;
-        obj = member;
-    }
-
-    return obj;
-}
-
-Expr* Parser::parseTemplateCall(Expr* caller)
+std::shared_ptr<Expr> Parser::parseTemplateCall(std::shared_ptr<Expr> caller)
 {
     Token open = expect(Lexer::LessThan, "Expected '<'");
-    std::vector<Expr*> tempargs;
+    std::vector<std::shared_ptr<Expr>> tempargs;
 
     if (at().type != Lexer::GreaterThan)
     {
@@ -495,7 +437,7 @@ Expr* Parser::parseTemplateCall(Expr* caller)
 
         if (at().type != Lexer::Comma && at().type != Lexer::GreaterThan && at().type != Lexer::Equals) 
         {
-            return newNode<BinaryExprType>(caller->token, caller, tempargs[0], "<");
+            return newnode<BinaryExprType>(caller->token, caller, tempargs[0], "<");
         }
 
         while (at().type == Lexer::Comma)
@@ -507,76 +449,76 @@ Expr* Parser::parseTemplateCall(Expr* caller)
 
     expect(Lexer::GreaterThan, "Expected '>' after template arguments");
 
-    Expr* call = newNode<TemplateCallType>(open, caller, tempargs);
+    std::shared_ptr<Expr> call = newnode<TemplateCallType>(open, caller, tempargs);
 
     if (at().type == Lexer::OpenParen)
     {
-        call = parseCallexpr(call);
+        call = parseCallExpr(call);
     }
 
     return call;
 }
 
-Expr* Parser::parseTemplateArg()
+std::shared_ptr<Expr> Parser::parseTemplateArg()
 {
     return parseObjectExpr();
 }
 
-Expr* Parser::parseLogicalExpr()
+std::shared_ptr<Expr> Parser::parseLogicalExpr()
 {
-    Expr* left = parseEqualityExpr();
+    std::shared_ptr<Expr> left = parseEqualityExpr();
 
     while (at().type == Lexer::AndOperator || at().type == Lexer::OrOperator)
     {
         Token op = eat();
-        Expr* right = parseEqualityExpr();
-        left = newNode<BinaryExprType>(op, left, right, op.value);
+        std::shared_ptr<Expr> right = parseEqualityExpr();
+        left = newnode<BinaryExprType>(op, left, right, op.value);
     }
 
     return left;
 }
 
-Expr* Parser::parseEqualityExpr()
+std::shared_ptr<Expr> Parser::parseEqualityExpr()
 {
-    Expr* left = parseRelationalExpr();
+    std::shared_ptr<Expr> left = parseRelationalExpr();
 
     while (at().type == Lexer::DoubleEquals || at().type == Lexer::NotEquals)
     {
         Token op = eat();
 
-        Expr* right = parseRelationalExpr();
-        left = newNode<BinaryExprType>(op, left, right, op.value);
+        std::shared_ptr<Expr> right = parseRelationalExpr();
+        left = newnode<BinaryExprType>(op, left, right, op.value);
     }
 
     return left;
 }
 
-Expr* Parser::parseRelationalExpr()
+std::shared_ptr<Expr> Parser::parseRelationalExpr()
 {
-    Expr* left = parseObjectExpr();
+    std::shared_ptr<Expr> left = parseObjectExpr();
 
     while (at().type == Lexer::LessThan || at().type == Lexer::GreaterThan || at().value == "<=" || at().value == ">=")
     {
         Token op = eat();
 
-        Expr* right = parseExpr();
+        std::shared_ptr<Expr> right = parseExpr();
 
-        left = newNode<BinaryExprType>(op, left, right, op.value);
+        left = newnode<BinaryExprType>(op, left, right, op.value);
     }
 
     return left;
 }
 
-Expr* Parser::parseObjectExpr()
+std::shared_ptr<Expr> Parser::parseObjectExpr()
 {
-    if (at().type != Lexer::Openbrace)
+    if (at().type != Lexer::OpenBrace)
     {
         return parseAdditiveExpr();
     }
 
     Token tk = eat();
 
-    std::vector<PropertyLiteralType*> properties;
+    std::vector<std::shared_ptr<PropertyLiteralType>> properties;
 
     while (notEOF() && at().type != Lexer::ClosedBrace)
     {
@@ -585,19 +527,19 @@ Expr* Parser::parseObjectExpr()
         if (at().type == Lexer::Comma)
         {
             eat();
-            properties.push_back(newNode<PropertyLiteralType>(key, key.value, new UndefinedLiteralType()));
+            properties.push_back(newnode<PropertyLiteralType>(key, key.value, std::make_shared<UndefinedLiteralType>()));
             continue;
         } else if (at().type == Lexer::ClosedBrace)
         {
-            properties.push_back(newNode<PropertyLiteralType>(key, key.value, new UndefinedLiteralType()));
+            properties.push_back(newnode<PropertyLiteralType>(key, key.value, std::make_shared<UndefinedLiteralType>()));
             continue;
         }
 
         expect(Lexer::Colon, "Expected colon");
 
-        Expr* value = parseExpr();
+        std::shared_ptr<Expr> value = parseExpr();
 
-        properties.push_back(newNode<PropertyLiteralType>(key, key.value, value));
+        properties.push_back(newnode<PropertyLiteralType>(key, key.value, value));
 
         if (at().type != Lexer::ClosedBrace)
         {
@@ -607,37 +549,37 @@ Expr* Parser::parseObjectExpr()
 
     expect(Lexer::ClosedBrace, "Object literal missing closing bracket");
 
-    return newNode<MapLiteralType>(tk, properties);
+    return newnode<MapLiteralType>(tk, properties);
 }
 
-Expr* Parser::parseAdditiveExpr()
+std::shared_ptr<Expr> Parser::parseAdditiveExpr()
 {
-    Expr* left = parseMultiplicativeExpr();
+    std::shared_ptr<Expr> left = parseMultiplicativeExpr();
     while (at().value == "+" || at().value == "-")
     {
         Token op = eat();
-        Expr* right = parseMultiplicativeExpr();
-        left = newNode<BinaryExprType>(op, left, right, op.value);
+        std::shared_ptr<Expr> right = parseMultiplicativeExpr();
+        left = newnode<BinaryExprType>(op, left, right, op.value);
     }
 
     return left;
 }
 
-Expr* Parser::parseMultiplicativeExpr()
+std::shared_ptr<Expr> Parser::parseMultiplicativeExpr()
 {
-    Expr* left = parseUnaryExpr();
+    std::shared_ptr<Expr> left = parseUnaryExpr();
 
     while (at().value == "*" || at().value == "/" || at().value == "%")
     {
         Token op = eat();
-        Expr* right = parseUnaryExpr();
-        left = newNode<BinaryExprType>(op, left, right, op.value);
+        std::shared_ptr<Expr> right = parseUnaryExpr();
+        left = newnode<BinaryExprType>(op, left, right, op.value);
     }
 
     return left;
 }
 
-Expr* Parser::parseUnaryExpr()
+std::shared_ptr<Expr> Parser::parseUnaryExpr()
 {
     if (at().type == Lexer::Bang ||
         at().type == Lexer::Increment || 
@@ -645,23 +587,31 @@ Expr* Parser::parseUnaryExpr()
     )
     {
         Token op = eat();
-        Expr* argument = parseExpr();
-        return newNode<UnaryPrefixType>(op, op.value, argument);
+        std::shared_ptr<Expr> argument = parseExpr();
+        return newnode<UnaryPrefixType>(op, op.value, argument);
     }
 
-    return parseArrowFunction();
+    return parseAwaitExpr();
 }
 
+std::shared_ptr<Expr> Parser::parseAwaitExpr()
+{
+    if (at().type != Lexer::Await)
+        return parseCallMemberExpr();
 
-Expr* Parser::parseCallexpr(Expr* caller)
+    Token tk = eat();
+    return newnode<AwaitExprType>(tk, parseCallMemberExpr());
+}
+
+std::shared_ptr<Expr> Parser::parseCallExpr(std::shared_ptr<Expr> caller)
 {
     if (at().type == Lexer::LessThan)
     {
         caller = parseTemplateCall(caller);
     }
 
-    CallExprType* callExpr = newNode<CallExprType>(at(), caller, parseArgs());
-    if (at().type == Lexer::OpenParen) return parseCallexpr(callExpr);
+    std::shared_ptr<CallExprType> callExpr = newnode<CallExprType>(at(), caller, parseArgs());
+    if (at().type == Lexer::OpenParen) return parseCallExpr(callExpr);
     
     if (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
     {
@@ -671,7 +621,66 @@ Expr* Parser::parseCallexpr(Expr* caller)
     return callExpr;
 }
 
-Expr* Parser::parseArrowFunction()
+std::shared_ptr<Expr> Parser::parseCallMemberExpr()
+{
+    std::shared_ptr<Expr> member = parseMemberExpr();
+
+    if (at().type == Lexer::OpenParen)
+    {
+        return parseCallExpr(member);
+    } else return member;
+}
+
+std::shared_ptr<Expr> Parser::parseMemberExpr()
+{
+    std::shared_ptr<Expr> obj = parseArrowFunction();
+
+    while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket || at().type == Lexer::LessThan)
+    {
+        if (at().type == Lexer::LessThan)
+        {
+            obj = parseTemplateCall(obj);
+            continue;
+        }
+
+        Token op = eat();
+        std::shared_ptr<Expr> property;
+        bool computed;
+        std::string lastProp;
+
+        if (op.type == Lexer::Dot)
+        {
+            computed = false;
+            property = parsePrimaryExpr();
+
+            if (property->kind != NodeType::Identifier)
+            {
+                throw std::runtime_error(SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context));
+            }
+
+            lastProp = std::static_pointer_cast<IdentifierType>(property)->symbol;
+
+        } else
+        {
+            computed = true;
+            property = parseExpr();
+            expect(Lexer::CloseBracket, "Expected closing bracket");
+
+            if (property->kind == NodeType::StringLiteral)
+            {
+                lastProp = std::static_pointer_cast<StringLiteralType>(property)->strValue;
+            }
+        }
+
+        std::shared_ptr<MemberExprType> member = newnode<MemberExprType>(op, obj, property, computed);
+        member->lastProp = lastProp;
+        obj = member;
+    }
+
+    return obj;
+}
+
+std::shared_ptr<Expr> Parser::parseArrowFunction()
 {
     if (at().type != Lexer::Function)
     {
@@ -680,16 +689,25 @@ Expr* Parser::parseArrowFunction()
 
     Token tk = eat();
 
-    std::vector<VarDeclarationType*> params = parseParams();
+    std::vector<std::shared_ptr<VarDeclarationType>> params = parseParams();
 
-    expect(Lexer::Arrow, "Expected arrow after arrow function parameters");
+    if (at().type == Lexer::Arrow)
+        eat();
 
-    std::vector<Stmt*> body = parseBody();
+    std::vector<std::shared_ptr<Stmt>> body;
+    if (at().type == Lexer::OpenBrace)
+    {
+        body = parseBody();
+    }
+    else
+    {
+        body.push_back(newnode<ReturnStmtType>(tk, parseExpr()));
+    }
 
-    return newNode<ArrowFunctionType>(tk, params, body);
+    return newnode<ArrowFunctionType>(tk, params, body);
 }
 
-Expr* Parser::parseNewExpr()
+std::shared_ptr<Expr> Parser::parseNewExpr()
 {
     if (at().type != Lexer::New)
     {
@@ -697,24 +715,29 @@ Expr* Parser::parseNewExpr()
     }
 
     Token tk = eat();
+    std::vector<std::shared_ptr<Expr>> args;
 
-    Expr* constructor = parseMemberExpr();
-
-    std::vector<Expr*> args;
-    if (at().type == Lexer::OpenParen)
+    std::shared_ptr<Expr> constructor = parseMemberExpr();
+    if (constructor->kind == NodeType::CallExpr)
+    {
+        std::shared_ptr<CallExprType> call = std::static_pointer_cast<CallExprType>(constructor);
+        args = call->args;
+        constructor = call->calee;
+    }
+    else
     {
         args = parseArgs();
     }
-
-    return newNode<NewExprType>(tk, constructor, args);
+    
+    return newnode<NewExprType>(tk, constructor, args);
 }
 
-Expr* Parser::parseMemberChain(Expr* expr)
+std::shared_ptr<Expr> Parser::parseMemberChain(std::shared_ptr<Expr> expr)
 {
     while (at().type == Lexer::Dot || at().type == Lexer::OpenBracket)
     {
         Token op = eat();
-        Expr* property;
+        std::shared_ptr<Expr> property;
         bool computed;
         std::string lastProp;
         
@@ -725,11 +748,10 @@ Expr* Parser::parseMemberChain(Expr* expr)
             
             if (property->kind != NodeType::Identifier)
             {
-                std::cerr << SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context);
-                exit(1);
+                throw std::runtime_error(SyntaxError("Cannot use dot operator without right hand side being an identifier", op, context));
             }
             
-            lastProp = static_cast<IdentifierType*>(property)->symbol;
+            lastProp = std::static_pointer_cast<IdentifierType>(property)->symbol;
             
         } else
         {
@@ -739,24 +761,24 @@ Expr* Parser::parseMemberChain(Expr* expr)
             
             if (property->kind == NodeType::StringLiteral)
             {
-                lastProp = static_cast<StringLiteralType*>(property)->strValue;
+                lastProp = std::static_pointer_cast<StringLiteralType>(property)->strValue;
             }
         }
         
-        MemberExprType* member = newNode<MemberExprType>(op, expr, property, computed);
+        std::shared_ptr<MemberExprType> member = newnode<MemberExprType>(op, expr, property, computed);
         member->lastProp = lastProp;
         expr = member;
         
         if (at().type == Lexer::OpenParen)
         {
-            expr = parseCallexpr(expr);
+            expr = parseCallExpr(expr);
         }
     }
     
     return expr;
 }
 
-Expr* Parser::parsePrimaryExpr()
+std::shared_ptr<Expr> Parser::parsePrimaryExpr()
 {
     Token tk = at();
     if (tk.type == Lexer::OpenBracket)
@@ -764,61 +786,58 @@ Expr* Parser::parsePrimaryExpr()
         return parseArrayExpr();
     }
 
-    Expr* primary;
+    std::shared_ptr<Expr> primary;
 
     switch (tk.type)
     {
         case Lexer::Identifier:
         {
             Token token = eat();
-            primary = newNode<IdentifierType>(token, token.value);
+            primary = newnode<IdentifierType>(token, token.value);
             break;
         }
 
         case Lexer::Number:
         {
             Token token = eat();
-            primary = newNode<NumericLiteralType>(token, std::stod(token.value));
+            primary = newnode<NumericLiteralType>(token, std::stod(token.value));
             break;
         }
 
         case Lexer::String:
         {
             Token token = eat();
-            primary = newNode<StringLiteralType>(token, token.value);
+            primary = newnode<StringLiteralType>(token, token.value);
             break;
         }
 
         case Lexer::OpenParen:
         {
             eat();
-            Expr* value = parseExpr();
+            std::shared_ptr<Expr> value = parseExpr();
             expect(Lexer::ClosedParen, "Expected closing parentheses ");
             primary = value;
             break;
         }
 
         case Lexer::Bool:
-            primary = newNode<BoolLiteralType>(at(), eat().value == "true");
+            primary = newnode<BoolLiteralType>(at(), eat().value == "true");
             break;
 
         case Lexer::Undefined:
-            primary = newNode<UndefinedLiteralType>(eat());
+            primary = newnode<UndefinedLiteralType>(eat());
             break;
 
         case Lexer::Null:
-            eat();
-            primary = new NullLiteralType();
+            primary = newnode<NullLiteralType>(eat());
             break;
 
         case Lexer::END:
-            eat();
-            primary = new UndefinedLiteralType();
+            primary = newnode<UndefinedLiteralType>(eat());
             break;
 
         default:
-            std::cout << SyntaxError("Unexpected token found while parsing: " + at().value, at(), context);
-            exit(1);
+            throw std::runtime_error(SyntaxError("Unexpected token found while parsing: " + at().value, at(), context));
     }
 
     if (primary->kind == NodeType::Identifier && at().type == Lexer::LessThan)
@@ -826,15 +845,10 @@ Expr* Parser::parsePrimaryExpr()
         primary = parseTemplateCall(primary);
     }
 
-    if (at().type == Lexer::Dot)
-    {
-        primary = parseMemberChain(primary);
-    }
-
     return primary;
 }
 
-Expr* Parser::parseArrayExpr()
+std::shared_ptr<Expr> Parser::parseArrayExpr()
 {
     if (at().type != Lexer::OpenBracket)
     {
@@ -843,12 +857,12 @@ Expr* Parser::parseArrayExpr()
 
     Token tk = eat();
 
-    std::vector<Expr*> items;
+    std::vector<std::shared_ptr<Expr>> items;
 
     if (at().type == Lexer::CloseBracket)
     {
         eat();
-        return newNode<ArrayLiteralType>(tk, items);
+        return newnode<ArrayLiteralType>(tk, items);
     }
     
     items.push_back(parseExpr());
@@ -861,15 +875,15 @@ Expr* Parser::parseArrayExpr()
 
     expect(Lexer::CloseBracket, "Expected closing bracket");
 
-    return newNode<ArrayLiteralType>(tk, items);
+    return newnode<ArrayLiteralType>(tk, items);
 }
 
-std::vector<Expr*> Parser::parseArgs()
+std::vector<std::shared_ptr<Expr>> Parser::parseArgs()
 {
     expect(Lexer::OpenParen, "Expected open parentheses");
 
-    std::vector<Expr*> args; 
-    if (at().type != Lexer::ClosedParen)
+    std::vector<std::shared_ptr<Expr>> args; 
+    if (at().type != (Lexer::ClosedParen))
     {
         args = parseArgList();
     }
@@ -879,9 +893,9 @@ std::vector<Expr*> Parser::parseArgs()
     return args;
 }
 
-std::vector<Expr*> Parser::parseArgList()
+std::vector<std::shared_ptr<Expr>> Parser::parseArgList()
 {
-    std::vector<Expr*> args;
+    std::vector<std::shared_ptr<Expr>> args;
 
     args.push_back(parseAssignmentExpr());
 
@@ -894,11 +908,11 @@ std::vector<Expr*> Parser::parseArgList()
     return args;
 }
 
-VarDeclarationType* Parser::parseParam() {
+std::shared_ptr<VarDeclarationType> Parser::parseParam() {
     Token ident = expect(Lexer::Identifier, "Expected identifier");
 
-    Expr* type = nullptr;
-    Expr* value = nullptr;
+    std::shared_ptr<Expr> type = nullptr;
+    std::shared_ptr<Expr> value = nullptr;
 
     if (at().type == Lexer::Colon) {
         eat();
@@ -908,15 +922,15 @@ VarDeclarationType* Parser::parseParam() {
     if (at().type == Lexer::Equals) {
         Token eq = eat();
         value = parseExpr();
-        return newNode<VarDeclarationType>(eq, value, ident.value, type ? type : new UndefinedLiteralType());
+        return newnode<VarDeclarationType>(eq, value, ident.value, type ? type : std::make_shared<UndefinedLiteralType>());
     }
 
-    return newNode<VarDeclarationType>(ident, new UndefinedLiteralType(), ident.value, type);
+    return newnode<VarDeclarationType>(ident, std::make_shared<UndefinedLiteralType>(), ident.value, type);
 }
 
-std::vector<VarDeclarationType*> Parser::parseParams() {
+std::vector<std::shared_ptr<VarDeclarationType>> Parser::parseParams() {
     expect(Lexer::OpenParen, "Expected parentheses before parameters");
-    std::vector<VarDeclarationType*> params;
+    std::vector<std::shared_ptr<VarDeclarationType>> params;
 
     if (at().type == Lexer::ClosedParen) {
         eat();
@@ -934,12 +948,12 @@ std::vector<VarDeclarationType*> Parser::parseParams() {
     return params;
 }
 
-std::vector<Stmt*> Parser::parseBody(bool methods, std::string prbname)
+std::vector<std::shared_ptr<Stmt>> Parser::parseBody(bool methods, std::string prbname)
 {
-    if (at().type == Lexer::Openbrace)
+    if (at().type == Lexer::OpenBrace)
     {
         eat();
-        std::vector<Stmt*> body;
+        std::vector<std::shared_ptr<Stmt>> body;
         if (methods)
         {
             while (at().type != Lexer::ClosedBrace && at().type != Lexer::END)
@@ -949,11 +963,11 @@ std::vector<Stmt*> Parser::parseBody(bool methods, std::string prbname)
                     std::string name = at().value;
                     if (at(1).type == Lexer::OpenParen || at(1).type == Lexer::LessThan)
                     {
-                        Stmt* fn = parseFunctionDeclaration(true);
+                        std::shared_ptr<Stmt> fn = parseFunctionDeclaration(true);
 
                         if (fn->kind == NodeType::FunctionDeclaration)
                         {
-                            FunctionDeclarationType* func = static_cast<FunctionDeclarationType*>(fn);
+                            std::shared_ptr<FunctionDeclarationType> func = std::static_pointer_cast<FunctionDeclarationType>(fn);
                             
                             func->name = (func->name == prbname ? "run" : func->name);
 
@@ -977,7 +991,7 @@ std::vector<Stmt*> Parser::parseBody(bool methods, std::string prbname)
         return body;
     } else
     {
-        std::vector<Stmt*> body;
+        std::vector<std::shared_ptr<Stmt>> body;
         body.push_back(parseStmt());
         return body;
     }
@@ -1004,8 +1018,7 @@ Lexer::Token Parser::expect(Lexer::TokenType type, std::string err)
     Lexer::Token prev = shift(tokens);
     if (prev.type != type)
     {
-        std::cerr << SyntaxError(err, prev, context);
-        exit(1);
+        throw std::runtime_error(SyntaxError(err, prev, context));
     }
 
     return prev;

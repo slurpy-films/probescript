@@ -3,5 +3,6 @@
 *.o
 .vscode
 testing/
+dist/
 makefile
 build
