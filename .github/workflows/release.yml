@@ -21,14 +21,26 @@ jobs:
           - os: windows
             arch: x64
             runner: windows-latest
+          - os: windows
+            arch: arm64
+            runner: windows-latest
+          - os: macos
+            arch: x64
+            runner: macos-latest
+          - os: macos
+            arch: arm64
+            runner: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v2
-      - name: Install Ninja
+
+      - name: Install Ninja (only on Linux and macOS)
         uses: seanmiddleditch/gha-setup-ninja@v4
-        if: matrix.os == 'linux'
+        if: matrix.os == 'linux' || matrix.os == 'macos'
+
       - name: Configure CMake
         run: |
           mkdir build
@@ -39,11 +51,13 @@ jobs:
             cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
           fi
         shell: bash
+
       - name: Build
         run: |
           cd build
           cmake --build . --config Release
         shell: bash
+
       - name: Prepare zip structure
         run: |
           mkdir dist
@@ -65,10 +79,11 @@ jobs:
             cp src/installer/probescript-setup.sh dist/
           fi
         shell: bash
+
       - name: Zip files
         run: |
           cd dist
-          OS=${{matrix.os}}
+          OS=${{ matrix.os }}
           if [ "$OS" = "windows" ]; then
             OS="win"
           fi
@@ -79,6 +94,7 @@ jobs:
             zip "$FILENAME" probescript* installation.txt
           fi
         shell: bash
+
       - name: Upload zipped asset to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
