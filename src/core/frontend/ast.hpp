@@ -115,7 +115,7 @@ struct FunctionDeclarationType : public Stmt {
     bool staticRet = false;
     std::shared_ptr<Expr> rettype = std::make_shared<UndefinedLiteralType>();
     std::vector<std::shared_ptr<VarDeclarationType>> parameters;
-    std::vector<std::shared_ptr<VarDeclarationType>> templateparams;
+    std::vector<std::shared_ptr<VarDeclarationType>> templateparams = {};
     std::string name;
     std::vector<std::shared_ptr<Stmt>> body;
     bool isAsync = false;

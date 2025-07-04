@@ -146,26 +146,6 @@ TypePtr TC::checkTemplateCall(std::shared_ptr<TemplateCallType> call, TypeEnvPtr
 {
     TypePtr caller = check(call->caller, env);
 
-    for (size_t i = 0; i < caller->val->templateparams.size(); i++)
-    {
-        env->declareVar(caller->val->templateparams[i]->identifier, (call->templateArgs.size() > i ? getType(call->templateArgs[i], env) : std::make_shared<Type>(TypeKind::Any, "any")), caller->val->templateparams[i]->token);
-    }
-
-    if (caller->type == TypeKind::Function)
-    {
-        if (
-            caller->val->returntype
-            && caller->val->returntype->templateSub
-            && caller->val->returntype->val->sourcenode
-        )
-        {
-            std::shared_ptr<VarDeclarationType> src = caller->val->returntype->val->sourcenode;
-            TypePtr type = env->lookUp(src->identifier, src->token);
-            
-            caller->val->returntype = type;
-        }
-    }
-
     if (
         caller->type == TypeKind::Class
         && caller->val->returntype
@@ -180,7 +160,7 @@ TypePtr TC::checkTemplateCall(std::shared_ptr<TemplateCallType> call, TypeEnvPtr
             throw std::runtime_error(CustomError("'function' template call requires one argument", "TemplateError", call->token));
         }
 
-        std::string paramNames = ", ";
+        std::string paramNames = !call->templateArgs.empty() ? ", " : "";
         signature->val->returntype = getType(call->templateArgs[0], env);
 
         for (size_t i = 1; i < call->templateArgs.size(); i++)
@@ -197,8 +177,93 @@ TypePtr TC::checkTemplateCall(std::shared_ptr<TemplateCallType> call, TypeEnvPtr
 
         return signature;
     }
+    else if (caller->val->sourcenode && caller->val->declenv)
+    {
+        TypeEnvPtr scope = std::make_shared<TypeEnv>(caller->val->declenv);
+
+        if (call->templateArgs.size() != caller->val->templateparams.size())
+        {
+            throw std::runtime_error(
+                CustomError("Template expects " + std::to_string(caller->val->templateparams.size()) + " template arguments, but " + std::to_string(call->templateArgs.size()) + " were provided", "TemplateError", call->token)
+            );
+        }
+
+        for (size_t i = 0; i < caller->val->templateparams.size(); i++)
+        {
+            scope->declareVar(
+                caller->val->templateparams[i]->identifier,
+                getType(call->templateArgs[i], env),
+                caller->val->templateparams[i]->token
+            );
+        }
+
+        auto sourcenode = caller->val->sourcenode;
+
+        if (sourcenode->kind == NodeType::FunctionDeclaration)
+        {
+            auto fndecl = std::static_pointer_cast<FunctionDeclarationType>(sourcenode);
+            return checkFunction(fndecl, scope, true);
+        }
+
+        TypePtr result = check(sourcenode, scope);
+        result->val->declenv = scope;
+
+        return result;
+    }
 
     return caller;
+}
+
+TypePtr TC::checkFunction(std::shared_ptr<FunctionDeclarationType> fn, TypeEnvPtr env, bool templateProcessed)
+{
+    // `env` clone for template calls without changing `env`
+    TypeEnvPtr declenv = std::make_shared<TypeEnv>(env);
+
+    TypeEnvPtr scope = std::make_shared<TypeEnv>(declenv);
+
+    if (!fn->templateparams.empty() && !templateProcessed)
+    {
+        for (const auto& param : fn->templateparams)
+        {
+            scope->declareVar(
+                param->identifier,
+                std::make_shared<Type>(TypeKind::Any, "any"),
+                param->token
+            );
+        }
+    }
+
+    std::unordered_set<std::string> usedParams;
+
+    for (std::shared_ptr<VarDeclarationType> param : fn->parameters)
+    {
+        if (usedParams.count(param->identifier))
+        {
+            throw std::runtime_error(CustomError("Duplicate parameter " + param->identifier, "ParameterError", param->token));
+        }
+
+        usedParams.insert(param->identifier);
+        scope->declareVar(param->identifier, param->staticType ? getType(param->type, scope) : std::make_shared<Type>(TypeKind::Any, "any"), param->token);
+    }
+
+    m_currentret = fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any");
+
+    TypePtr type =
+        std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters, fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any"), fn->templateparams));
+    
+    type->val->sourcenode = fn;
+    type->val->declenv = declenv;
+
+    env->declareVar(fn->name, type, fn->token);
+
+    for (std::shared_ptr<Stmt> stmt : fn->body)
+    {
+        check(stmt, scope);
+    }
+
+    m_currentret = nullptr;
+
+    return type;
 }
 
 TypePtr TC::checkReturnStmt(std::shared_ptr<ReturnStmtType> stmt, TypeEnvPtr env)
@@ -458,59 +523,17 @@ void TC::checkProbeInheritance(TypePtr prb, TypeEnvPtr env)
     env->massDeclare(prb->val->props);
 }
 
-TypePtr TC::checkFunction(std::shared_ptr<FunctionDeclarationType> fn, TypeEnvPtr env)
-{
-    TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
-
-    for (std::shared_ptr<VarDeclarationType> param : fn->templateparams)
-    {
-        TypePtr type = std::make_shared<Type>(TypeKind::Any, "any");
-        type->templateSub = true;
-        type->val->sourcenode = param;
-
-        scope->declareVar(param->identifier, type, param->token);
-    }
-
-    std::unordered_set<std::string> usedParams;
-
-    for (std::shared_ptr<VarDeclarationType> param : fn->parameters)
-    {
-        if (usedParams.count(param->identifier))
-        {
-            throw std::runtime_error(CustomError("Duplicate parameter " + param->identifier, "ParameterError", param->token));
-        }
-
-        usedParams.insert(param->identifier);
-        scope->declareVar(param->identifier, param->staticType ? getType(param->type, scope) : std::make_shared<Type>(TypeKind::Any, "any"), param->token);
-    }
-
-    m_currentret = fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any");
-
-    TypePtr type =
-        std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(fn->parameters, fn->rettype ? getType(fn->rettype, scope) : std::make_shared<Type>(TypeKind::Any, "any"), fn->templateparams));
-
-    env->declareVar(fn->name, type, fn->token);
-    
-    for (std::shared_ptr<Stmt> stmt : fn->body)
-    {
-        check(stmt, scope);
-    }
-
-    m_currentret = nullptr;
-
-    return type;
-}
-
 TypePtr TC::checkCall(std::shared_ptr<CallExprType> call, TypeEnvPtr env)
 {
     TypeEnvPtr scope = std::make_shared<TypeEnv>(env);
     TypePtr fn = check(call->calee, scope);
 
-
     if (fn->type == TypeKind::Any) return std::make_shared<Type>(TypeKind::Any, "any");
 
     if (fn->type == TypeKind::Function)
     {
+        TypeEnvPtr declenv = fn->val->declenv ? fn->val->declenv : scope;
+
         // First check that all required parameters are provided
         for (size_t i = 0; i < fn->val->params.size(); i++)
         {
@@ -522,19 +545,19 @@ TypePtr TC::checkCall(std::shared_ptr<CallExprType> call, TypeEnvPtr env)
             }
         }
 
-        // Then check the type of all arguments
+        // Then check the types of all arguments
         for (size_t i = 0; i < call->args.size(); i++)
         {
             TypePtr type = check(call->args[i], scope);
 
             if (
-                fn->val->params.size() <= i || type->type == TypeKind::Any || getType(fn->val->params[i]->type, scope)->type == TypeKind::Any
+                fn->val->params.size() <= i || type->type == TypeKind::Any || getType(fn->val->params[i]->type, declenv)->type == TypeKind::Any
             ) continue;
 
-            if (!compare(getType(fn->val->params[i]->type, scope), type, scope))
+            if (!compare(getType(fn->val->params[i]->type, declenv), type, scope))
             {
                 throw std::runtime_error(
-                    TypeError("Function parameter " + std::to_string(i + 1) + " expects " + getType(fn->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token)
+                    TypeError("Function parameter " + std::to_string(i + 1) + " expects " + getType(fn->val->params[i]->type, declenv)->name + ", but got " + type->name + "\n", call->args[i]->token)
                 );
             }
         }
@@ -548,6 +571,8 @@ TypePtr TC::checkCall(std::shared_ptr<CallExprType> call, TypeEnvPtr env)
         }
 
         TypePtr run = fn->val->props["run"];
+
+        TypeEnvPtr declenv = fn->val->declenv ? fn->val->declenv : scope;
 
         // First check that all required parameters are provided
         for (size_t i = 0; i < run->val->params.size(); i++)
@@ -566,13 +591,13 @@ TypePtr TC::checkCall(std::shared_ptr<CallExprType> call, TypeEnvPtr env)
             TypePtr type = check(call->args[i], scope);
 
             if (
-                run->val->params.size() <= i || type->type == TypeKind::Any || getType(run->val->params[i]->type, scope)->type == TypeKind::Any
+                run->val->params.size() <= i || type->type == TypeKind::Any || getType(run->val->params[i]->type, declenv)->type == TypeKind::Any
             ) continue;
 
-            if (!compare(getType(run->val->params[i]->type, scope), type, scope))
+            if (!compare(getType(run->val->params[i]->type, declenv), type, scope))
             {
                 throw std::runtime_error(
-                    TypeError("Probe parameter " + std::to_string(i + 1) + " expects " + getType(run->val->params[i]->type, scope)->name + ", but got " + type->name + "\n", call->args[i]->token)
+                    TypeError("Probe parameter " + std::to_string(i + 1) + " expects " + getType(run->val->params[i]->type, declenv)->name + ", but got " + type->name + "\n", call->args[i]->token)
                 );
             }
         }
@@ -713,7 +738,8 @@ TypePtr TC::checkNewExpr(std::shared_ptr<NewExprType> expr, TypeEnvPtr env)
 
     if (cls->type != TypeKind::Class)
     {
-        throw std::runtime_error(TypeError("Expected constructor to be of type class, got " + cls->name, expr->constructor->token));
+        // Everthing is allowed to be called as a class since something like `new num()` is allowed
+        return cls;
     }
 
     if (cls->val->returntype) return cls->val->returntype;

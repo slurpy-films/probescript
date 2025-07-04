@@ -31,7 +31,7 @@ private:
     TypePtr checkAssign(std::shared_ptr<AssignmentExprType> assign, TypeEnvPtr env);
     TypePtr checkIdent(std::shared_ptr<IdentifierType> ident, TypeEnvPtr env);
     TypePtr checkProbe(std::shared_ptr<ProbeDeclarationType> prb, TypeEnvPtr env);
-    TypePtr checkFunction(std::shared_ptr<FunctionDeclarationType> fn, TypeEnvPtr env);
+    TypePtr checkFunction(std::shared_ptr<FunctionDeclarationType> fn, TypeEnvPtr env, bool templateProcessed = false);
     TypePtr checkCall(std::shared_ptr<CallExprType> call, TypeEnvPtr env);
     TypePtr checkObjectExpr(std::shared_ptr<MapLiteralType> obj, TypeEnvPtr env);
     TypePtr checkMemberExpr(std::shared_ptr<MemberExprType> expr, TypeEnvPtr env);

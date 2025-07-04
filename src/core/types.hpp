@@ -5,6 +5,9 @@
 #include <memory>
 #include "frontend/ast.hpp"
 
+class TypeEnv;
+using TypeEnvPtr = std::shared_ptr<TypeEnv>;
+
 struct Type;
 using TypePtr = std::shared_ptr<Type>;
 
@@ -34,7 +37,10 @@ struct TypeVal
     std::vector<std::shared_ptr<VarDeclarationType>> templateparams = {};
     std::unordered_map<std::string, TypePtr> props = {};
     TypePtr returntype;
-    std::shared_ptr<VarDeclarationType> sourcenode;
+
+    // Used for re-checking the source of a template function
+    std::shared_ptr<Stmt> sourcenode;
+    TypeEnvPtr declenv;
 
     TypeVal(std::vector<std::shared_ptr<VarDeclarationType>> params)
         : params(params) {}
@@ -102,5 +108,3 @@ private:
     std::unordered_map<std::string, TypePtr> m_variables;
     std::shared_ptr<TypeEnv> m_parent;
 };
-
-using TypeEnvPtr = std::shared_ptr<TypeEnv>;

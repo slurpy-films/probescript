@@ -26,13 +26,20 @@ Val evalTemplateCall(std::shared_ptr<TemplateCallType> call, EnvPtr env)
     if (caller->type == ValueType::Function)
     {
         std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(caller);
+        scope = fn->declarationEnv;
         name = fn->name;
         params = fn->params;
         body = fn->body;
 
         for (size_t i = 0; i < fn->templateparams.size(); i++)
         {
-            scope->declareVar(fn->templateparams[i]->identifier, (call->templateArgs.size() >= i ? eval(call->templateArgs[i], scope) : std::make_shared<UndefinedVal>()), call->templateArgs[i]->token);
+            scope->declareVar(
+                fn->templateparams[i]->identifier, 
+                (call->templateArgs.size() > i 
+                    ? eval(call->templateArgs[i], scope) 
+                    : std::make_shared<UndefinedVal>()),
+                fn->templateparams[i]->token
+            );
         }
     }
 
@@ -152,16 +159,12 @@ Val evalBinExpr(std::shared_ptr<BinaryExprType> binop, EnvPtr env) {
 
 Val evalBody(std::vector<std::shared_ptr<Stmt>> body, EnvPtr env, bool isLoop)
 {
-    Val last = std::make_shared<UndefinedVal>();
     for (std::shared_ptr<Stmt> stmt : body)
     {
-        last = eval(stmt, env);
-        if (last->type == ValueType::ReturnSignal) break;
-        else if (last->type == ValueType::BreakSignal && isLoop) break;
-        else if (last->type == ValueType::ContinueSignal && isLoop) break;
+        eval(stmt, env);
     }
 
-    return last;
+    return std::make_shared<UndefinedVal>();
 }
 
 Val evalTernaryExpr(std::shared_ptr<TernaryExprType> expr, EnvPtr env)
