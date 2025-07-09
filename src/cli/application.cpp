@@ -46,7 +46,13 @@ Application::Application(int argc, char* argv[])
 
         if (arg.find("--") == 0 || arg.find("-") == 0)
         {
-            m_flags.push_back(arg);
+            if (arg == "--target")
+            {
+                m_comptarget = argv[i + 1];
+                i += 2;
+            }
+            else
+                m_flags.push_back(arg);
         }
         else if (m_command.empty())
         {
@@ -127,7 +133,7 @@ void Application::run()
     {
         if (m_args.empty())
         {
-            std::cerr << "Run command expects 1 argument, 0 given";
+            std::cerr << "'test' command expects 1 argument, 0 given";
             exit(1);
         }
 
@@ -159,15 +165,84 @@ void Application::run()
 
             std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
 
-            if (std::find(m_flags.begin(), m_flags.end(), "--skip-tc") == m_flags.end())
-            {
-                TC tc;
-                tc.checkProgram(program, typeenv, context);
-            }
+            TC tc;
+            tc.checkProgram(program, typeenv, context);
 
             Val result = eval(program, env, context);
 
             runTests(fileName.string());
+        }
+        catch (const std::runtime_error& err)
+        {
+            std::cerr << err.what();
+            exit(1);
+        }
+        catch (const ThrowException& err)
+        {
+            std::cerr << err.what();
+            exit(1);
+        }
+    }
+    else if (m_command == "compile")
+    {
+        if (m_args.empty())
+        {
+            std::cerr << "'compile' command expects 1 argument, 0 given";
+            exit(1);
+        }
+
+        fs::path fileName(m_args[0]);
+        try
+        {
+            Parser parser;
+            std::pair<std::unordered_map<std::string, fs::path>, Val> indexedPair = indexModules(fileName);
+            EnvPtr env = std::make_shared<Env>();
+
+            if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
+            {
+                fileName = fileName / indexedPair.second->properties["main"]->toString();
+            }
+
+            std::ifstream stream(fileName);
+            std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+            std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
+
+            g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
+            context->filename = std::filesystem::absolute(fileName).string();
+            context->file = file;
+            context->modules = indexedPair.first;
+            context->project = indexedPair.second;
+            
+            std::shared_ptr<ProgramType> program = parser.parse(file, context);
+
+            std::shared_ptr<TypeEnv> typeenv = std::make_shared<TypeEnv>();
+
+            // TODO: Add these back
+            // TC tc;
+            // tc.checkProgram(program, typeenv, context);
+
+            probescript::CompilationTarget target = probescript::CompilationTarget::Native;
+            if (!m_comptarget.empty())
+            {
+                if (m_comptarget == "linux_x64")
+                {
+                    target = probescript::CompilationTarget::LinuxX64;
+                }
+                else if (m_comptarget == "windows_x64")
+                {
+                    target = probescript::CompilationTarget::WindowsX64;
+                }
+                else if (m_comptarget == "windows_arm64")
+                {
+                    target = probescript::CompilationTarget::WindowsARM64;
+                }
+            }
+
+            probescript::Compiler compiler{target};
+            compiler.compile(program);
+            compiler.dump("out.o");
         }
         catch (const std::runtime_error& err)
         {

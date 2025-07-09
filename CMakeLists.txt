@@ -4,15 +4,42 @@ project(probescript)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(src/core src/cli src/standard_lib)
+find_package(LLVM REQUIRED CONFIG)
 
-file(GLOB_RECURSE MAIN_SOURCES "src/cli/*.cpp" "src/core/*.cpp" "src/standard_lib/*.cpp")
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
+include_directories(src/core src/cli src/standard_lib src)
+include_directories(${LLVM_INCLUDE_DIRS})
 
-if(MINGW)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++")
-endif()
+file(GLOB_RECURSE MAIN_SOURCES "src/cli/*.cpp" "src/core/*.cpp" "src/standard_lib/*.cpp" src/compiler/*.cpp)
+
+# llvm_map_components_to_libnames(llvm_libs
+#     core
+#     support
+    
+#     irreader
+#     asmparser
+#     bitwriter
+    
+#     analysis
+#     transformutils
+#     scalaropts
+    
+#     target
+
+#     x86
+#     aarch64
+#     arm
+    
+#     executionengine
+#     runtimedyld
+#     mcjit
+#     interpreter
+# )
 
 add_executable(probescript ${MAIN_SOURCES})
+
+target_link_libraries(probescript LLVM)
 
 if(WIN32 OR MINGW OR MSYS OR CYGWIN)
     target_link_libraries(probescript ws2_32)

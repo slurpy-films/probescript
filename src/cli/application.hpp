@@ -12,6 +12,7 @@
 #include "modules.hpp"
 #include "context.hpp"
 #include "prbtest.hpp"
+#include "compiler/compiler.hpp"
 
 extern char __PROBESCRIPTVERSION__[];
 
@@ -27,5 +28,7 @@ private:
     std::string m_command;
     std::vector<std::string> m_args;
     std::vector<std::string> m_flags;
+
+    std::string m_comptarget;
     char** m_argv;
 };

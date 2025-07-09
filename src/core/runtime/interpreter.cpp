@@ -26,7 +26,7 @@ Val evalTemplateCall(std::shared_ptr<TemplateCallType> call, EnvPtr env)
     if (caller->type == ValueType::Function)
     {
         std::shared_ptr<FunctionValue> fn = std::static_pointer_cast<FunctionValue>(caller);
-        scope = fn->declarationEnv;
+        scope = std::make_shared<Env>(fn->declarationEnv);
         name = fn->name;
         params = fn->params;
         body = fn->body;

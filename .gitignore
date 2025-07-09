@@ -4,5 +4,4 @@
 .vscode
 testing/
 dist/
-makefile
 build
