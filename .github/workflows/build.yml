@@ -27,7 +27,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y g++ build-essential
-          sudo apt-get install -y llvm-dev libllvm-dev clang-dev
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
       
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
