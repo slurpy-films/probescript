@@ -15,6 +15,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup CMake
+        if: runner.os != 'Windows'
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.29.3'
@@ -38,7 +39,7 @@ jobs:
           brew install llvm
           echo "LLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm" >> $GITHUB_ENV
       
-      - name: Install MinGW and LLVM (Windows)
+      - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
@@ -47,6 +48,7 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-llvm
             mingw-w64-x86_64-clang
+            mingw-w64-x86_64-cmake
       
       - name: Create build directory
         run: mkdir build
