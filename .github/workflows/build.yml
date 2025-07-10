@@ -1,44 +1,49 @@
 name: CI
+
 on:
   push:
     branches: [ master, dev, compiler ]
   pull_request:
     branches: [ master, dev, compiler ]
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup CMake
         if: runner.os != 'Windows'
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.29.3'
-      
+
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@v4
-      
+
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++ build-essential
+          sudo apt-get install -y g++ build-essential wget
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 19
-      
+          echo "LLVM_DIR=/usr/lib/llvm-19/lib/cmake/llvm" >> $GITHUB_ENV
+
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
+        shell: bash
         run: |
-          brew install gcc
-          brew install llvm
+          brew install gcc llvm
           echo "LLVM_DIR=$(brew --prefix llvm)/lib/cmake/llvm" >> $GITHUB_ENV
-      
+
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -49,46 +54,45 @@ jobs:
             mingw-w64-x86_64-llvm
             mingw-w64-x86_64-clang
             mingw-w64-x86_64-cmake
-      
-      - name: Add LLVM to PATH
+            mingw-w64-x86_64-ninja
+
+      - name: Add LLVM to PATH (Windows)
         if: runner.os == 'Windows'
         shell: bash
-        run: |
-          echo "PATH=/mingw/bin:$PATH" >> $GITHUB_ENV
-
-      
+        run: echo "PATH=/mingw64/bin:$PATH" >> $GITHUB_ENV
+        
       - name: Create build directory
         run: mkdir build
-      
+
       - name: Configure with CMake (Linux/macOS)
         if: runner.os != 'Windows'
+        shell: bash
         run: |
-          cmake -B build -S . -G Ninja
-      
+          cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
+
       - name: Configure with CMake (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          cmake -B build -S . -G Ninja
-      
+          cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
+
       - name: Build (Linux/macOS)
         if: runner.os != 'Windows'
-        run: |
-          cmake --build build --config Release
-      
+        run: cmake --build build
+
       - name: Build (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
-        run: |
-          cmake --build build --config Release
-      
+        run: cmake --build build
+
       - name: Copy binary (Linux/macOS)
         if: runner.os != 'Windows'
         run: cp build/probescript probescript
-      
+
       - name: Copy binary (Windows)
         if: runner.os == 'Windows'
         run: cp build/probescript.exe probescript.exe
-      
+
       - name: Run tests
+        shell: bash
         run: bash tests/run-tests.sh
