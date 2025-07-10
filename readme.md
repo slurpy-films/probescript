@@ -77,9 +77,9 @@ Imports are done with the **import** keyword. If you want to import a user made 
 ```probe
 module MyModule;
 ```
-For probescript to properly index your modules, make a project.json file at the root of your project. If you run a directory with the **run** command, it will fall back to the **main** property of your project.json. The directory this file, and all children directories, will be indexed.
+For probescript to properly index your modules, make a project.json file at the root of your project. If you run a directory with the **run** command, it will fall back to the **main** property of your project.json. The directory of this file, and all children directories, will be indexed and can be imported.
 
-When you want to export something from a module, use the export keyword, like this:
+When you want to export something from a module, use the export keyword. Example:
 ```probe
 module MyModule;
 

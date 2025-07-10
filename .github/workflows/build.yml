@@ -50,6 +50,13 @@ jobs:
             mingw-w64-x86_64-clang
             mingw-w64-x86_64-cmake
       
+      - name: Add LLVM to PATH
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "PATH=/mingw/bin:$PATH"
+
+      
       - name: Create build directory
         run: mkdir build
       
