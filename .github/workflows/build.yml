@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo "PATH=/mingw/bin:$PATH"
+          echo "PATH=/mingw/bin:$PATH" >> $GITHUB_ENV
 
       
       - name: Create build directory
