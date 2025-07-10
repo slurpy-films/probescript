@@ -12,17 +12,32 @@ void Compiler::setup()
 {
     // Initialize member variables
     m_currentscope = std::make_shared<Scope>();
+    
     // Initialize llvm member variables
     ctx = std::make_unique<llvm::LLVMContext>();
     module = std::make_unique<llvm::Module>("Probescript", *ctx);
     builder = std::make_unique<llvm::IRBuilder<>>(*ctx);
 
-    // Initialize llvm targets
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
+    // x86 og x86_64
+    LLVMInitializeX86Target();
+    LLVMInitializeX86TargetMC();
+    LLVMInitializeX86TargetInfo();
+    LLVMInitializeX86AsmParser();
+    LLVMInitializeX86AsmPrinter();
+
+    // ARM
+    LLVMInitializeARMTarget();
+    LLVMInitializeARMTargetMC();
+    LLVMInitializeARMTargetInfo();
+    LLVMInitializeARMAsmParser();
+    LLVMInitializeARMAsmPrinter();
+
+    // AArch64 (ARM64)
+    LLVMInitializeAArch64Target();
+    LLVMInitializeAArch64TargetMC();
+    LLVMInitializeAArch64TargetInfo();
+    LLVMInitializeAArch64AsmParser();
+    LLVMInitializeAArch64AsmPrinter();
 
     std::string triple;
     std::string cpu = "generic";

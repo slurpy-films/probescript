@@ -9,7 +9,7 @@ class Animal {
     species = undefined;
 
     increaseAge(amount) {
-        age += amount;
+        this.age += amount;
     }
 
     new(age, species) {
@@ -43,7 +43,7 @@ class Cow extends FarmAnimal {
 
 To instantiate a class, use the **new** keyword.
 ```probe
-var bob = new Cow("bob", 43); // { name: "bob", age: 43, species: Cow, new: [function new], newYear: [function constructor], increaseAge: [function increaseAge] }
+var bob = new Cow("bob", 43); // { name: "bob", age: 43, species: Cow, new: [function new], newYear: [function newYear], increaseAge: [function increaseAge] }
 bob.newYear();
-bob.age // 44
+console.println(bob.age); // 44
 ```

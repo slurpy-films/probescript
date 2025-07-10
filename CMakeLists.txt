@@ -6,8 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(LLVM REQUIRED CONFIG)
 
-separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-add_definitions(${LLVM_DEFINITIONS_LIST})
+add_definitions(${LLVM_DEFINITIONS})
 include_directories(src/core src/cli src/standard_lib src)
 include_directories(${LLVM_INCLUDE_DIRS})
 
@@ -17,16 +16,38 @@ file(GLOB_RECURSE MAIN_SOURCES "src/cli/*.cpp" "src/core/*.cpp" "src/standard_li
 
 add_executable(probescript ${MAIN_SOURCES})
 
-target_link_libraries(probescript PRIVATE
+set(PROBESCRIPT_STATIC_LIBS
     LLVMCore
     LLVMSupport
     LLVMIRReader
     LLVMMCJIT
-    LLVMNativeCodeGen
     LLVMAnalysis
     LLVMPasses
+
+    LLVMAArch64CodeGen
+    LLVMAArch64AsmParser
+    LLVMAArch64Desc
+    LLVMAArch64Disassembler
+    LLVMAArch64Info
+    LLVMAArch64Utils
+
+    LLVMARMCodeGen
+    LLVMARMAsmParser
+    LLVMARMCodeGen
+    LLVMARMDesc
+    LLVMARMDisassembler
+    LLVMARMInfo
+    LLVMARMUtils
+
+    LLVMX86CodeGen
+    LLVMX86AsmParser
+    LLVMX86Desc
+    LLVMX86Disassembler
+    LLVMX86Info
 )
 
 if(WIN32 OR MINGW OR MSYS OR CYGWIN)
-    target_link_libraries(probescript ws2_32)
+    list(APPEND PROBESCRIPT_STATIC_LIBS ws2_32)
 endif()
+
+target_link_libraries(probescript PRIVATE ${PROBESCRIPT_STATIC_LIBS})
