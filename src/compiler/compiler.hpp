@@ -45,6 +45,11 @@ public:
 
     void dump(std::filesystem::path path);
 private:
+    enum class ValueTag
+    {
+        Number,
+    };
+
     CompilationTarget target;
 
     std::unique_ptr<llvm::LLVMContext> ctx;
@@ -56,31 +61,15 @@ private:
 
     llvm::Function* createFunction(const std::string& name, llvm::FunctionType* fntype);
     llvm::Function* createFunctionProto(const std::string& name, llvm::FunctionType* fntype);
-
     void createFunctionBlock(llvm::Function* fn);
+    
     llvm::BasicBlock* createBB(std::string name, llvm::Function* fn = nullptr);
     void setup();
 
-    void genProgram(std::shared_ptr<ProgramType> program);
-    
-    llvm::Value* gen(std::shared_ptr<Stmt> node);
-    
-    // Statement generator functions
-    llvm::Value* genReturn(std::shared_ptr<ReturnStmtType> stmt);
-    llvm::Value* genProbe(std::shared_ptr<ProbeDeclarationType> prb);
-    llvm::Value* genFunction(std::shared_ptr<FunctionDeclarationType> fn);
-    llvm::Value* genVarDecl(std::shared_ptr<VarDeclarationType> decl);
-    
-    // Expression generator functions
-    llvm::Value* genIdent(std::shared_ptr<IdentifierType> ident);
-    llvm::Value* genNum(std::shared_ptr<NumericLiteralType> num);
-
-    llvm::Value* m_retptr; // Used for sret in user-defined functions
-
-    class Scope : std::enable_shared_from_this<Scope>
+    class Scope
     {
     public:
-        Scope(std::shared_ptr<Scope> parent = nullptr);
+        Scope(llvm::Module* module, llvm::IRBuilder<>* builder, std::shared_ptr<Scope> parent = nullptr);
 
         llvm::Value* declareVar(const std::string& name, llvm::Value* val); // llvm::Value* return type since it returns the 'val' argument
         llvm::Value* lookUp(const std::string& name);
@@ -91,6 +80,21 @@ private:
         std::shared_ptr<Scope> m_parent;
     };
 
-    std::shared_ptr<Scope> m_currentscope;
+    void genProgram(std::shared_ptr<ProgramType> program);
+    
+    llvm::Value* gen(std::shared_ptr<Stmt> node, std::shared_ptr<Scope> scope);
+    
+    // Statement generator functions
+    llvm::Value* genReturn(std::shared_ptr<ReturnStmtType> stmt, std::shared_ptr<Scope> scope);
+    llvm::Value* genProbe(std::shared_ptr<ProbeDeclarationType> prb, std::shared_ptr<Scope> scope);
+    llvm::Value* genFunction(std::shared_ptr<FunctionDeclarationType> fn, std::shared_ptr<Scope> scope);
+    llvm::Value* genVarDecl(std::shared_ptr<VarDeclarationType> decl, std::shared_ptr<Scope> scope);
+    
+    // Expression generator functions
+    llvm::Value* genIdent(std::shared_ptr<IdentifierType> ident, std::shared_ptr<Scope> scope);
+    llvm::Value* genNum(std::shared_ptr<NumericLiteralType> num, std::shared_ptr<Scope> scope);
+    llvm::Value* genCall(std::shared_ptr<CallExprType> call, std::shared_ptr<Scope> scope);
+
+    llvm::Value* m_retptr; // Used for struct return in user-defined functions
 };
 }

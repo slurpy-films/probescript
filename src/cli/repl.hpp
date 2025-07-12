@@ -2,10 +2,11 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "runtime/interpreter.hpp"
-#include "frontend/parser.hpp"
-#include "context.hpp"
-#include "typechecker.hpp"
+
+#include "core/runtime/interpreter.hpp"
+#include "core/frontend/parser.hpp"
+#include "core/context.hpp"
+#include "core/typechecker.hpp"
 
 class REPL
 {

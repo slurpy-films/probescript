@@ -3,9 +3,9 @@
 #include <vector>
 #include <functional>
 
-#include "runtime/values.hpp"
-#include "runtime/interpreter.hpp"
-#include "env.hpp"
+#include "core/runtime/values.hpp"
+#include "core/runtime/interpreter.hpp"
+#include "core/env.hpp"
 
 struct TestCase
 {

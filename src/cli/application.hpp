@@ -3,14 +3,16 @@
 #include <filesystem>
 #include <algorithm>
 
-#include "frontend/ast.hpp"
-#include "runtime/values.hpp"
-#include "frontend/parser.hpp"
-#include "typechecker.hpp"
-#include "runtime/interpreter.hpp"
+// Probescript core includes
+#include "core/frontend/ast.hpp"
+#include "core/runtime/values.hpp"
+#include "core/frontend/parser.hpp"
+#include "core/typechecker.hpp"
+#include "core/runtime/interpreter.hpp"
+#include "core/modules.hpp"
+#include "core/context.hpp"
+
 #include "repl.hpp"
-#include "modules.hpp"
-#include "context.hpp"
 #include "prbtest.hpp"
 #include "compiler/compiler.hpp"
 

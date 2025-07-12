@@ -1,9 +1,10 @@
 #pragma once
-#include "frontend/lexer.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
 #include <memory>
+
+#include "frontend/lexer.hpp"
 
 enum NodeType {
     Program,

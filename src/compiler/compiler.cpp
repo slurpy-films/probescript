@@ -11,14 +11,11 @@ Compiler::Compiler(CompilationTarget target)
 void Compiler::setup()
 {
     // Initialize member variables
-    m_currentscope = std::make_shared<Scope>();
-    
-    // Initialize llvm member variables
     ctx = std::make_unique<llvm::LLVMContext>();
     module = std::make_unique<llvm::Module>("Probescript", *ctx);
     builder = std::make_unique<llvm::IRBuilder<>>(*ctx);
 
-    // x86 og x86_64
+    // x86 and x86_64
     LLVMInitializeX86Target();
     LLVMInitializeX86TargetMC();
     LLVMInitializeX86TargetInfo();
@@ -79,7 +76,19 @@ void Compiler::setup()
 
     module->setDataLayout(targetMachine->createDataLayout());
 
+    // 'valuetype' represents a user-defined value
+    valuetype = llvm::StructType::create(*ctx, "_value");
+    
+    std::vector<llvm::Type*> fields = {
+        builder->getInt32Ty(), // tag: ValueTag
+        llvm::ArrayType::get(builder->getInt32Ty(), 16) // Payload: Value payload
+    };
+
+    valuetype->setBody(fields, false);
+
     // Declare functions from probescript-runtime
+
+    // System exit, takes a single i32 as a parameter and returns void
     auto exitFnty = llvm::FunctionType::get(
         llvm::Type::getVoidTy(*ctx),
         { llvm::Type::getInt32Ty(*ctx) },
@@ -90,16 +99,36 @@ void Compiler::setup()
         exitFnty,
         llvm::Function::ExternalLinkage,
         "exit",
-        *module        
+        module.get()
     );
 
-    valuetype = llvm::StructType::create(*ctx, "_value");
-    std::vector<llvm::Type*> fields = {
-        builder->getInt32Ty(), // tag: ValueTag
-        llvm::ArrayType::get(builder->getInt32Ty(), 16) // Payload: Value payload
-    };
+    // Wraps the system exit function
+    llvm::FunctionType* exitWrapperTy = llvm::FunctionType::get(
+        builder->getVoidTy(),
+        { llvm::PointerType::getUnqual(valuetype), valuetype },
+        false
+    );
+    llvm::Function* exitWrapper = llvm::Function::Create(
+        exitWrapperTy,
+        llvm::Function::ExternalLinkage,
+        "_exit",
+        module.get()
+    );
+    llvm::BasicBlock* exitEntry = createBB("entry", exitWrapper);
+    builder->SetInsertPoint(exitEntry);
 
-    valuetype->setBody(fields, false);
+    llvm::Function::arg_iterator args = exitWrapper->arg_begin();
+    llvm::Value* retPtr = args++;
+    retPtr->setName("__sret");
+    llvm::Value* codeValue = args++;
+    codeValue->setName("code");
+
+    llvm::Value* payloadArray = builder->CreateExtractValue(codeValue, {1}, "payload_array");
+
+    llvm::Value* exitCode = builder->CreateExtractValue(payloadArray, {0}, "exit_code");
+
+    builder->CreateCall(exitFn, { exitCode });
+    builder->CreateRetVoid();
 }
 
 void Compiler::compile(std::shared_ptr<ProgramType> program)
@@ -144,19 +173,24 @@ void Compiler::compile(std::shared_ptr<ProgramType> program)
     }
 
     builder->CreateCall(exitfn, { exitCode });
-
     builder->CreateRetVoid();
 }
 
 void Compiler::dump(std::filesystem::path path)
 {
-    module->print(llvm::outs(), nullptr);
+    module->print(llvm::outs(), nullptr); // debug
     
+    std::string error;
+    llvm::raw_string_ostream errorStream(error);
+    if (llvm::verifyModule(*module, &errorStream))
+    {
+        throw std::runtime_error("Compiler error: " + error);
+    }   
     llvm::legacy::PassManager pm;
     auto filetype = llvm::CodeGenFileType::ObjectFile;
     std::error_code EC;
 
-    llvm::raw_fd_ostream dest("out.o", EC);
+    llvm::raw_fd_ostream dest(path.string(), EC);
     if (EC)
         throw std::runtime_error("Could not open file to write object");
 
@@ -202,9 +236,12 @@ llvm::BasicBlock* Compiler::createBB(std::string name, llvm::Function* fn)
     return llvm::BasicBlock::Create(*ctx, name, fn);
 }
 
-Compiler::Scope::Scope(std::shared_ptr<Scope> parent)
+Compiler::Scope::Scope(llvm::Module* module, llvm::IRBuilder<>* builder, std::shared_ptr<Scope> parent)
 {
+    llvm::Function* exitFn = module->getFunction("_exit");
     m_parent = parent;
+
+    declareVar("exit", exitFn);
 }
 
 std::shared_ptr<Compiler::Scope> Compiler::Scope::getParent()

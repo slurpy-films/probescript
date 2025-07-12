@@ -4,9 +4,11 @@
 #include <sstream>
 #include <regex>
 #include <algorithm>
-#include "runtime/values.hpp"
-#include "utils.hpp"
-#include "types.hpp"
+#include <functional>
+
+#include "core/runtime/values.hpp"
+#include "core/utils.hpp"
+#include "core/types.hpp"
 
 struct Request
 {
@@ -29,8 +31,8 @@ struct Response
 Val getValHttpModule();
 TypePtr getTypeHttpModule();
 
-#include "env.hpp"
-#include "runtime/interpreter.hpp"
+#include "core/env.hpp"
+#include "core/runtime/interpreter.hpp"
 
 inline std::string trim(const std::string& str) {
     const auto start = str.find_first_not_of(" \t\r");

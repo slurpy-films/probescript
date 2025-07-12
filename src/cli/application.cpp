@@ -242,7 +242,7 @@ void Application::run()
 
             probescript::Compiler compiler{target};
             compiler.compile(program);
-            compiler.dump("out.o");
+            compiler.dump(fileName.filename().replace_extension("").string() + ".o");
         }
         catch (const std::runtime_error& err)
         {

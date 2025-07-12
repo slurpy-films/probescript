@@ -1,7 +1,0 @@
-INSTALLATION
-
-Windows:
-To install probescript on windows, run the 'probescript-setup.bat' script as administrator. Choose 'Install probescript'. Choose the default for the installation directory, and answer 'y' when it asks you if you want to add probescript to PATH.
-
-Linux:
-To install probescript on windows, run the 'probescript-setup.sh' script as administrator. Choose 'Install probescript'. Choose the default for the installation directory, and answer 'y' when it asks you if you want to add probescript to /usr/local/bin.

@@ -453,7 +453,7 @@ TypePtr TC::checkVarDecl(std::shared_ptr<VarDeclarationType> decl, TypeEnvPtr en
     }
 
     check(decl->value, env);
-    env->declareVar(decl->identifier, decl->staticType ? getType(decl->type, env) : std::make_shared<Type>(TypeKind::Any, "any"), decl->token);
+    env->declareVar(decl->identifier, decl->staticType ? getType(decl->type, env) : (decl->value ? check(decl->value, env) : std::make_shared<Type>(TypeKind::Any, "any")), decl->token);
 
     return std::make_shared<Type>(TypeKind::Any, "any");
 }
