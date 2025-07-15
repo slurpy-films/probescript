@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <unordered_map>
 #include <cmath>
@@ -7,12 +8,36 @@
 #include <algorithm>
 #include <cctype>
 #include <future>
+
 #include "frontend/ast.hpp"
 #include "utils.hpp"
 #include "frontend/lexer.hpp"
 
+namespace Probescript
+{
+
 class Env;
 using EnvPtr = std::shared_ptr<Env>;
+
+} // namespace Probescript::Env
+
+namespace Probescript::Values
+{
+
+struct RuntimeVal;
+using Val = std::shared_ptr<RuntimeVal>;
+
+} // namespace Probescript::Values
+
+namespace Probescript::Interpreter
+{
+
+Values::Val evalCallWithFnVal(Values::Val fn, std::vector<Values::Val> args, EnvPtr env);
+
+} // namespace Probescript::Interpreter
+
+namespace Probescript::Values
+{
 
 enum class ValueType {
     Probe,
@@ -93,7 +118,6 @@ std::shared_ptr<T> makeVal(Lexer::Token tk, Args&&... args)
     return val;
 }
 
-Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env);
 
 using NativeFunction = std::function<Val(std::vector<Val>, EnvPtr)>;
 
@@ -365,12 +389,12 @@ public:
 
 struct FunctionValue : public RuntimeVal {
     std::string name;
-    std::vector<std::shared_ptr<VarDeclarationType>> params;
-    std::vector<std::shared_ptr<VarDeclarationType>> templateparams;
+    std::vector<std::shared_ptr<AST::VarDeclarationType>> params;
+    std::vector<std::shared_ptr<AST::VarDeclarationType>> templateparams;
     EnvPtr declarationEnv;
-    std::vector<std::shared_ptr<Stmt>> body;
+    std::vector<std::shared_ptr<AST::Stmt>> body;
 
-    FunctionValue (std::string name, std::vector<std::shared_ptr<VarDeclarationType>> params, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, bool isAsync = false) 
+    FunctionValue (std::string name, std::vector<std::shared_ptr<AST::VarDeclarationType>> params, EnvPtr declarationEnv, std::vector<std::shared_ptr<AST::Stmt>> body, bool isAsync = false) 
         : RuntimeVal(ValueType::Function), name(name), params(params), declarationEnv(declarationEnv), body(body), isAsync(isAsync) {}
 
     std::string toString() const override {
@@ -389,13 +413,13 @@ struct FunctionValue : public RuntimeVal {
 
 struct ProbeValue : public RuntimeVal {
     std::string name;
-    std::shared_ptr<Expr> extends;
+    std::shared_ptr<AST::Expr> extends;
     bool doesExtend = false;
     EnvPtr declarationEnv;
-    std::vector<std::shared_ptr<Stmt>> body;
-    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body) 
+    std::vector<std::shared_ptr<AST::Stmt>> body;
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<AST::Stmt>> body) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body) {}
-    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<Expr> extends) 
+    ProbeValue (std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<AST::Stmt>> body, std::shared_ptr<AST::Expr> extends) 
         : RuntimeVal(ValueType::Probe), name(name), declarationEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[probe " + name + "]";
@@ -409,12 +433,12 @@ struct ProbeValue : public RuntimeVal {
 struct ClassVal : public RuntimeVal {
     std::string name;
     EnvPtr parentEnv;
-    std::vector<std::shared_ptr<Stmt>> body;
-    std::shared_ptr<Expr> extends;
+    std::vector<std::shared_ptr<AST::Stmt>> body;
+    std::shared_ptr<AST::Expr> extends;
     bool doesExtend = false;
-    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<AST::Stmt>> body) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body) {}
-    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<Expr> extends) 
+    ClassVal(std::string name, EnvPtr declarationEnv, std::vector<std::shared_ptr<AST::Stmt>> body, std::shared_ptr<AST::Expr> extends) 
     : RuntimeVal(ValueType::Class), name(name), parentEnv(declarationEnv), body(body), extends(extends), doesExtend(true) {}
     std::string toString() const override {
         return "[class " + name + "]";
@@ -566,3 +590,5 @@ struct FutureVal : public RuntimeVal
     FutureVal(std::shared_future<Val> fut)
         : RuntimeVal(ValueType::Future), future(fut) {}
 };
+
+} // namespace Probescript::Values

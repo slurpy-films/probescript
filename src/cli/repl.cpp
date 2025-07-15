@@ -1,10 +1,11 @@
 #include "repl.hpp"
 
+using namespace Probescript;
+
 void REPL::start()
 {
     std::cout << "REPL v1.0\n";
     EnvPtr env = std::make_shared<Env>();
-    TypeEnvPtr typeenv = std::make_shared<TypeEnv>();
     std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::REPL);
 
     while (true)
@@ -17,9 +18,9 @@ void REPL::start()
         if (src.find("exit") == 0) break;
         try
         {
-            std::shared_ptr<ProgramType> program = parser.parse(src);
+            std::shared_ptr<AST::ProgramType> program = parser.parse(src);
 
-            Val result = eval(program, env, context);
+            Values::Val result = Interpreter::eval(program, env, context);
 
             std::cout << result->toConsole() << "\n";
         }

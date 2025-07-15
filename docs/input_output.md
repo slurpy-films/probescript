@@ -13,7 +13,7 @@ Probescript provides two main functions for printing to the terminal:
 * `console.println(...)` – Prints all arguments separated by spaces, followed by a newline.
 * `console.print(...)` – Prints all arguments separated by spaces, but **without** adding a newline at the end.
 
-Use `console.println()` for most cases where you want each output on its own line. Use `console.print()` when you want to print multiple things on the same line, followed by a newline later.
+Use `console.println()` for most cases where you want each output on its own line. Use `console.print()` when you want to print multiple things on the same line.
 
 Both functions can print any value, including strings, numbers, arrays, maps, and even functions.
 
@@ -50,6 +50,6 @@ console.println("Hello", name);
 **Example with type conversion:**
 
 ```prb
-var age: num = num(console.prompt("Enter your age:"));
+var age: num = new num(console.prompt("Enter your age:"));
 console.println("You are", age, "years old");
 ```

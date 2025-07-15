@@ -1,12 +1,19 @@
 #pragma once
+
 #include <unordered_map>
 #include <string>
 #include <sstream>
 #include <regex>
 #include <algorithm>
-#include "runtime/values.hpp"
-#include "utils.hpp"
-#include "types.hpp"
+
+#include "core/runtime/values.hpp"
+#include "core/runtime/interpreter.hpp"
+#include "core/utils.hpp"
+#include "core/types.hpp"
+#include "core/env.hpp"
+
+namespace Probescript::Stdlib::Http
+{
 
 struct Request
 {
@@ -26,11 +33,9 @@ struct Response
     std::function<void(std::string, std::unordered_map<std::string, std::string>)> send;
 };
 
-Val getValHttpModule();
-TypePtr getTypeHttpModule();
+Values::Val getValHttpModule();
+Typechecker::TypePtr getTypeHttpModule();
 
-#include "env.hpp"
-#include "runtime/interpreter.hpp"
 
 inline std::string trim(const std::string& str) {
     const auto start = str.find_first_not_of(" \t\r");
@@ -81,8 +86,6 @@ inline std::unordered_map<std::string, std::string> parseCookies(const std::stri
 }
 
 
-void startServer(const int port, std::function<void(Request, Response)> handler);
-
 inline std::pair<std::string, std::string> parseMethodAndPath(const std::string& request)
 {
     std::istringstream stream(request);
@@ -91,26 +94,4 @@ inline std::pair<std::string, std::string> parseMethodAndPath(const std::string&
     return {method, path};
 }
 
-#ifdef _WIN32
-
-#pragma comment(lib, "Ws2_32.lib")
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <thread>
-#include "threads.hpp"
-#include <sstream>
-
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <thread>
-#include <sstream>
-#include <threads.hpp>
-#include <cstring>
-#include <netdb.h>
-#endif
-
-Val sendReq(const std::string& method, std::string& url, std::shared_ptr<ObjectVal> conf, EnvPtr env);
+} // namespace Probescript::Stdlib::Http

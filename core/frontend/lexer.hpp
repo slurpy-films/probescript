@@ -3,10 +3,11 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
+
 #include "utils.hpp"
 #include "context.hpp"
 
-namespace Lexer
+namespace Probescript::Lexer
 {
 
 enum TokenType
@@ -105,33 +106,33 @@ inline std::unordered_map<std::string, TokenType> getKeyWords()
 {
     static std::unordered_map<std::string, TokenType> keywords =
     {
-        { "var", Var },
-        { "null", Null },
-        { "const", Const },
-        { "fn", Function },
-        { "if", If },
-        { "probe", Probe },
-        { "import", Import },
-        { "export", Export },
-        { "module", Module },
-        { "while", While },
-        { "else", Else },
-        { "class", Class },
-        { "new", New },
-        { "return", Return },
-        { "extends", Extends },
-        { "as", As },
-        { "for", For },
-        { "break", Break },
-        { "continue", Continue },
-        { "throw", Throw },
-        { "try", Try },
-        { "catch", Catch },
-        { "undefined", Undefined },
-        { "true", Bool },
-        { "false", Bool },
-        { "async", Async },
-        { "await", Await },
+        { "var", Probescript::Lexer::TokenType::Var },
+        { "null", Probescript::Lexer::TokenType::Null },
+        { "const", Probescript::Lexer::TokenType::Const },
+        { "fn", Probescript::Lexer::TokenType::Function },
+        { "if", Probescript::Lexer::TokenType::If },
+        { "probe", Probescript::Lexer::TokenType::Probe },
+        { "import", Probescript::Lexer::TokenType::Import },
+        { "export", Probescript::Lexer::TokenType::Export },
+        { "module", Probescript::Lexer::TokenType::Module },
+        { "while", Probescript::Lexer::TokenType::While },
+        { "else", Probescript::Lexer::TokenType::Else },
+        { "class", Probescript::Lexer::TokenType::Class },
+        { "new", Probescript::Lexer::TokenType::New },
+        { "return", Probescript::Lexer::TokenType::Return },
+        { "extends", Probescript::Lexer::TokenType::Extends },
+        { "as", Probescript::Lexer::TokenType::As },
+        { "for", Probescript::Lexer::TokenType::For },
+        { "break", Probescript::Lexer::TokenType::Break },
+        { "continue", Probescript::Lexer::TokenType::Continue },
+        { "throw", Probescript::Lexer::TokenType::Throw },
+        { "try", Probescript::Lexer::TokenType::Try },
+        { "catch", Probescript::Lexer::TokenType::Catch },
+        { "undefined", Probescript::Lexer::TokenType::Undefined },
+        { "true", Probescript::Lexer::TokenType::Bool },
+        { "false", Probescript::Lexer::TokenType::Bool },
+        { "async", Probescript::Lexer::TokenType::Async },
+        { "await", Probescript::Lexer::TokenType::Await },
     };
 
     return keywords;
@@ -139,4 +140,4 @@ inline std::unordered_map<std::string, TokenType> getKeyWords()
 
 std::vector<Token> tokenize(const std::string& sourceCode);
 
-} // namespace Lexer
+} // namespace Probescript::Lexer

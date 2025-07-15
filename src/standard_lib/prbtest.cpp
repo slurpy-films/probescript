@@ -1,52 +1,56 @@
 #include "prbtest.hpp"
 
-std::vector<TestCase> g_tests;
+using namespace Probescript;
+using namespace Probescript::Stdlib;
+using namespace Probescript::Stdlib::Prbtest;
 
-Val getValTestLib()
+std::vector<TestCase> g_tests = {};
+
+Values::Val Prbtest::getValTestLib()
 {
-    return std::make_shared<ObjectVal>(std::unordered_map<std::string, Val>(
+    return std::make_shared<Values::ObjectVal>(std::unordered_map<std::string, Values::Val>(
     {
         {
             "assert",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
+            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
             {
                 if (args.empty()) throw ThrowException(ArgumentError("Usage: assert(expression, message?: str)"));
                 if (!args[0]->toBool()) throw ThrowException(CustomError(args.size() < 2 ? "Assertion failed" : args[1]->toString(), "AssertError"));
-                return std::make_shared<UndefinedVal>();
+                return std::make_shared<Values::UndefinedVal>();
             })
         },
         {
             "test",
-            std::make_shared<NativeFnValue>([](std::vector<Val> args, EnvPtr env) -> Val
+            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
             {
                 if (args.size() < 2) throw ThrowException(ArgumentError("Usage: test(name: str, fn: function)"));
                 g_tests.push_back(TestCase(args[0]->toString(), [args]()
                 {
-                    evalCallWithFnVal(args[1], {}, std::make_shared<Env>());
+                    Interpreter::evalCallWithFnVal(args[1], {}, std::make_shared<Env>());
                 }));
 
-                return std::make_shared<UndefinedVal>();
+                return std::make_shared<Values::UndefinedVal>();
             })
         }
     }));
 }
 
-TypePtr getTypeTestLib()
+Typechecker::TypePtr Prbtest::getTypeTestLib()
 {
-    return std::make_shared<Type>(TypeKind::Module, "native module", std::make_shared<TypeVal>(std::unordered_map<std::string, TypePtr>(
+    return std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Module, "native module", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>(
     {
         {
             "assert",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "expression"), std::make_shared<VarDeclarationType>(std::make_shared<StringLiteralType>("Assertion failed"), "failmessage") })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("expression", Typechecker::g_anyty), std::make_shared<Typechecker::Parameter>("failmessage", Typechecker::g_strty, true) })))
         },
         {
             "test",
-            std::make_shared<Type>(TypeKind::Function, "native function", std::make_shared<TypeVal>(std::vector({ std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "name", std::make_shared<IdentifierType>("str")), std::make_shared<VarDeclarationType>(std::make_shared<UndefinedLiteralType>(), "fn") })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("name", Typechecker::g_strty), std::make_shared<Typechecker::Parameter>("fn", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function")) })))
         }
     })));
 }
 
-void runTests(std::string file)
+void Prbtest::runTests(std::string file)
 {
     bool failed = false;
     std::string messages;

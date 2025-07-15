@@ -1,7 +1,8 @@
 #include "modules.hpp"
 
+using namespace Probescript;
 
-std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path fileName) {
+std::pair<std::unordered_map<std::string, fs::path>, Values::Val> ModuleIndexer::indexModules(fs::path fileName) {
     fs::path current = fs::is_directory(fileName) ? fileName : fs::current_path() / fileName.parent_path();
     fs::path projectFile;
     bool found = false;
@@ -22,7 +23,7 @@ std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path 
     }
 
     std::unordered_map<std::string, fs::path> modules;
-    if (!found) return { modules, std::make_shared<ObjectVal>() };
+    if (!found) return { modules, std::make_shared<Values::ObjectVal>() };
 
     for (const auto& entry : fs::recursive_directory_iterator(projectFile.parent_path())) {
         if (entry.is_regular_file()) {
@@ -52,7 +53,7 @@ std::pair<std::unordered_map<std::string, fs::path>, Val> indexModules(fs::path 
 
     std::ifstream stream(projectFile);
     std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-    JSON::JSONParser parser(file);
+    Stdlib::JSON::JSONParser parser(file);
 
     return { modules, parser.parse() };
 }

@@ -1,6 +1,7 @@
 #include "frontend/lexer.hpp"
 
-using namespace Lexer;
+using namespace Probescript;
+using namespace Probescript::Lexer;
 
 std::vector<Token> Lexer::tokenize(const std::string& sourceCode)
 {

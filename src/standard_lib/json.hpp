@@ -1,13 +1,16 @@
 #pragma once
-#include "runtime/values.hpp"
-#include "env.hpp"
-#include "utils.hpp"
-#include "errors.hpp"
-#include "types.hpp"
 
-namespace JSON {
+#include "core/runtime/values.hpp"
+#include "core/env.hpp"
+#include "core/utils.hpp"
+#include "core/errors.hpp"
+#include "core/types.hpp"
 
-enum TokenType {
+namespace Probescript::Stdlib::JSON
+{
+
+enum TokenType
+{
     String,
     OpenBrace,
     ClosedBrace,
@@ -19,7 +22,8 @@ enum TokenType {
     CloseBracket,
 };
 
-struct Token {
+struct Token
+{
     std::string val;
     TokenType type;
 
@@ -27,10 +31,11 @@ struct Token {
         : val(v), type(t) {}
 };
 
-class JSONParser {
+class JSONParser
+{
 public:
     JSONParser(std::string& file, EnvPtr env = std::make_shared<Env>()) : file(file), env(env) {}
-    Val parse();
+    Values::Val parse();
 
 private:
     EnvPtr env;
@@ -46,23 +51,22 @@ private:
         return str.length() == 1 && isdigit(str[0]);
     }
 
-    inline Val parseTokens() {
+    inline Values::Val parseTokens() {
         return parseValue();
     }
     
-    Val parseValue();
+    Values::Val parseValue();
     
-    Val parseObject();
+    Values::Val parseObject();
 
-    Val parseArray();
+    Values::Val parseArray();
 
     inline Token eat() {
         return shift(tokens);
     }
 };
 
-} // namespace JSON
+Values::Val getValJsonModule();
+Typechecker::TypePtr getTypeJsonModule();
 
-
-Val getValJsonModule();
-TypePtr getTypeJsonModule();
+} // namespace Probescript::Stdlib::JSON

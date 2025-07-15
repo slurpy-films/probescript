@@ -1,20 +1,23 @@
 #include "runtime/interpreter.hpp"
 
-Val evalCall(std::shared_ptr<CallExprType> call, EnvPtr env)
-{
-    std::vector<Val> args;
+using namespace Probescript;
+using namespace Probescript::Interpreter;
 
-    for (std::shared_ptr<Expr> arg : call->args)
+Values::Val Interpreter::evalCall(std::shared_ptr<AST::CallExprType> call, EnvPtr env)
+{
+    std::vector<Values::Val> args;
+
+    for (std::shared_ptr<AST::Expr> arg : call->args)
     {
         args.push_back(eval(arg, env));
     };
 
-    Val fn = eval(call->calee, env);
+    Values::Val fn = eval(call->calee, env);
 
     return evalCallWithFnVal(fn, args, env);
 }
 
-Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
+Values::Val Interpreter::evalCallWithFnVal(Values::Val fn, std::vector<Values::Val> args, EnvPtr env)
 {
 
     if (fn == nullptr)
@@ -22,39 +25,39 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
         throw ThrowException(CustomError("Function call target is null", "FunctionCallError", fn->token));
     }
 
-    if (fn->type == ValueType::NativeFn)
+    if (fn->type == Values::ValueType::NativeFn)
     {
-        auto nativefn = std::static_pointer_cast<NativeFnValue>(fn);
+        auto nativefn = std::static_pointer_cast<Values::NativeFnValue>(fn);
 
-        Val result = nativefn->call(args, env);
+        Values::Val result = nativefn->call(args, env);
 
         return result;
     }
 
-    if (fn->type == ValueType::Function)
+    if (fn->type == Values::ValueType::Function)
     {
-        std::shared_ptr<FunctionValue> func = std::static_pointer_cast<FunctionValue>(fn);
+        std::shared_ptr<Values::FunctionValue> func = std::static_pointer_cast<Values::FunctionValue>(fn);
         
         if (func->isAsync)
         {
-            return std::make_shared<FutureVal>(std::async(std::launch::async, [func, env, args]() -> Val
+            return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [func, env, args]() -> Values::Val
             {
                 EnvPtr scope = std::make_shared<Env>(func->declarationEnv);
 
                 for (int i = 0; i < func->params.size(); i++)
                 {
                     std::string varname = func->params[i]->identifier;
-                    Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
+                    Values::Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
                     scope->declareVar(varname, value, Lexer::Token());
                 }
 
-                Val result = std::make_shared<UndefinedVal>();
+                Values::Val result = std::make_shared<Values::UndefinedVal>();
 
                 try
                 {
                     evalBody(func->body, scope);
                 }
-                catch (const ReturnSignal& ret)
+                catch (const Values::ReturnSignal& ret)
                 {
                     result = ret.get(); 
                 }
@@ -69,16 +72,16 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
             for (int i = 0; i < func->params.size(); i++)
             {
                 std::string varname = func->params[i]->identifier;
-                Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
+                Values::Val value = (i < args.size()) ? args[i] : eval(func->params[i]->value, env);
                 scope->declareVar(varname, value, fn->token);
             }
-            Val result = std::make_shared<UndefinedVal>();
+            Values::Val result = std::make_shared<Values::UndefinedVal>();
 
             try
             {
                 evalBody(func->body, scope);
             }
-            catch (const ReturnSignal& ret)
+            catch (const Values::ReturnSignal& ret)
             {
                 result = ret.get(); 
             }
@@ -87,7 +90,7 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
         }
     }
 
-    if (fn->type == ValueType::Probe)
+    if (fn->type == Values::ValueType::Probe)
     {
         return evalProbeCall(fn, env, args);
     }
@@ -95,14 +98,14 @@ Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env)
     throw ThrowException(CustomError("Cannot call value that is not a function", "FunctionCallError"));
 }
 
-Val evalAwaitExpr(std::shared_ptr<AwaitExprType> expr, EnvPtr env) {
-    Val result = eval(expr->caller, env);
+Values::Val Interpreter::evalAwaitExpr(std::shared_ptr<AST::AwaitExprType> expr, EnvPtr env) {
+    Values::Val result = eval(expr->caller, env);
     
-    if (result->type != ValueType::Future) {
+    if (result->type != Values::ValueType::Future) {
         throw ThrowException(ArgumentError("'await' requires a future"));
     }
     
-    std::shared_ptr<FutureVal> future = std::static_pointer_cast<FutureVal>(result);
+    std::shared_ptr<Values::FutureVal> future = std::static_pointer_cast<Values::FutureVal>(result);
     
     try {
         return future->future.get();
