@@ -920,7 +920,6 @@ bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
         if (
             right->type == TypeKind::Function
             && left->type == TypeKind::Function
-            && ((right->val->returntype && right->val->returntype->type != TypeKind::Any) || (left->val->returntype && left->val->returntype->type != TypeKind::Any))
         )
         {
             if (right->val->params.size() != left->val->params.size())
