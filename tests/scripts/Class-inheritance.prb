@@ -40,6 +40,6 @@ probe Main
             failed = true;
         }
 
-        if (failed) process.kill(1);
+        if (failed) exit(1);
     }
 }
