@@ -53,6 +53,8 @@ private:
     TypePtr checkTemplateCall(std::shared_ptr<AST::TemplateCallType> call, TypeEnvPtr env);
     TypePtr checkCastExpr(std::shared_ptr<AST::CastExprType> expr, TypeEnvPtr env);
     TypePtr checkUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> expr, TypeEnvPtr env);
+    TypePtr checkUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> expr, TypeEnvPtr env);
+    TypePtr checkAwaitExpr(std::shared_ptr<AST::AwaitExprType> expr, TypeEnvPtr env);
 
     void checkProbeInheritance(TypePtr prb, TypeEnvPtr env);
     void checkClassInheritance(TypePtr cls, TypeEnvPtr env, TypePtr thisobj);

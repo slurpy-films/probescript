@@ -35,6 +35,7 @@ enum class TypeKind
     Probe,
     Module, // A module is handled like an object, but if the user tries to access a member it doesn't have, it throws the process
     Array,
+    Future,
 };
 
 struct Parameter;
@@ -46,9 +47,16 @@ struct TypeVal
     std::unordered_map<std::string, TypePtr> props = {};
     TypePtr returntype;
 
+    bool isAsync = false;
+
     // Used for re-checking the source of a template function
     std::shared_ptr<AST::Stmt> sourcenode;
     TypeEnvPtr declenv;
+
+    TypePtr futureVal; // What this future eventually will resolve to
+
+    TypeVal(bool _, TypePtr futureVal) // bool _ so there is a defference between this and the returntype constructor
+        : futureVal(futureVal) {}
 
     TypeVal(std::vector<std::shared_ptr<Parameter>> params)
         : params(params) {}

@@ -99,6 +99,16 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
         }
     },
     {
+        "future",
+        {
+            std::make_shared<Values::NativeClassVal>([](std::vector<Values::Val> _args, EnvPtr _env) -> Values::Val
+            {
+                return std::make_shared<Values::UndefinedVal>();
+            }),
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Class, "native class", std::make_shared<Typechecker::TypeVal>(std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+        }
+    },
+    {
         "array",
         {
             std::make_shared<Values::NativeClassVal>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {

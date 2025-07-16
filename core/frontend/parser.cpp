@@ -917,7 +917,7 @@ std::shared_ptr<AST::VarDeclarationType> Parser::parseParam() {
 
     if (at().type == Lexer::Colon) {
         eat();
-        type = parseExpr();
+        type = parseTernaryExpr();
     }
 
     if (at().type == Lexer::Equals) {

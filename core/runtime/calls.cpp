@@ -101,15 +101,19 @@ Values::Val Interpreter::evalCallWithFnVal(Values::Val fn, std::vector<Values::V
 Values::Val Interpreter::evalAwaitExpr(std::shared_ptr<AST::AwaitExprType> expr, EnvPtr env) {
     Values::Val result = eval(expr->caller, env);
     
-    if (result->type != Values::ValueType::Future) {
-        throw ThrowException(ArgumentError("'await' requires a future"));
+    if (result->type != Values::ValueType::Future)
+    {
+        throw ThrowException(CustomError("'await' requires a future", "AwaitError", expr->caller->token));
     }
     
     std::shared_ptr<Values::FutureVal> future = std::static_pointer_cast<Values::FutureVal>(result);
     
-    try {
+    try
+    {
         return future->future.get();
-    } catch (...) {
+    }
+    catch (...)
+    {
         throw ThrowException(CustomError("Async function failed", "AsyncError"));
     }
 }

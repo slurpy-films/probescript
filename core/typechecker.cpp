@@ -122,6 +122,10 @@ TypePtr TC::check(std::shared_ptr<AST::Stmt> node, TypeEnvPtr env, std::shared_p
             return checkCastExpr(std::static_pointer_cast<AST::CastExprType>(node), env);
         case AST::NodeType::UnaryPrefix:
             return checkUnaryPrefix(std::static_pointer_cast<AST::UnaryPrefixType>(node), env);
+        case AST::NodeType::UnaryPostFix:
+            return checkUnaryPostfix(std::static_pointer_cast<AST::UnaryPostFixType>(node), env);
+        case AST::NodeType::AwaitExpr:
+            return checkAwaitExpr(std::static_pointer_cast<AST::AwaitExprType>(node), env);
         default:
             return std::make_shared<Type>(TypeKind::Any, "any");
     }
@@ -131,7 +135,27 @@ TypePtr TC::checkUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> expr, TypeEnv
 {
     TypePtr right = check(expr->assigne, env);
     if (expr->op == "!") return std::make_shared<Type>(TypeKind::Bool, "bool");
-    else return right;
+    
+    // If the operator is not '!' it has to be '++' or '--'
+    if (!compare(right, g_numty, env))
+    {
+        throw std::runtime_error(TypeError("'" + expr->op + "' can only be used on numbers", expr->assigne->token));
+    }
+
+    return right;
+}
+
+TypePtr TC::checkUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> expr, TypeEnvPtr env)
+{
+    TypePtr type = check(expr->assigne, env);
+    // Unary postfix operators are only '++' and '--'
+
+    if (!compare(type, g_numty, env))
+    {
+        throw std::runtime_error(TypeError("'" + expr->op + "' can only be used on numbers", expr->assigne->token));
+    }
+
+    return type;
 }
 
 TypePtr TC::checkForStmt(std::shared_ptr<AST::ForStmtType> forstmt, TypeEnvPtr env)
@@ -230,7 +254,7 @@ TypePtr TC::checkFunction(std::shared_ptr<AST::FunctionDeclarationType> fn, Type
 
     TypeEnvPtr scope = std::make_shared<TypeEnv>(declenv);
 
-    if (!fn->templateparams.empty() && !templateProcessed)
+    if (!templateProcessed)
     {
         for (const auto& param : fn->templateparams)
         {
@@ -275,6 +299,7 @@ TypePtr TC::checkFunction(std::shared_ptr<AST::FunctionDeclarationType> fn, Type
     
     type->val->sourcenode = fn;
     type->val->declenv = declenv;
+    type->val->isAsync = fn->isAsync;
 
     env->declareVar(fn->name, type, fn->token);
 
@@ -316,7 +341,8 @@ TypePtr TC::checkIfStmt(std::shared_ptr<AST::IfStmtType> stmt, TypeEnvPtr env)
         check(stmt, scope);
     }
 
-    if (stmt->hasElse){
+    if (stmt->hasElse)
+    {
         TypeEnvPtr elsescope = std::make_shared<TypeEnv>(env);
         for (std::shared_ptr<AST::Stmt> stmt : stmt->elseStmt)
         {
@@ -588,6 +614,11 @@ TypePtr TC::checkCall(std::shared_ptr<AST::CallExprType> call, TypeEnvPtr env)
             }
         }
 
+        if (fn->val->isAsync)
+        {
+            return std::make_shared<Type>(TypeKind::Future, "future<" + (fn->val->returntype ? fn->val->returntype : std::make_shared<Type>(TypeKind::Any, "any"))->name + ">", std::make_shared<TypeVal>(false, fn->val->returntype ? fn->val->returntype : std::make_shared<Type>(TypeKind::Any, "any")));
+        }
+
         return fn->val->returntype ? fn->val->returntype : std::make_shared<Type>(TypeKind::Any, "any");
     } else if (fn->type == TypeKind::Probe)
     {
@@ -771,8 +802,41 @@ TypePtr TC::checkNewExpr(std::shared_ptr<AST::NewExprType> expr, TypeEnvPtr env)
 
     if (cls->type != TypeKind::Class)
     {
-        // Everthing is allowed to be called as a class since something like `new num()` is allowed
+        // Everything is allowed to be called as a class since something like `new num()` is allowed
         return cls;
+    }
+
+    if (cls->val->props.find("new") != cls->val->props.end())
+    {
+        TypePtr constructor = cls->val->props["new"];
+
+        if (constructor->type == TypeKind::Function)
+        {
+            // Check that we have provided all required arguments
+            size_t size = constructor->val->params.size();
+            for (size_t i = 0; i < size; i++)
+            {
+                if (i >= expr->args.size() && !constructor->val->params[i]->hasDefault)
+                {
+                    throw std::runtime_error(CustomError("Constructor expects " + std::to_string(size) + " arguments, but only " + std::to_string(expr->args.size()) + " were provided", "ConstructError", expr->constructor->token));
+                }
+            }
+
+            // Check the types of the arguments
+            for (size_t i = 0; i < size; i++)
+            {
+                if (expr->args.size() <= i || !expr->args[i])
+                    break;
+
+                std::shared_ptr<Parameter> param = constructor->val->params[i];
+                TypePtr arg = check(expr->args[i], env);
+
+                if (!compare(arg, param->type, env))
+                {
+                    throw std::runtime_error(CustomError("Constructor expects '" + param->ident + "' to be of type " + param->type->name + " but it is of type " + arg->name, "ConstructorError", expr->args[i]->token));
+                }
+            }
+        }
     }
 
     if (cls->val->returntype) return cls->val->returntype;
@@ -830,31 +894,39 @@ std::unordered_map<std::string, TypePtr> TC::getExports(std::shared_ptr<AST::Pro
     return exports;
 }
 
+TypePtr TC::checkAwaitExpr(std::shared_ptr<AST::AwaitExprType> expr, TypeEnvPtr env)
+{
+    TypePtr type = check(expr->caller, env);
+    if (!compare(type, std::make_shared<Type>(TypeKind::Future, "future"), env))
+    {
+        throw std::runtime_error(TypeError("Cannot await a value that is not a future", expr->caller->token));
+    }
+
+    return type->val->futureVal;
+}
+
 TypePtr TC::getType(std::shared_ptr<AST::Expr> name, TypeEnvPtr env)
 {
     if (!name) return std::make_shared<Type>(TypeKind::Any, "any");
 
     if (name->kind == AST::NodeType::Identifier)
     {
-        TypePtr type;
         std::shared_ptr<AST::IdentifierType> ident = std::static_pointer_cast<AST::IdentifierType>(name);
 
         if (ident->symbol == "str")
-            type = std::make_shared<Type>(TypeKind::String, "string");
+            return std::make_shared<Type>(TypeKind::String, "string");
         else if (ident->symbol == "num")
-            type = std::make_shared<Type>(TypeKind::Number, "number");
+            return std::make_shared<Type>(TypeKind::Number, "number");
         else if (ident->symbol == "bool")
-            type = std::make_shared<Type>(TypeKind::Bool, "bool");
+            return std::make_shared<Type>(TypeKind::Bool, "bool");
         else if (ident->symbol == "map")
-            type = std::make_shared<Type>(TypeKind::Object, "map");
+            return std::make_shared<Type>(TypeKind::Object, "map");
         else if (ident->symbol == "function")
-            type = std::make_shared<Type>(TypeKind::Function, "function");
+            return std::make_shared<Type>(TypeKind::Function, "function");
         else if (ident->symbol == "array")
-            type = std::make_shared<Type>(TypeKind::Array, "array");
+            return std::make_shared<Type>(TypeKind::Array, "array");
 	    else if (ident->symbol == "any")
-	    type = std::make_shared<Type>(TypeKind::Any, "any");
-
-        if (type) return type;
+	        return std::make_shared<Type>(TypeKind::Any, "any");
     }
 
     if (name->kind == AST::NodeType::MapLiteral)
