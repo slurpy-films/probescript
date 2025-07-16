@@ -230,11 +230,23 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
                 std::regex regex(args[0]->toString());
                 std::shared_ptr<Values::ObjectVal> obj = std::make_shared<Values::ObjectVal>();
 
-                obj->properties["match"] = std::make_shared<Values::NativeFnValue>([regex](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+                obj->properties["test"] = std::make_shared<Values::NativeFnValue>([regex](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
                 {
                     if (args.empty()) throw ThrowException(ArgumentError("Usage: regex.match(input: string)"));
 
                     return std::make_shared<Values::BooleanVal>(std::regex_match(args[0]->toString(), regex));
+                });
+
+                obj->properties["search"] = std::make_shared<Values::NativeFnValue>([regex](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
+                    if (args.empty()) throw ThrowException(ArgumentError("Usage: regex.search(input: string)"));
+                    return std::make_shared<Values::BooleanVal>(std::regex_search(args[0]->toString(), regex));
+                });
+
+                obj->properties["replace"] = std::make_shared<Values::NativeFnValue>([regex](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+                {
+                    if (args.size() < 2) throw ThrowException(ArgumentError("Usage: regex.replace(input: string, replacement: string)"));
+                    std::string result = std::regex_replace(args[0]->toString(), regex, args[1]->toString());
+                    return std::make_shared<Values::StringVal>(result);
                 });
 
                 return obj;
@@ -242,8 +254,16 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
             std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Class, "native class", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>(
                 {
                     {
-                        "match",
+                        "test",
                         std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
+                    },
+                    {
+                        "search",
+                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
+                    },
+                    {
+                        "replace",
+                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("replacement", Typechecker::g_strty, false) })))
                     }
                 }
             )), "Regex")
