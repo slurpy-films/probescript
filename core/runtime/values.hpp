@@ -144,7 +144,9 @@ struct NumberVal : public RuntimeVal {
     }
 
     std::string toJSON() const override {
-        return std::to_string(number);
+        return (std::floor(number) == number)
+            ? std::to_string(static_cast<int>(number))
+            : std::to_string(number);
     }
 
     double toNum() const override { return number; }
