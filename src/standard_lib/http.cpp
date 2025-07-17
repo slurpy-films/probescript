@@ -227,33 +227,42 @@ Values::Val sendReq(const std::string& method, std::string& url, std::shared_ptr
     }
 
     std::string body;
-    if (conf->hasProperty("body") && conf->properties["body"]->type == Values::ValueType::String) {
+    if (conf->hasProperty("body") && conf->properties["body"]->type == Values::ValueType::String)
+    {
         body = std::static_pointer_cast<Values::StringVal>(conf->properties["body"])->string;
     }
 
     std::regex urlRegex(R"(^(http?://)?([^:/]+)(:(\d+))?(/.*)?$)");
     std::smatch match;
-    if (!std::regex_match(url, match, urlRegex)) {
+    if (!std::regex_match(url, match, urlRegex))
+    {
         throw ThrowException("[HttpError]: Invalid URL format: " + url);
     }
 
     int port = 80;
-    if (match[4].matched) {
-        try {
+    if (match[4].matched)
+    {
+        try
+        {
             port = std::stoi(match[4]);
-        } catch (...) {
+        }
+        catch (...)
+        {
             throw ThrowException("[HttpError]: Invalid port number in URL: " + match[4].str());
         }
     }
 
     std::string host = match[2];
     std::string path = match[5].matched ? match[5].str() : "/";
-    std::string req = method + " " + path + " HTTP/1.1\r\n"
-                      "Host: " + host + "\r\n"
-                      "Connection: close\r\n"
-                      "Content-length: " + std::to_string(body.length()) + "\r\n"
-                      + headers + "\r\n"
-                      + body;
+    std::ostringstream reqStream;
+    reqStream << method << " " << path << " HTTP/1.1\r\n"
+              << "Host: " << host << "\r\n"
+              << "Connection: close\r\n"
+              << "Content-length: " << body.length() << "\r\n"
+              << headers << "\r\n"
+              << body;
+
+    std::string req = reqStream.str();
 
 #ifdef _WIN32
     WSADATA wsaData;
@@ -261,12 +270,14 @@ Values::Val sendReq(const std::string& method, std::string& url, std::shared_ptr
 #endif
 
     struct hostent *server = gethostbyname(host.c_str());
-    if (!server) {
+    if (!server)
+    {
         throw ThrowException("[HttpError]: Failed to resolve host: " + host);
     }
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
+    if (sock < 0)
+    {
         throw ThrowException("[HttpError]: Socket creation failed");
     }
 
@@ -275,7 +286,8 @@ Values::Val sendReq(const std::string& method, std::string& url, std::shared_ptr
     serverAddr.sin_port = htons(port);
     serverAddr.sin_addr.s_addr = *(unsigned long*)server->h_addr;
 
-    if (connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+    if (connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
+    {
         throw ThrowException("[HttpError]: Connection to " + host + ":" + std::to_string(port) + " failed");
     }
 
@@ -284,7 +296,8 @@ Values::Val sendReq(const std::string& method, std::string& url, std::shared_ptr
     char buffer[4096];
     std::string res;
     int bytes;
-    while ((bytes = recv(sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
+    while ((bytes = recv(sock, buffer, sizeof(buffer) - 1, 0)) > 0)
+    {
         buffer[bytes] = '\0';
         res += buffer;
     }
@@ -297,7 +310,8 @@ Values::Val sendReq(const std::string& method, std::string& url, std::shared_ptr
 #endif
 
     size_t headerEnd = res.find("\r\n\r\n");
-    if (headerEnd == std::string::npos) {
+    if (headerEnd == std::string::npos)
+    {
         throw ThrowException("[HttpError]: Malformed HTTP response");
     }
 
@@ -314,14 +328,35 @@ Values::Val sendReq(const std::string& method, std::string& url, std::shared_ptr
     statusText = std::regex_replace(statusText, std::regex("^ +"), "");
 
     int statusCode = 0;
-    try {
+    try
+    {
         statusCode = std::stoi(statusCodeStr);
-    } catch (...) {
+    }
+    catch (...)
+    {
         throw ThrowException("[HttpError]: Invalid status code: " + statusCodeStr);
+    }
+
+    // Parse headers into ObjectVal
+    auto headerMap = std::make_shared<Values::ObjectVal>();
+    std::string line;
+    while (std::getline(stream, line))
+    {
+        if (line.empty() || line == "\r") continue;
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos)
+        {
+            std::string key = line.substr(0, colonPos);
+            std::string val = line.substr(colonPos + 1);
+            val = std::regex_replace(val, std::regex("^ +"), "");
+            val = std::regex_replace(val, std::regex("\r$"), "");
+            headerMap->properties[key] = std::make_shared<Values::StringVal>(val);
+        }
     }
 
     std::unordered_map<std::string, Values::Val> props = {
         { "status", std::make_shared<Values::NumberVal>(statusCode) },
+        { "headers", headerMap },
         { "body", std::make_shared<Values::NativeFnValue>([bodyPart](std::vector<Values::Val>, EnvPtr) -> Values::Val {
             return std::make_shared<Values::StringVal>(bodyPart);
         }) }
@@ -444,56 +479,77 @@ Values::Val Http::getValHttpModule()
             "get",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.get(\"http://example.com\", { headers: {} })"));
-
-                return sendReq("GET", std::static_pointer_cast<Values::StringVal>(args[0])->string, std::static_pointer_cast<Values::ObjectVal>(args[1]), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {
+                    return sendReq("GET", std::static_pointer_cast<Values::StringVal>(args[0])->string, std::static_pointer_cast<Values::ObjectVal>(args[1]), env);
+                }));
             })
         },
         {
             "post",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.post(\"http://example.com\", { body: \"body\", headers: {} })"));
-
-                return sendReq("POST", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {
+                    return sendReq("POST", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                }));
             })
         },
         {
             "delete",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.delete(\"http://example.com\", { body: \"body\", headers: {} })"));
-
-                return sendReq("DELETE", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {
+                    return sendReq("DELETE", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                }));
             })
         },
         {
             "put",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.put(\"http://example.com\", { body: \"body\", headers: {} })"));
-
-                return sendReq("PUT", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {    
+                    return sendReq("PUT", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                }));
             })
         },
         {
             "patch",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.patch(\"http://example.com\", { body: \"body\", headers: {} })"));
-
-                return sendReq("PATCH", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {
+                    return sendReq("PATCH", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                }));
             })
         },
         {
             "options",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.options(\"http://example.com\", { headers: {} })"));
-
-                return sendReq("OPTIONS", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {
+                    return sendReq("OPTIONS", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                }));
             })
         },
         {
             "head",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
                 if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.head(\"http://example.com\", { headers: {}})"));
-
-                return sendReq("HEAD", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                
+                return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
+                {
+                    return sendReq("HEAD", std::static_pointer_cast<Values::StringVal>(args[0])->string, ((args.size() > 1 && args[1]->type == Values::ValueType::Object) ? std::static_pointer_cast<Values::ObjectVal>(args[1]) : std::make_shared<Values::ObjectVal>()), env);
+                }));
             })
         },
         {
@@ -520,35 +576,35 @@ Typechecker::TypePtr Http::getTypeHttpModule()
         },
         {
             "get",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "post",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "put",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "patch",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "delete",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "patch",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "options",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "head",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
         },
         {
             "Request",
