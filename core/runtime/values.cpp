@@ -166,6 +166,14 @@ StringVal::StringVal(std::string val) : RuntimeVal(ValueType::String), string(va
             })
         },
         {
+            "find_last",
+            std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _env) -> Val
+            {
+                double pos = !args.empty() ? this->string.find_last_of(args[0]->toString()) : -1;
+                return std::make_shared<NumberVal>(pos == std::string::npos ? -1 : pos);
+            })
+        },
+        {
             "includes",
             std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _env) -> Val
             {

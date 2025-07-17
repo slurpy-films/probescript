@@ -208,7 +208,7 @@ Values::Val JSON::getValJsonModule()
             "to_string",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
             {
-                if (args.empty() || args[0]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: json.to_string(obj: object)"));
+                if (args.empty()) throw ThrowException(ArgumentError("Usage: json.to_string(object)"));
                 return std::make_shared<Values::StringVal>(args[0]->toJSON());
             })
         }
@@ -226,7 +226,7 @@ Typechecker::TypePtr JSON::getTypeJsonModule()
         },
         {
             "to_string",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("object", Typechecker::g_anyty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("value", Typechecker::g_anyty, false) })))
         }
     })));
 }
