@@ -469,10 +469,10 @@ Values::Val Http::getValHttpModule()
 
                         res->properties["json"] = std::make_shared<Values::NativeFnValue>([resheaders, response](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
                         {
-                            if (args.empty() || args[0]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: res.html(object: object)"));
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.html(object)"));
 
                             (*resheaders)["Content-Type"] = "application/json";
-                            response->send(args[0]->toString(), (*resheaders));
+                            response->send(args[0]->toJSON(), (*resheaders));
 
                             return std::make_shared<Values::UndefinedVal>();
                         });
