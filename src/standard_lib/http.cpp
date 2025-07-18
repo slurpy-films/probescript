@@ -439,9 +439,18 @@ Values::Val Http::getValHttpModule()
                             return std::make_shared<Values::UndefinedVal>();
                         });
 
+                        res->properties["header"] = std::make_shared<Values::NativeFnValue>([resheaders](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+                        {
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.header(key: str, value: str)"));
+
+                            (*resheaders)[args[0]->toString()] = args[1]->toString();
+
+                            return std::make_shared<Values::UndefinedVal>();
+                        });
+
                         res->properties["send"] = std::make_shared<Values::NativeFnValue>([resheaders, response](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
                         {
-                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.send(value: str)"));
+                            if (args.empty()) throw ThrowException(ArgumentError("Usage: res.send(body: str)"));
 
                             response->send(args[0]->toString(), (*resheaders));
 
@@ -544,7 +553,7 @@ Values::Val Http::getValHttpModule()
         {
             "head",
             std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val {
-                if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.head(\"http://example.com\", { headers: {}})"));
+                if (args.size() < 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::Object) throw ThrowException(ArgumentError("Usage: http.head(\"http://example.com\", { headers: {} })"));
                 
                 return std::make_shared<Values::FutureVal>(std::async(std::launch::async, [args, env]() -> Values::Val
                 {
@@ -572,39 +581,129 @@ Typechecker::TypePtr Http::getTypeHttpModule()
     return std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Module, "native module", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>({
         {
             "Serve",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("port", Typechecker::g_numty, false), std::make_shared<Typechecker::Parameter>("handler", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function"), false) })))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("port", Typechecker::g_numty, false),
+                        std::make_shared<Typechecker::Parameter>("handler", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function"),
+                        false)
+                    })
+                )
+            )
         },
         {
             "get",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }
+                    ),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "post",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false)
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "put",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) 
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "patch",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false)
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "delete",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false)
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "patch",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false)
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "options",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false)
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "head",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false) }), std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")))
+            std::make_shared<Typechecker::Type>(
+                Typechecker::TypeKind::Function,
+                "native function",
+                std::make_shared<Typechecker::TypeVal>(
+                    std::vector({
+                        std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
+                        std::make_shared<Typechecker::Parameter>("req", Typechecker::g_mapty, false)
+                    }),
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Future, "future")
+                )
+            )
         },
         {
             "Request",
@@ -659,6 +758,14 @@ Typechecker::TypePtr Http::getTypeHttpModule()
                 {
                     "html",
                     std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("html", Typechecker::g_strty, false) })))
+                },
+                {
+                    "content_type",
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("type", Typechecker::g_strty, false) })))
+                },
+                {
+                    "header",
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("key", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("val", Typechecker::g_strty, false) })))
                 }
             })), "Response")
         }
