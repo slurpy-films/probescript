@@ -1,11 +1,15 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <functional>
 
-#include "runtime/values.hpp"
-#include "runtime/interpreter.hpp"
-#include "env.hpp"
+#include "core/runtime/values.hpp"
+#include "core/runtime/interpreter.hpp"
+#include "core/env.hpp"
+
+namespace Probescript::Stdlib::Prbtest
+{
 
 struct TestCase
 {
@@ -16,9 +20,12 @@ struct TestCase
         : name(name), fn(fn) {};
 };
 
-extern std::vector<TestCase> g_tests;
 
-Val getValTestLib();
-TypePtr getTypeTestLib();
+Values::Val getValTestLib();
+Typechecker::TypePtr getTypeTestLib();
 
 void runTests(std::string file);
+
+} // namespace Probescript::Stdlib::Prbtest
+
+extern std::vector<Probescript::Stdlib::Prbtest::TestCase> g_tests;

@@ -4,10 +4,10 @@ probe Main
     {
         var regex: Regex = new Regex("\\d+");
 
-        if (!regex.match("13"))
+        if (!regex.test("13"))
         {
             console.println("Test failed because \"13\" is supposed to match with regex '\\d+'");
-            process.kill(1);
+            exit(1);
         }
     }
 }

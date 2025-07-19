@@ -1,5 +1,7 @@
 #include "env.hpp"
 
+using namespace Probescript;
+
 Env::Env(EnvPtr parentENV)
 {
     parent = parentENV;
@@ -12,7 +14,7 @@ void Env::init()
         declareVar(key, pair.first, Lexer::Token());
 }
 
-Val Env::declareVar(std::string varname, Val value, Lexer::Token tk)
+Values::Val Env::declareVar(std::string varname, Values::Val value, Lexer::Token tk)
 {
     if (!m_ready) init();
     if (variables.find(varname) != variables.end())
@@ -24,7 +26,7 @@ Val Env::declareVar(std::string varname, Val value, Lexer::Token tk)
     return value;
 }
 
-Val Env::assignVar(std::string varname, Val value, Lexer::Token tk)
+Values::Val Env::assignVar(std::string varname, Values::Val value, Lexer::Token tk)
 {
     if (!m_ready) init();
     EnvPtr env = resolve(varname, tk);
@@ -34,7 +36,7 @@ Val Env::assignVar(std::string varname, Val value, Lexer::Token tk)
     return value;
 }
 
-Val Env::lookupVar(std::string varname, Lexer::Token tk)
+Values::Val Env::lookupVar(std::string varname, Lexer::Token tk)
 {
     if (!m_ready) init();
     EnvPtr env = resolve(varname, tk);

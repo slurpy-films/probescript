@@ -10,33 +10,40 @@
 #include "frontend/lexer.hpp"
 #include "errors.hpp"
 
-extern std::unordered_map<std::string, std::pair<Val, TypePtr>> g_globals;
+extern std::unordered_map<std::string, std::pair<Probescript::Values::Val, Probescript::Typechecker::TypePtr>> g_globals;
+
+namespace Probescript
+{
 
 class Env;
 using EnvPtr = std::shared_ptr<Env>;
 
+} // namespace Probescript
+
 #include "runtime/values.hpp"
 
-Val evalCallWithFnVal(Val fn, std::vector<Val> args, EnvPtr env);
+namespace Probescript
+{
 
 class Env : public std::enable_shared_from_this<Env>
 {
 public:
     Env(EnvPtr parentENV = nullptr);
 
-    std::unordered_map<std::string, Val> variables = {};
+    std::unordered_map<std::string, Values::Val> variables = {};
 
-    Val declareVar(std::string varName, Val value, Lexer::Token tk);
+    Values::Val declareVar(std::string varName, Values::Val value, Lexer::Token tk);
 
-    Val assignVar(std::string varName, Val value, Lexer::Token tk);
+    Values::Val assignVar(std::string varName, Values::Val value, Lexer::Token tk);
 
-    Val lookupVar(std::string varName, Lexer::Token tk);
+    Values::Val lookupVar(std::string varName, Lexer::Token tk);
 
     EnvPtr resolve(std::string varname, Lexer::Token tk);
-
 private:
     EnvPtr parent;
     bool m_ready = false;
 
     void init();
 };
+
+} // namespace Probescript

@@ -1,5 +1,7 @@
 #include "runtime/values.hpp"
 
+using namespace Probescript;
+using namespace Probescript::Values;
 
 Val RuntimeVal::add(Val o) const
 {
@@ -68,7 +70,7 @@ ArrayVal::ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items
             return std::make_shared<UndefinedVal>();
 
         for (size_t i = 0; i < items.size(); ++i)
-            evalCallWithFnVal(args[0], { items[i] }, env);
+            Interpreter::evalCallWithFnVal(args[0], { items[i] }, env);
 
         return std::make_shared<UndefinedVal>();
     });
@@ -81,7 +83,7 @@ ArrayVal::ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items
         auto result = std::make_shared<ArrayVal>();
 
         for (size_t i = 0; i < items.size(); ++i)
-            result->items.push_back(evalCallWithFnVal(args[0], { items[i], std::make_shared<NumberVal>(i) }, env));
+            result->items.push_back(Interpreter::evalCallWithFnVal(args[0], { items[i], std::make_shared<NumberVal>(i) }, env));
 
         return result;
     });
@@ -94,7 +96,7 @@ ArrayVal::ArrayVal(std::vector<Val> items) : RuntimeVal(ValueType::Array), items
         auto result = std::make_shared<ArrayVal>();
 
         for (size_t i = 0; i < items.size(); ++i)
-            if (evalCallWithFnVal(args[0], { items[i], std::make_shared<NumberVal>(i) }, env)->toBool())
+            if (Interpreter::evalCallWithFnVal(args[0], { items[i], std::make_shared<NumberVal>(i) }, env)->toBool())
                 result->items.push_back(items[i]);
 
         return result;
@@ -160,6 +162,14 @@ StringVal::StringVal(std::string val) : RuntimeVal(ValueType::String), string(va
             std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _env) -> Val
             {
                 double pos = !args.empty() ? this->string.find(args[0]->toString()) : -1;
+                return std::make_shared<NumberVal>(pos == std::string::npos ? -1 : pos);
+            })
+        },
+        {
+            "find_last",
+            std::make_shared<NativeFnValue>([this](std::vector<Val> args, EnvPtr _env) -> Val
+            {
+                double pos = !args.empty() ? this->string.find_last_of(args[0]->toString()) : -1;
                 return std::make_shared<NumberVal>(pos == std::string::npos ? -1 : pos);
             })
         },

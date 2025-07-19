@@ -1,11 +1,11 @@
 #include "errors.hpp"
 
-std::string Error(const std::string& m)
+std::string Probescript::Error(const std::string& m)
 {
     return ConsoleColors::RED + "[Error]: " + ConsoleColors::RESET + m + "\n";
 }
 
-std::string SyntaxError(const std::string& m, Lexer::Token tk, std::shared_ptr<Context> ctx)
+std::string Probescript::SyntaxError(const std::string& m, Lexer::Token tk, std::shared_ptr<Context> ctx)
 {
     std::vector<std::string> file = split(ctx->file, "\n");
     std::string line = file[tk.line - 1];
@@ -47,7 +47,7 @@ std::string SyntaxError(const std::string& m, Lexer::Token tk, std::shared_ptr<C
     }
 }
 
-std::string TypeError(const std::string& m, Lexer::Token tk)
+std::string Probescript::TypeError(const std::string& m, Lexer::Token tk)
 {
     std::vector<std::string> file = split(tk.ctx->file, "\n");
 
@@ -89,17 +89,17 @@ std::string TypeError(const std::string& m, Lexer::Token tk)
     }
 }
 
-std::string ArgumentError(const std::string& m)
+std::string Probescript::ArgumentError(const std::string& m)
 {
     return ConsoleColors::RED + "[ArgumentError]: " + ConsoleColors::RESET + m + "\n";
 }
 
-std::string CustomError(const std::string& m, const std::string& n)
+std::string Probescript::CustomError(const std::string& m, const std::string& n)
 {
     return ConsoleColors::RED + "[" + n + "]: " + ConsoleColors::RESET + m + "\n";
 }
 
-std::string CustomError(const std::string& m, const std::string& n, Lexer::Token tk)
+std::string Probescript::CustomError(const std::string& m, const std::string& n, Lexer::Token tk)
 {
     std::vector<std::string> file = split(tk.ctx->file, "\n");
 

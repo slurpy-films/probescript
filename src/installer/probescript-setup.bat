@@ -35,8 +35,10 @@ echo          INSTALL PROBESCRIPT
 echo ========================================
 echo.
 
-if exist "C:\Program Files\Probescript\probescript.exe" (
-    echo Probescript is already installed in C:\Program Files\Probescript\
+set "default_install_dir=%LOCALAPPDATA%\Probescript"
+
+if exist "%default_install_dir%\probescript.exe" (
+    echo Probescript is already installed in %default_install_dir%
     echo.
     set /p reinstall="Do you want to reinstall? (y/n): "
     if /i not "!reinstall!"=="y" goto main
@@ -66,18 +68,17 @@ if not exist "%binary_path%" (
 
 :continue_install
 echo.
-echo Default installation directory: C:\Program Files\Probescript
+echo Default installation directory: %default_install_dir%
 set /p install_dir="Enter installation directory (or press Enter for default): "
 
-if "%install_dir%"=="" set "install_dir=C:\Program Files\Probescript"
+if "%install_dir%"=="" set "install_dir=%default_install_dir%"
 
 echo.
 echo Creating installation directory: %install_dir%
 mkdir "%install_dir%" 2>nul
 if errorlevel 1 (
     echo Error: Could not create installation directory.
-    echo This may be due to insufficient administrator privileges.
-    echo Try running this script as administrator.
+    echo Check that you have write access.
     pause
     goto main
 )

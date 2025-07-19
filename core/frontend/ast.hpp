@@ -1,9 +1,14 @@
 #pragma once
-#include "frontend/lexer.hpp"
+
 #include <vector>
 #include <string>
 #include <iostream>
 #include <memory>
+
+#include "frontend/lexer.hpp"
+
+namespace Probescript::AST
+{
 
 enum NodeType {
     Program,
@@ -394,3 +399,5 @@ struct AwaitExprType : public Expr
     AwaitExprType(std::shared_ptr<Expr> caller)
         : Expr(NodeType::AwaitExpr), caller(caller) {}
 };
+
+} // namespace Probescript::AST

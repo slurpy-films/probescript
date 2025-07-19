@@ -24,7 +24,7 @@ probe Main
         if (result != 233)
         {
             console.println("Test failed because 233 was expected as result of fibonacci(13) but got", result);
-            process.kill(1);
+            exit(1);
         }
     }
 }
