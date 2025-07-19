@@ -1,5 +1,7 @@
 #!/bin/bash
 
+INSTALL_DIR="$HOME/.local/bin"
+
 main_menu() {
     clear
     echo
@@ -33,8 +35,10 @@ install_probescript() {
     echo "========================================"
     echo
 
-    if [ -f "/usr/local/bin/probescript" ]; then
-        echo "Probescript is already installed in /usr/local/bin/"
+    mkdir -p "$INSTALL_DIR"
+
+    if [ -f "$INSTALL_DIR/probescript" ]; then
+        echo "Probescript is already installed in $INSTALL_DIR/"
         echo
         read -p "Do you want to reinstall? (y/n): " reinstall
         if [[ ! "$reinstall" =~ ^[Yy]$ ]]; then
@@ -50,7 +54,7 @@ install_probescript() {
     else
         echo "Enter path to probescript binary:"
         read -p "Path (or press Enter to cancel): " binary_path
-        
+
         if [ -z "$binary_path" ]; then
             echo "No path provided. Cancelling installation."
             read -p "Press Enter to continue..."
@@ -67,67 +71,22 @@ install_probescript() {
     fi
 
     echo
-    echo "Default installation directory: /usr/local/bin"
-    read -p "Enter installation directory (or press Enter for default): " install_dir
-    
-    if [ -z "$install_dir" ]; then
-        install_dir="/usr/local/bin"
+    echo "Installing probescript to $INSTALL_DIR/"
+    cp "$binary_path" "$INSTALL_DIR/probescript"
+    chmod +x "$INSTALL_DIR/probescript"
+
+    echo
+    if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
+        add_to_path "$INSTALL_DIR"
     fi
 
     echo
-    echo "Installing probescript to $install_dir/"
-    
-    if [ ! -d "$install_dir" ]; then
-        echo "Creating directory: $install_dir"
-        sudo mkdir -p "$install_dir"
-        if [ $? -ne 0 ]; then
-            echo "Error: Could not create installation directory."
-            echo "This may be due to insufficient privileges."
-            read -p "Press Enter to continue..."
-            main_menu
-            return
-        fi
-    fi
-
-    sudo cp "$binary_path" "$install_dir/probescript"
-    if [ $? -ne 0 ]; then
-        echo "Error: Could not copy file."
-        read -p "Press Enter to continue..."
-        main_menu
-        return
-    fi
-
-    sudo chmod +x "$install_dir/probescript"
-    if [ $? -ne 0 ]; then
-        echo "Warning: Could not set executable permissions."
-    fi
-
-    echo "Probescript installed to: $install_dir/probescript"
-
-    if [ "$install_dir" = "/usr/local/bin" ]; then
-        echo
-        echo "Installation completed!"
-        show_ascii_art
-        echo
-        echo "Welcome to probescript!"
-        echo "To see a list of commands, run: probescript --help"
-        echo "Repository: https://github.com/slurpy-films/probescript"
-    else
-        echo
-        read -p "Add $install_dir to PATH? (y/n): " add_path
-        if [[ "$add_path" =~ ^[Yy]$ ]]; then
-            add_to_path "$install_dir"
-        fi
-        
-        echo
-        echo "Installation completed!"
-        show_ascii_art
-        echo
-        echo "Welcome to probescript!"
-        echo "To see a list of commands, run: probescript --help"
-        echo "Repository: https://github.com/slurpy-films/probescript"
-    fi
-
+    echo "Installation completed!"
+    show_ascii_art
+    echo
+    echo "Welcome to probescript!"
+    echo "To see a list of commands, run: probescript --help"
+    echo "Repository: https://github.com/slurpy-films/probescript"
     echo
     read -p "Press Enter to continue..."
     main_menu
@@ -141,24 +100,14 @@ uninstall_probescript() {
     echo "========================================"
     echo
 
-    if [ ! -f "/usr/local/bin/probescript" ]; then
-        echo "Probescript is not installed in standard location."
-        echo "Checking other possible locations..."
-        
-        if command -v probescript &> /dev/null; then
-            probescript_location=$(which probescript)
-            echo "Probescript found at: $probescript_location"
-            echo "You may need to manually remove it."
-        else
-            echo "Probescript was not found on the system."
-        fi
-        
+    if [ ! -f "$INSTALL_DIR/probescript" ]; then
+        echo "Probescript is not installed in $INSTALL_DIR"
         read -p "Press Enter to continue..."
         main_menu
         return
     fi
 
-    echo "Probescript found at: /usr/local/bin/probescript"
+    echo "Probescript found at: $INSTALL_DIR/probescript"
     echo
     read -p "Are you sure you want to uninstall probescript? (y/n): " confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -166,9 +115,8 @@ uninstall_probescript() {
         return
     fi
 
-    echo "Removing probescript..."
-    sudo rm -f "/usr/local/bin/probescript"
-    
+    rm -f "$INSTALL_DIR/probescript"
+
     if [ $? -eq 0 ]; then
         echo "Probescript has been uninstalled."
     else
@@ -189,17 +137,15 @@ check_status() {
     echo "========================================"
     echo
 
-    if [ -f "/usr/local/bin/probescript" ]; then
-        echo "[OK] Probescript found at: /usr/local/bin/probescript"
-        
-        file_info=$(ls -lh /usr/local/bin/probescript)
+    if [ -f "$INSTALL_DIR/probescript" ]; then
+        echo "[OK] Probescript found at: $INSTALL_DIR/probescript"
+        file_info=$(ls -lh "$INSTALL_DIR/probescript")
         echo "     File info: $file_info"
     else
-        echo "[NOT FOUND] Probescript not found in standard location"
+        echo "[NOT FOUND] Probescript not found in $INSTALL_DIR"
     fi
 
     echo
-
     echo "Checking PATH..."
     if command -v probescript &> /dev/null; then
         probescript_location=$(which probescript)
@@ -209,7 +155,6 @@ check_status() {
     fi
 
     echo
-
     echo "Testing probescript..."
     if command -v probescript &> /dev/null; then
         if probescript --version &> /dev/null; then
@@ -229,27 +174,23 @@ check_status() {
 
 add_to_path() {
     local new_path="$1"
+    echo
     echo "Adding $new_path to PATH..."
 
-    shell_config=""
+    local shell_config=""
     if [ -n "$BASH_VERSION" ]; then
-        if [ -f "$HOME/.bashrc" ]; then
-            shell_config="$HOME/.bashrc"
-        elif [ -f "$HOME/.bash_profile" ]; then
-            shell_config="$HOME/.bash_profile"
-        fi
+        shell_config="$HOME/.bashrc"
     elif [ -n "$ZSH_VERSION" ]; then
         shell_config="$HOME/.zshrc"
     fi
 
     if [ -z "$shell_config" ]; then
-        echo "Could not determine shell configuration file."
-        echo "Please manually add $new_path to your PATH."
+        echo "Could not detect shell config. Please add $new_path to your PATH manually."
         return
     fi
 
-    if grep -q "$new_path" "$shell_config" 2>/dev/null; then
-        echo "PATH already contains probescript location."
+    if grep -q "$new_path" "$shell_config"; then
+        echo "PATH already contains $new_path"
         return
     fi
 
