@@ -222,11 +222,11 @@ Typechecker::TypePtr JSON::getTypeJsonModule()
     {
         {
             "parse",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("raw", Typechecker::g_strty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("raw", Typechecker::g_strty, false) })))
         },
         {
             "to_string",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("value", Typechecker::g_anyty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("value", Typechecker::g_anyty, false) })))
         }
     })));
 }

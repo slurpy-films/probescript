@@ -735,7 +735,9 @@ TypePtr TC::checkArrowFunction(std::shared_ptr<AST::ArrowFunctionType> fn, TypeE
         check(stmt, scope);
     }
 
-    return std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(parameters));
+    TypePtr type = std::make_shared<Type>(TypeKind::Function, "function", std::make_shared<TypeVal>(parameters));
+    type->val->returntype = g_anyty;
+    return type;
 }
 
 TypePtr TC::checkImportStmt(std::shared_ptr<AST::ImportStmtType> stmt, TypeEnvPtr env, std::shared_ptr<Context> ctx)
@@ -992,6 +994,8 @@ bool TC::compare(TypePtr left, TypePtr right, TypeEnvPtr env)
         if (
             right->type == TypeKind::Function
             && left->type == TypeKind::Function
+            && right->val->returntype
+            && left->val->returntype
         )
         {
             if (right->val->params.size() != left->val->params.size())

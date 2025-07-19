@@ -41,11 +41,11 @@ Typechecker::TypePtr Prbtest::getTypeTestLib()
     {
         {
             "assert",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("expression", Typechecker::g_anyty), std::make_shared<Typechecker::Parameter>("failmessage", Typechecker::g_strty, true) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("expression", Typechecker::g_anyty), std::make_shared<Typechecker::Parameter>("failmessage", Typechecker::g_strty, true) })))
         },
         {
             "test",
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("name", Typechecker::g_strty), std::make_shared<Typechecker::Parameter>("fn", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function")) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("name", Typechecker::g_strty), std::make_shared<Typechecker::Parameter>("fn", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function")) })))
         }
     })));
 }

@@ -52,11 +52,11 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
             std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Module, "native module", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>({
                 {
                     "randint",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("x", Typechecker::g_numty, false), std::make_shared<Typechecker::Parameter>("y", Typechecker::g_numty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("x", Typechecker::g_numty, false), std::make_shared<Typechecker::Parameter>("y", Typechecker::g_numty, false) })))
                 },
                 {
                     "rand",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function")
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function")
                 }
             })))
         }
@@ -162,19 +162,19 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
             std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Module, "native module", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>({
                 {
                     "stamp",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("format", Typechecker::g_strty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("format", Typechecker::g_strty, false) })))
                 },
                 {
                     "now",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function")
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function")
                 },
                 {
                     "is_leapyear",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("year", Typechecker::g_numty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("year", Typechecker::g_numty, false) })))
                 },
                 {
                     "days_in_month",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("year", Typechecker::g_numty), std::make_shared<Typechecker::Parameter>("month", Typechecker::g_numty) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("year", Typechecker::g_numty), std::make_shared<Typechecker::Parameter>("month", Typechecker::g_numty) })))
                 }
             })))
         }

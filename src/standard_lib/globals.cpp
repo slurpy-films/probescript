@@ -43,7 +43,7 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
                     })
                 }
             })),
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Module, "module", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>({ { "println", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function") }, { "print", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function") }, { "prompt", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function")} })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Module, "module", std::make_shared<Typechecker::TypeVal>(std::unordered_map<std::string, Typechecker::TypePtr>({ { "println", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function") }, { "print", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function") }, { "prompt", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function")} })))
         }
     },
     {
@@ -149,7 +149,7 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
 
                 return array;
             }),
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("obj", Typechecker::g_anyty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("obj", Typechecker::g_anyty, false) })))
         }
     },
     {
@@ -168,7 +168,7 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
 
                 return array;
             }),
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("obj", Typechecker::g_anyty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("obj", Typechecker::g_anyty, false) })))
         }
     },
     {
@@ -180,7 +180,7 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
 
                 return std::make_shared<Values::RuntimeVal>(*args[0]);
             }),
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("val", Typechecker::g_anyty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("val", Typechecker::g_anyty, false) })))
         }
     },
     {
@@ -202,7 +202,7 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
 
                 return std::make_shared<Values::UndefinedVal>();
             }),
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
         }
     },
     {
@@ -217,7 +217,7 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
 
                 return std::make_shared<Values::UndefinedVal>();
             }),
-            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("milliseconds", Typechecker::g_numty, false) })))
+            std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("milliseconds", Typechecker::g_numty, false) })))
         }
     },
     {
@@ -255,15 +255,15 @@ std::unordered_map<std::string, std::pair<Values::Val, Typechecker::TypePtr>> g_
                 {
                     {
                         "test",
-                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
+                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
                     },
                     {
                         "search",
-                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
+                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false) })))
                     },
                     {
                         "replace",
-                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("replacement", Typechecker::g_strty, false) })))
+                        std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("input", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("replacement", Typechecker::g_strty, false) })))
                     }
                 }
             )), "Regex")

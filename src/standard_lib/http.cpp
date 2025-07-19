@@ -583,7 +583,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "Serve",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("port", Typechecker::g_numty, false),
@@ -597,7 +597,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "get",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -611,7 +611,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "post",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -625,7 +625,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "put",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -639,7 +639,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "patch",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -653,7 +653,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "delete",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -667,7 +667,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "patch",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -681,7 +681,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "options",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -695,7 +695,7 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             "head",
             std::make_shared<Typechecker::Type>(
                 Typechecker::TypeKind::Function,
-                "native function",
+                "function",
                 std::make_shared<Typechecker::TypeVal>(
                     std::vector({
                         std::make_shared<Typechecker::Parameter>("url", Typechecker::g_strty, false),
@@ -719,11 +719,11 @@ Typechecker::TypePtr Http::getTypeHttpModule()
                 },
                 {
                     "ondata",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("function", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function"), false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("function", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function"), false) })))
                 },
                 {
                     "end",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("function", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function"), false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("function", std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function"), false) })))
                 },
                 {
                     "cookies",
@@ -735,11 +735,11 @@ Typechecker::TypePtr Http::getTypeHttpModule()
                 },
                 {
                     "raw",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(Typechecker::g_strty))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(Typechecker::g_strty))
                 },
                 {
                     "content_type",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("type", Typechecker::g_strty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("type", Typechecker::g_strty, false) })))
                 }
             })), "Request")
         },
@@ -749,23 +749,23 @@ Typechecker::TypePtr Http::getTypeHttpModule()
             {
                 {
                     "json",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("object", Typechecker::g_anyty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("object", Typechecker::g_anyty, false) })))
                 },
                 {
                     "send",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("data", Typechecker::g_strty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("data", Typechecker::g_strty, false) })))
                 },
                 {
                     "html",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("html", Typechecker::g_strty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("html", Typechecker::g_strty, false) })))
                 },
                 {
                     "content_type",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("type", Typechecker::g_strty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("type", Typechecker::g_strty, false) })))
                 },
                 {
                     "header",
-                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "native function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("key", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("val", Typechecker::g_strty, false) })))
+                    std::make_shared<Typechecker::Type>(Typechecker::TypeKind::Function, "function", std::make_shared<Typechecker::TypeVal>(std::vector({ std::make_shared<Typechecker::Parameter>("key", Typechecker::g_strty, false), std::make_shared<Typechecker::Parameter>("val", Typechecker::g_strty, false) })))
                 }
             })), "Response")
         }
