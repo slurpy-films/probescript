@@ -9,6 +9,11 @@
 #include "core/typechecker.hpp"
 #include "core/runtime/interpreter.hpp"
 
+#include "core/vm/vm.hpp"
+#include "core/vm/builder.hpp"
+
+#include "core/compiler/compiler.hpp"
+
 #include "repl.hpp"
 #include "modules.hpp"
 #include "context.hpp"

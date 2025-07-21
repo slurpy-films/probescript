@@ -69,6 +69,57 @@ void Application::run()
         REPL repl;
         repl.start();
         return;
+    } else if (m_command == "vm") {
+        std::vector<std::shared_ptr<VM::Instruction>> instructions;
+        std::vector<VM::ValuePtr> constants;
+
+        {
+            if (m_args.empty())
+            {
+                std::cerr << "Run command expects 1 argument, 0 given";
+                exit(1);
+            }
+
+            fs::path fileName(m_args[0]);
+            try
+            {
+                Parser parser;
+                std::pair<std::unordered_map<std::string, fs::path>, Values::Val> indexedPair = ModuleIndexer::indexModules(fileName);
+
+                if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
+                {
+                    fileName = fileName / indexedPair.second->properties["main"]->toString();
+                }
+
+                std::ifstream stream(fileName);
+                std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+                std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
+
+                g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
+                context->filename = std::filesystem::absolute(fileName).string();
+                context->file = file;
+                context->modules = indexedPair.first;
+                context->project = indexedPair.second;
+                
+                std::shared_ptr<AST::ProgramType> program = parser.parse(file, context);
+                
+                Compiler compiler(program);
+                compiler.compile();
+
+                instructions = compiler.getInstructions();
+                constants = compiler.getConstants();
+            }
+            catch (const std::exception& err)
+            {
+                std::cerr << err.what();
+                exit(1);
+            }
+        }
+
+        VM::Machine vm(instructions, constants, std::make_shared<VM::Scope>());
+        vm.run();
     } else if (m_command == "run")
     {
         if (m_args.empty())
