@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <functional>
+#include <unordered_map>
 
 #include "instruction.hpp"
 
@@ -24,15 +25,18 @@ public:
     Scope(ScopePtr parent = nullptr)
         : m_parent(parent) {}
 
-    ValuePtr declareVar(std::string name, ValuePtr value);
-    ValuePtr lookupVar(std::string name);
+    ValuePtr declare(const std::string& name, ValuePtr value);
+    ValuePtr assign(const std::string& name, ValuePtr value);
+    ValuePtr lookupVar(const std::string& name);
+
+    ScopePtr getParent();
 private:
     ScopePtr m_parent;
     std::unordered_map<std::string, ValuePtr> m_variables;
     bool m_ready = false;
     
     void init();
-    ScopePtr resolve(std::string varName);
+    ScopePtr resolve(const std::string& varName);
 };
 
 enum class ValueType
@@ -42,6 +46,10 @@ enum class ValueType
     Function,
     NativeFunction,
     Null,
+    Boolean,
+    Object,
+    NativeClass,
+    Array,
 };
 
 struct Value
@@ -59,6 +67,15 @@ struct Value
     {
         return 0;
     }
+    
+    virtual bool toBool() const
+    {
+        return false;
+    }
+
+    virtual ValuePtr add(const ValuePtr o) const;
+    virtual ValuePtr sub(const ValuePtr o) const;
+    virtual bool compare(const ValuePtr o) const;
 };
 
 struct NumberVal : public Value
@@ -77,6 +94,57 @@ struct NumberVal : public Value
     {
         return std::to_string(number);
     }
+
+    bool toBool() const override
+    {
+        return number != 0;
+    }
+
+    ValuePtr add(const ValuePtr o) const override
+    {
+        return std::make_shared<NumberVal>(number + o->toNum());
+    }
+
+    ValuePtr sub(const ValuePtr o) const override
+    {
+        return std::make_shared<NumberVal>(number - o->toNum());
+    }
+
+    bool compare(const ValuePtr o) const override
+    {
+        return o->type == ValueType::Number && o->toNum() == number;
+    }
+};
+
+struct BooleanVal : public Value
+{
+    bool boolean;
+
+    std::string toString() const override
+    {
+        return boolean ? "true" : "false";
+    }
+
+    bool compare(const ValuePtr o)
+    {
+        return o->type == ValueType::Boolean && o->toBool() == boolean;
+    }
+
+    bool toBool() const override
+    {
+        return boolean;
+    }
+
+    BooleanVal(bool val)
+        : Value(ValueType::Boolean), boolean(val) {}
+};
+
+struct ObjectVal : public Value
+{
+    std::unordered_map<std::string, ValuePtr> properties;
+
+    ObjectVal(std::unordered_map<std::string, ValuePtr> properties = {})
+        : Value(ValueType::Object), properties(properties) {}
 };
 
 struct NullVal : public Value
@@ -87,6 +155,16 @@ struct NullVal : public Value
     std::string toString() const override
     {
         return "null";
+    }
+    
+    ValuePtr add(const ValuePtr o) const override
+    {
+        return std::make_shared<NullVal>();
+    }
+
+    bool compare(const ValuePtr o) const override
+    {
+        return o->type == ValueType::Null;
     }
 };
 
@@ -113,6 +191,21 @@ struct StringVal : public Value
             return 0;
         }
     }
+
+    bool toBool() const override
+    {
+        return !string.empty();
+    }
+
+    ValuePtr add(const ValuePtr o) const override
+    {
+        return std::make_shared<StringVal>(string + o->toString());
+    }
+
+    bool compare(const ValuePtr o) const override
+    {
+        return o->type == ValueType::String && o->toString() == string;
+    }
 };
 
 struct NativeFunctionVal : public Value
@@ -121,6 +214,22 @@ struct NativeFunctionVal : public Value
 
     NativeFunctionVal(std::function<ValuePtr(std::vector<ValuePtr>)> call)
         : Value(ValueType::NativeFunction), call(call) {}
+};
+
+struct NativeClassVal : public Value
+{
+    std::function<ValuePtr(std::vector<ValuePtr>)> call;
+
+    NativeClassVal(std::function<ValuePtr(std::vector<ValuePtr>)> call)
+        : Value(ValueType::NativeClass), call(call) {}
+};
+
+struct ArrayVal : public Value
+{
+    std::vector<ValuePtr> items;
+
+    ArrayVal(std::vector<ValuePtr> items = {})
+        : Value(ValueType::Array), items(items) {}
 };
 
 struct FunctionValue : public Value

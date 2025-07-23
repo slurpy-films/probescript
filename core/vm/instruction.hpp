@@ -1,5 +1,4 @@
 #pragma once
-
 #include <string>
 #include <vector>
 #include <variant>
@@ -11,7 +10,7 @@ namespace Probescript::VM
 enum class Opcode
 {
     LOAD_CONST,
-    PRINT, // Debug print instruction - this is never used in the standard compiler
+    PRINT,
     ADD,
     SUB,
     MUL,
@@ -21,53 +20,87 @@ enum class Opcode
     STORE,
     LOAD,
     MAKE_FUNCTION,
+    COMPARE,
+    JUMP_IF_FALSE,
+    START_SCOPE,
+    END_SCOPE,
+    JUMP,
+    ASSIGN,
+};
+
+inline std::string OpCodeToString(Opcode code)
+{
+    switch (code)
+    {
+        case Opcode::LOAD_CONST:
+            return "LOAD_CONST";
+        case Opcode::PRINT:
+            return "PRINT";
+        case Opcode::ADD:
+            return "ADD";
+        case Opcode::SUB:
+            return "SUB";
+        case Opcode::MUL:
+            return "MUL";
+        case Opcode::DIV:
+            return "DIV";
+        case Opcode::HALT:
+            return "HALT";
+        case Opcode::CALL:
+            return "CALL";
+        case Opcode::STORE:
+            return "STORE";
+        case Opcode::LOAD:
+            return "LOAD";
+        case Opcode::MAKE_FUNCTION:
+            return "MAKE_FUNCTION";
+        case Opcode::COMPARE:
+            return "COMPARE";
+        case Opcode::JUMP_IF_FALSE:
+            return "JUMP_IF_FALSE";
+        case Opcode::START_SCOPE:
+            return "START_SCOPE";
+        case Opcode::END_SCOPE:
+            return "END_SCOPE";
+        case Opcode::JUMP:
+            return "JUMP";
+        case Opcode::ASSIGN:
+            return "ASSIGN";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+enum class BoolOperator
+{
+    EQUALS,
+    GREATER,
+    LESS,
 };
 
 struct Instruction
 {
     Opcode op;
-
-    Instruction(Opcode op)
-        : op(op) {}
-};
-
-struct LOAD_CONST : public Instruction
-{
     size_t index;
-
-    LOAD_CONST(size_t index)
-        : Instruction(Opcode::LOAD_CONST), index(index) {}
-};
-
-struct CALL : public Instruction
-{
     int argc;
-
-    CALL(int argc)
-        : Instruction(Opcode::CALL), argc(argc) {}
-};
-
-struct STORE : public Instruction
-{
     std::string name;
-
-    STORE(std::string name)
-        : Instruction(Opcode::STORE), name(name) {}
-};
-
-struct LOAD : public Instruction
-{
-    std::string name;
-
-    LOAD(std::string name)
-        : Instruction(Opcode::LOAD), name(name) {}
-};
-
-struct MAKE_FUNCTION : public Instruction {
     std::vector<std::shared_ptr<Instruction>> body;
+    BoolOperator boolop;
+    size_t line;
 
-    MAKE_FUNCTION(const std::vector<std::shared_ptr<Instruction>>& body)
-        : Instruction(Opcode::MAKE_FUNCTION), body(body) {}
+    explicit Instruction(Opcode op) : op(op), index(0), argc(0), boolop(BoolOperator::EQUALS), line(0) {}
+    
+    Instruction(Opcode op, size_t index) : op(op), index(index), argc(0), boolop(BoolOperator::EQUALS), line(0) {}
+    
+    Instruction(Opcode op, int argc) : op(op), index(0), argc(argc), boolop(BoolOperator::EQUALS), line(0) {}
+    
+    Instruction(Opcode op, const std::string& name) : op(op), index(0), argc(0), name(name), boolop(BoolOperator::EQUALS), line(0) {}
+    
+    Instruction(Opcode op, const std::vector<std::shared_ptr<Instruction>>& body) : op(op), index(0), argc(0), body(body), boolop(BoolOperator::EQUALS), line(0) {}
+    
+    Instruction(Opcode op, BoolOperator boolop) : op(op), index(0), argc(0), boolop(boolop), line(0) {}
+    
+    Instruction(Opcode op, size_t line, bool) : op(op), index(0), argc(0), boolop(BoolOperator::EQUALS), line(line) {}
 };
 
-}
+} // namespace Probescript::VM

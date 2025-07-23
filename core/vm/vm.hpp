@@ -29,12 +29,6 @@ private:
     size_t ip = 0; // instruction pointer
     ValuePtr pop();
     void push(ValuePtr val);
-
-    void runCall(std::shared_ptr<CALL> call);
-    void runLoadConst(std::shared_ptr<LOAD_CONST> loadConst);
-    void runLoad(std::shared_ptr<LOAD> load);
-    void runStore(std::shared_ptr<STORE> store);
-    void runPrint();
 };
 
 } // namespace Probescript::VM

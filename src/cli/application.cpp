@@ -118,6 +118,11 @@ void Application::run()
             }
         }
 
+        for (const auto instr : instructions)
+        {
+            std::cout << OpCodeToString(instr->op) << "\n";
+        }
+        
         VM::Machine vm(instructions, constants, std::make_shared<VM::Scope>());
         vm.run();
     } else if (m_command == "run")

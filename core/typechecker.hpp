@@ -11,7 +11,7 @@
 #include "types.hpp"
 
 extern std::unordered_map<std::string, std::pair<Probescript::Values::Val, Probescript::Typechecker::TypePtr>> g_stdlib;
-extern std::unordered_map<std::string, std::pair<Probescript::Values::Val, Probescript::Typechecker::TypePtr>> g_globals;
+extern std::unordered_map<std::string, Probescript::Typechecker::TypePtr> g_typeGlobals;
 
 namespace fs = std::filesystem;
 

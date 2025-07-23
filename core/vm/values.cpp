@@ -2,7 +2,7 @@
 
 using namespace Probescript::VM;
 
-ValuePtr Scope::declareVar(std::string name, ValuePtr val)
+ValuePtr Scope::declare(const std::string& name, ValuePtr val)
 {
     if (!m_ready) init();
 
@@ -10,14 +10,23 @@ ValuePtr Scope::declareVar(std::string name, ValuePtr val)
     return val;
 }
 
-ValuePtr Scope::lookupVar(std::string varName)
+ValuePtr Scope::assign(const std::string& name, ValuePtr val)
+{
+    if (!m_ready) init();
+
+    auto scope = resolve(name);
+    scope->m_variables[name] = val;
+    return val;
+}
+
+ValuePtr Scope::lookupVar(const std::string& varName)
 {
     if (!m_ready) init();
     
     return resolve(varName)->m_variables[varName];
 }
 
-ScopePtr Scope::resolve(std::string varName)
+ScopePtr Scope::resolve(const std::string& varName)
 {
     if (!m_ready) init();
     
@@ -35,11 +44,16 @@ ScopePtr Scope::resolve(std::string varName)
     }
 }
 
+ScopePtr Scope::getParent()
+{
+    return m_parent;
+}
+
 void Scope::init()
 {
     m_ready = true;
     
-    declareVar("print", std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
+    declare("print", std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
     {
         for (auto& arg : args)
         {
@@ -49,4 +63,19 @@ void Scope::init()
         std::cout << '\n';
         return std::make_shared<NullVal>();
     }));
+}
+
+ValuePtr Value::add(const ValuePtr o) const
+{
+    return std::make_shared<NullVal>();
+}
+
+ValuePtr Value::sub(const ValuePtr o) const
+{
+    return std::make_shared<NullVal>();
+}
+
+bool Value::compare(const ValuePtr o) const
+{
+    return false;
 }

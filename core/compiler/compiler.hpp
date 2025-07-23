@@ -30,9 +30,14 @@ private:
     
     // Statement generator methods
     void genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn);
+    void genVarDecl(std::shared_ptr<AST::VarDeclarationType> decl);
+    void genIf(std::shared_ptr<AST::IfStmtType> stmt);
+    void genWhile(std::shared_ptr<AST::WhileStmtType> stmt);
 
     // Expression generator methods
+    void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
     void genNumber(std::shared_ptr<AST::NumericLiteralType> num);
+    void genString(std::shared_ptr<AST::StringLiteralType> string);
     void genIdent(std::shared_ptr<AST::IdentifierType> ident);
     void genCall(std::shared_ptr<AST::CallExprType> call);
     void genBinExpr(std::shared_ptr<AST::BinaryExprType> expr);

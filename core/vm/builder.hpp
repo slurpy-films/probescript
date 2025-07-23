@@ -15,24 +15,49 @@ public:
     void createString(const std::string& str);
     void createCall(size_t argc);
     void createPrint();
+
     void createStore(const std::string& name);
     void createLoad(const std::string& name);
+    void createAssign(const std::string& name);
     
     void createAdd();
     void createSub();
     void createMul();
     void createDiv();
 
+    void createEquals();
+    void createGreaterThan();
+    void createLessThan();
+
+    void createJump(size_t line);
+    
+    void createJumpIfFalse(size_t line);
+    void patchJumpIfFalse(size_t i, size_t line);
+
     void startFunction();
     void endFunction();
+
+    void startIf();
+    void endIf();
+
+    void startScope();
+    void endScope();
+
+    void set(size_t index, std::shared_ptr<Instruction> instr);
+
+    size_t getInstructionLength();
 
     std::vector<std::shared_ptr<Instruction>> getInstructions();
     std::vector<ValuePtr> getConstants();
 private:
     std::vector<std::shared_ptr<Instruction>> m_instructions;
     std::vector<ValuePtr> m_constants;
+
     std::vector<std::shared_ptr<ByteCodeBuilder>> m_functionStack;
-    bool m_isBuildingFunction = false;
+    std::vector<std::shared_ptr<ByteCodeBuilder>> m_ifStack;
+
+    // Since the JUMP_IF_FALSE instruction increments the instruction pointer instead of setting it, we need to keep track of the line number
+    std::vector<size_t> m_ifPatchStack;
 
     template <typename T, typename... Args>
     std::shared_ptr<T> mk(Args&&... args)

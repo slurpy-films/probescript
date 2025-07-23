@@ -13,10 +13,10 @@ TypePtr Typechecker::g_mapty = std::make_shared<Type>(TypeKind::Bool, "bool");
 
 TypeEnv::TypeEnv(std::shared_ptr<TypeEnv> parent)
 {
-    if (parent) m_parent = parent;
+    m_parent = parent;
 
-    for (const auto& [key, pair] : g_globals)
-        m_variables[key] = pair.second;
+    for (const auto& [key, type] : g_typeGlobals)
+        m_variables[key] = type;
 }
 
 std::unordered_map<std::string, TypePtr> TypeEnv::getVars()
