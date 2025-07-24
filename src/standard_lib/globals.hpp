@@ -4,6 +4,7 @@
 #include <string>
 #include <regex>
 #include <thread>
+#include <mutex>
 
 #include "core/types.hpp"
 #include "core/errors.hpp"

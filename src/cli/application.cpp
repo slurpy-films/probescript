@@ -64,6 +64,11 @@ Application::Application(int argc, char* argv[])
 
 void Application::run()
 {
+    // std::cout is by default really slow so it is in sync with printf, but we don't need printf so we can disable this.
+    // Disabling sync with stdio makes printing super fast. Without this, printing every number from 0 - 99999 takes about 20 seconds,
+    // but with it disabled, it only takes about two seconds.
+    std::ios::sync_with_stdio(false);
+    
     if (m_command == "repl")
     {
         REPL repl;
@@ -118,11 +123,6 @@ void Application::run()
             }
         }
 
-        for (const auto instr : instructions)
-        {
-            std::cout << OpCodeToString(instr->op) << "\n";
-        }
-        
         VM::Machine vm(instructions, constants, std::make_shared<VM::Scope>());
         vm.run();
     } else if (m_command == "run")

@@ -2,6 +2,8 @@
 
 using namespace Probescript;
 
+extern std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals;
+
 void Compiler::compile()
 {
     for (auto& stmt : m_program->body)
@@ -18,7 +20,7 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
     {
         case AST::NodeType::NumericLiteral:
             genNumber(std::static_pointer_cast<AST::NumericLiteralType>(node));
-            break;
+            break;        
         case AST::NodeType::Identifier:
             genIdent(std::static_pointer_cast<AST::IdentifierType>(node));
             break;
@@ -45,6 +47,12 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
             break;
         case AST::NodeType::AssignmentExpr:
             genAssign(std::static_pointer_cast<AST::AssignmentExprType>(node));
+            break;
+        case AST::NodeType::MemberExpr:
+            genMemberAccess(std::static_pointer_cast<AST::MemberExprType>(node));
+            break;
+        case AST::NodeType::ReturnStmt:
+            genReturn(std::static_pointer_cast<AST::ReturnStmtType>(node));
             break;
 
         default:
@@ -73,8 +81,27 @@ void Compiler::genCall(std::shared_ptr<AST::CallExprType> call)
     builder->createCall(call->args.size());
 }
 
+void Compiler::genReturn(std::shared_ptr<AST::ReturnStmtType> returnStmt)
+{
+    gen(returnStmt->val),
+
+    builder->createReturn();
+}
+
 void Compiler::genIdent(std::shared_ptr<AST::IdentifierType> ident)
 {
+    if (ident->symbol == "console")
+    {
+        builder->createLoadConsole();
+        return;
+    }
+
+    if (g_valueGlobals.find(ident->symbol) != g_valueGlobals.end())
+    {
+        builder->createLoadGlobal(ident->symbol);
+        return;
+    }
+
     builder->createLoad(ident->symbol);
 }
 
@@ -128,8 +155,56 @@ void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn)
         gen(stmt);
     }
 
-    builder->endFunction();
+    std::vector<std::string> paramNames;
+    std::transform(
+        fn->parameters.begin(), fn->parameters.end(),
+        std::back_inserter(paramNames),
+        [](const std::shared_ptr<AST::VarDeclarationType>& param)
+        {
+            return param->identifier;
+        }
+    );
+
+    builder->endFunction(paramNames);
+
     builder->createStore(fn->name);
+}
+
+void Compiler::genMemberAccess(std::shared_ptr<AST::MemberExprType> member)
+{
+    if (
+        !member->computed
+        && member->object->kind == AST::NodeType::Identifier
+        && std::static_pointer_cast<AST::IdentifierType>(member->object)->symbol == "console"
+    )
+    {
+        std::string property
+            = std::static_pointer_cast<AST::IdentifierType>(member->property)->symbol;
+
+        if (
+            property != "println"
+            && property != "print"
+            && property != "prompt"
+        )
+        {
+            throw std::runtime_error(CustomError("Console does not have property " + property, "MemberError", member->property->token));
+        }
+
+        builder->createLoadConsole(property);
+        return;
+    }
+
+    gen(member->object);
+
+    if (member->computed)
+    {
+        gen(member->property);
+        builder->createMemberAccess();
+
+        return;
+    }
+
+    builder->createMemberAccess(std::static_pointer_cast<AST::IdentifierType>(member->property)->symbol);
 }
 
 void Compiler::genVarDecl(std::shared_ptr<AST::VarDeclarationType> decl)
@@ -195,13 +270,48 @@ void Compiler::genAssign(std::shared_ptr<AST::AssignmentExprType> assign)
 {
     gen(assign->value);
 
-    if (assign->assigne->kind == AST::NodeType::Identifier)
+    if (assign->assigne->kind != AST::NodeType::Identifier)
     {
-        builder->createAssign(std::static_pointer_cast<AST::IdentifierType>(assign->assigne)->symbol);
+        throw std::runtime_error(CustomError("Can only assign to identifiers", "AssignError", assign->assigne->token));
+    }
+
+    std::string assigne = std::static_pointer_cast<AST::IdentifierType>(assign->assigne)->symbol;
+
+    if (assign->op == "=")
+    {
+        builder->createAssign(assigne);
+    }
+    else if (assign->op == "+=")
+    {
+        builder->createLoad(assigne);
+        builder->createAdd();
+
+        builder->createAssign(assigne);
+    }
+    else if (assign->op == "-=")
+    {
+        builder->createLoad(assigne);
+        builder->createSub();
+
+        builder->createAssign(assigne);
+    }
+    else if (assign->op == "*=")
+    {
+        builder->createLoad(assigne);
+        builder->createMul();
+
+        builder->createAssign(assigne);
+    }
+    else if (assign->op == "/=")
+    {
+        builder->createLoad(assigne);
+        builder->createDiv();
+
+        builder->createAssign(assigne);
     }
     else
     {
-        throw std::runtime_error("Unknown assignment type");
+        throw std::runtime_error(CustomError("Unknown assignment operator", "AssignError", assign->token));
     }
 }
 

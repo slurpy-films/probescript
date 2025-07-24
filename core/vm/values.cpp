@@ -57,7 +57,14 @@ void Scope::init()
     {
         for (auto& arg : args)
         {
-            std::cout << arg->toString();
+            if (arg->type == ValueType::Number)
+            {
+                std::cout << arg->toNum();
+            }
+            else
+            {
+                std::cout << arg->toString();
+            }
         }
 
         std::cout << '\n';

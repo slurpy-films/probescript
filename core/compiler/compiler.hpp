@@ -3,10 +3,13 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 #include "frontend/ast.hpp"
 
 #include "vm/builder.hpp"
+
+#include "core/errors.hpp"
 
 namespace Probescript
 {
@@ -24,8 +27,7 @@ public:
 private:
     std::shared_ptr<VM::ByteCodeBuilder> builder;
     std::shared_ptr<AST::ProgramType> m_program;
-
-    
+        
     void gen(std::shared_ptr<AST::Stmt> node);
     
     // Statement generator methods
@@ -33,9 +35,11 @@ private:
     void genVarDecl(std::shared_ptr<AST::VarDeclarationType> decl);
     void genIf(std::shared_ptr<AST::IfStmtType> stmt);
     void genWhile(std::shared_ptr<AST::WhileStmtType> stmt);
+    void genReturn(std::shared_ptr<AST::ReturnStmtType> stmt);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
+    void genMemberAccess(std::shared_ptr<AST::MemberExprType> expr);
     void genNumber(std::shared_ptr<AST::NumericLiteralType> num);
     void genString(std::shared_ptr<AST::StringLiteralType> string);
     void genIdent(std::shared_ptr<AST::IdentifierType> ident);

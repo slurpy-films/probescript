@@ -7,6 +7,8 @@
 #include <memory>
 #include <functional>
 #include <unordered_map>
+#include <sstream>
+#include <iomanip>
 
 #include "instruction.hpp"
 
@@ -55,6 +57,8 @@ enum class ValueType
 struct Value
 {
     ValueType type;
+    std::unordered_map<std::string, ValuePtr> properties;
+    
     Value(ValueType type)
         : type(type) {}
 
@@ -92,7 +96,16 @@ struct NumberVal : public Value
 
     std::string toString() const override
     {
-        return std::to_string(number);
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(8) << number;
+        std::string str = oss.str();
+
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+
+        if (!str.empty() && str.back() == '.')
+            str.pop_back();
+
+        return str;
     }
 
     bool toBool() const override
@@ -141,10 +154,10 @@ struct BooleanVal : public Value
 
 struct ObjectVal : public Value
 {
-    std::unordered_map<std::string, ValuePtr> properties;
-
     ObjectVal(std::unordered_map<std::string, ValuePtr> properties = {})
-        : Value(ValueType::Object), properties(properties) {}
+        : Value(ValueType::Object) {
+            this->properties = properties;
+        }
 };
 
 struct NullVal : public Value
@@ -236,9 +249,10 @@ struct FunctionValue : public Value
 {
     std::vector<std::shared_ptr<Instruction>> body;
     ScopePtr scope;
+    std::vector<std::string> parameters;
 
-    FunctionValue(std::vector<std::shared_ptr<Instruction>> body, ScopePtr scope)
-        : Value(ValueType::Function), body(body), scope(scope) {}
+    FunctionValue(std::vector<std::shared_ptr<Instruction>> body, std::vector<std::string> parameters, ScopePtr scope)
+        : Value(ValueType::Function), body(body), parameters(parameters), scope(scope) {}
 };
 
 } // namespace Probescript::VM

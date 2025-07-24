@@ -84,51 +84,6 @@ std::unordered_map<std::string, Typechecker::TypePtr> g_typeGlobals =
 std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
 {
     {
-        "console",
-        std::make_shared<VM::ObjectVal>(std::unordered_map<std::string, VM::ValuePtr>({
-            {
-                "println",
-                std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
-                {
-                    for (const auto arg : args)
-                    {
-                        std::cout << arg->toString() << " ";
-                    }
-
-                    std::cout << '\n';
-                    return std::make_shared<VM::NullVal>();
-                })
-            },
-            {
-                "print",
-                std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
-                {
-                    for (const auto arg : args)
-                    {
-                        std::cout << arg->toString() << " ";
-                    }
-
-                    return std::make_shared<VM::NullVal>();
-                })
-            },
-            {
-                "prompt",
-                std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
-                {
-                    for (const auto arg : args)
-                    {
-                        std::cout << arg->toString();
-                    }
-
-                    std::string input;
-                    std::getline(std::cin, input);
-
-                    return std::make_shared<VM::StringVal>(input);
-                })
-            }
-        }))
-    },
-    {
         "num",
         std::make_shared<VM::NativeClassVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
         {
@@ -269,10 +224,8 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
         "sleep",
         std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
         {
-            if (!args.empty())
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(args[0]->toNum())));
-            }
+            // This function is disabled for now
+            // When futures are added to the VM, this function will be re-added
 
             return std::make_shared<VM::NullVal>();
         })

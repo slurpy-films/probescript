@@ -26,6 +26,10 @@ enum class Opcode
     END_SCOPE,
     JUMP,
     ASSIGN,
+    ACCESS_PROPERTY,
+    LOAD_GLOBAL,
+    LOAD_CONSOLE, // Special instruction for loading a console property like println
+    RETURN,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -66,6 +70,14 @@ inline std::string OpCodeToString(Opcode code)
             return "JUMP";
         case Opcode::ASSIGN:
             return "ASSIGN";
+        case Opcode::ACCESS_PROPERTY:
+            return "ACCESS_PROPERTY";
+        case Opcode::LOAD_GLOBAL:
+            return "LOAD_GLOBAL";
+        case Opcode::LOAD_CONSOLE:
+            return "LOAD_CONSOLE";
+        case Opcode::RETURN:
+            return "RETURN";
         default:
             return "UNKNOWN";
     }
@@ -85,8 +97,10 @@ struct Instruction
     int argc;
     std::string name;
     std::vector<std::shared_ptr<Instruction>> body;
+    std::vector<std::string> parameters;
     BoolOperator boolop;
     size_t line;
+    std::string propName = "";
 
     explicit Instruction(Opcode op) : op(op), index(0), argc(0), boolop(BoolOperator::EQUALS), line(0) {}
     
@@ -96,7 +110,8 @@ struct Instruction
     
     Instruction(Opcode op, const std::string& name) : op(op), index(0), argc(0), name(name), boolop(BoolOperator::EQUALS), line(0) {}
     
-    Instruction(Opcode op, const std::vector<std::shared_ptr<Instruction>>& body) : op(op), index(0), argc(0), body(body), boolop(BoolOperator::EQUALS), line(0) {}
+    Instruction(Opcode op, const std::vector<std::shared_ptr<Instruction>>& body, const std::vector<std::string>& parameters)
+        : op(op), index(0), argc(0), body(body), parameters(parameters), boolop(BoolOperator::EQUALS), line(0) {}
     
     Instruction(Opcode op, BoolOperator boolop) : op(op), index(0), argc(0), boolop(boolop), line(0) {}
     

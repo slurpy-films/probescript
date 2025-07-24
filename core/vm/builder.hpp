@@ -24,6 +24,13 @@ public:
     void createSub();
     void createMul();
     void createDiv();
+    
+    void createLoadGlobal(std::string globalName);
+    void createLoadConsole(std::string name = "");
+
+    void createMemberAccess(std::string prop = "");
+
+    void createReturn();
 
     void createEquals();
     void createGreaterThan();
@@ -35,7 +42,7 @@ public:
     void patchJumpIfFalse(size_t i, size_t line);
 
     void startFunction();
-    void endFunction();
+    void endFunction(std::vector<std::string>& params);
 
     void startIf();
     void endIf();

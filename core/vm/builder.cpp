@@ -139,19 +139,39 @@ void ByteCodeBuilder::startFunction()
     m_instructions.clear();
 }
 
-void ByteCodeBuilder::endFunction()
+void ByteCodeBuilder::endFunction(std::vector<std::string>& params)
 {
     auto fnInstructions = m_instructions;
 
     m_instructions = m_functionStack.back()->m_instructions;
     m_functionStack.pop_back();
 
-    m_instructions.push_back(std::make_shared<Instruction>(Opcode::MAKE_FUNCTION, fnInstructions));
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::MAKE_FUNCTION, fnInstructions, params));
 }
 
 void ByteCodeBuilder::set(size_t i, std::shared_ptr<Instruction> instr)
 {
     m_instructions[i] = instr;
+}
+
+void ByteCodeBuilder::createLoadGlobal(std::string globalName)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::LOAD_GLOBAL, globalName));
+}
+
+void ByteCodeBuilder::createReturn()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::RETURN));
+}
+
+void ByteCodeBuilder::createLoadConsole(std::string name)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::LOAD_CONSOLE, name));
+}
+
+void ByteCodeBuilder::createMemberAccess(std::string property)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::ACCESS_PROPERTY, property));
 }
 
 size_t ByteCodeBuilder::getInstructionLength()

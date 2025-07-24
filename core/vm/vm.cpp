@@ -2,6 +2,8 @@
 
 using namespace Probescript::VM;
 
+extern std::unordered_map<std::string, ValuePtr> g_valueGlobals;
+
 ValuePtr Machine::pop()
 {
     if (m_stack.empty())
@@ -19,7 +21,7 @@ void Machine::push(ValuePtr val)
     m_stack.push_back(val);
 }
 
-void Machine::run()
+Signal Machine::run()
 {
     while (ip < m_bytecode.size())
     {
@@ -35,6 +37,26 @@ void Machine::run()
                 }
 
                 push(m_consts[instr->index]);
+                break;
+            }
+            case Opcode::LOAD_GLOBAL:
+            {
+                push(g_valueGlobals[instr->name]);
+                break;
+            }
+            case Opcode::LOAD_CONSOLE:
+            {
+                // Here, instr->name is the name of the console property to access. 
+                // If it is empty, we push the console object directly
+                if (instr->name.empty())
+                {
+                    push(s_Console);
+                    break;
+                }
+
+                // This will push a nullptr if it does not exist, but we expect the compiler to never use this instruction on anything other than
+                // console.println, console.print or console.prompt
+                push(s_Console->properties[instr->name]);
                 break;
             }
             case Opcode::ADD:
@@ -96,8 +118,12 @@ void Machine::run()
                 throw std::runtime_error("Can only divide numbers");
             }
             case Opcode::PRINT:
-                std::cout << pop()->toString() << "\n";
+                std::cout << pop()->toString();
                 break;
+            case Opcode::RETURN:
+            {
+                return Signal(pop());
+            }
             case Opcode::CALL:
             {
                 std::vector<ValuePtr> args;
@@ -106,6 +132,8 @@ void Machine::run()
                 {
                     args.push_back(pop());
                 };
+
+                std::reverse(args.begin(), args.end());
 
                 ValuePtr fn = pop();
 
@@ -120,8 +148,21 @@ void Machine::run()
                     auto func = std::static_pointer_cast<FunctionValue>(fn);
                     ScopePtr scope = std::make_shared<Scope>(m_scope);
                     
+                    for (size_t i = 0; i < func->parameters.size(); ++i)
+                    {
+                        scope->declare(func->parameters[i], (args[i] ? args[i] : s_null));
+                    }
+
                     Machine vm(func->body, m_consts, scope);
-                    vm.run();
+                    
+                    Signal result = vm.run();
+                    if (result.type == SignalType::Return)
+                    {
+                        push(result.val);
+                        break;
+                    }
+                    
+                    push(std::make_shared<NullVal>());
 
                     break;
                 }
@@ -146,7 +187,7 @@ void Machine::run()
             }
             case Opcode::MAKE_FUNCTION:
             {
-                push(std::make_shared<FunctionValue>(instr->body, m_scope));
+                push(std::make_shared<FunctionValue>(instr->body, instr->parameters, m_scope));
                 break;
             }
             case Opcode::COMPARE:
@@ -213,11 +254,26 @@ void Machine::run()
                 m_scope = m_scope->getParent();
                 break;
             }
+            case Opcode::ACCESS_PROPERTY:
+            {
+                std::string key = instr->propName;
+
+                if (key.empty())
+                {
+                    auto top = pop();
+                    key = top->toString();
+                }
+
+                auto object = pop();
+                push(object->properties[key]);
+            }
             case Opcode::HALT:
-                return;
+                return Signal();
 
             default:
                 throw std::runtime_error("Unknown instruction");
         }
     }
+
+    return Signal();
 }
