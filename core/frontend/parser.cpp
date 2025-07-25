@@ -95,12 +95,12 @@ std::shared_ptr<AST::Stmt> Parser::parseProbeDeclaration()
     {
         Token tk = eat();
         std::shared_ptr<AST::Expr> extends = parseExpr();
-        std::vector<std::shared_ptr<AST::Stmt>> body = parseBody(true, name);
+        std::vector<std::shared_ptr<AST::Stmt>> body = parseBody(true);
 
         return newnode<AST::ProbeDeclarationType>(tk, name, body, extends);
     }
 
-    std::vector<std::shared_ptr<AST::Stmt>> body = parseBody(true, name);
+    std::vector<std::shared_ptr<AST::Stmt>> body = parseBody(true);
 
     std::shared_ptr<AST::ProbeDeclarationType> prb = newnode<AST::ProbeDeclarationType>(token, name, body);
 
@@ -949,7 +949,7 @@ std::vector<std::shared_ptr<AST::VarDeclarationType>> Parser::parseParams() {
     return params;
 }
 
-std::vector<std::shared_ptr<AST::Stmt>> Parser::parseBody(bool methods, std::string prbname)
+std::vector<std::shared_ptr<AST::Stmt>> Parser::parseBody(bool methods)
 {
     if (at().type == Lexer::OpenBrace)
     {
@@ -970,8 +970,6 @@ std::vector<std::shared_ptr<AST::Stmt>> Parser::parseBody(bool methods, std::str
                         {
                             std::shared_ptr<AST::FunctionDeclarationType> func = std::static_pointer_cast<AST::FunctionDeclarationType>(fn);
                             
-                            func->name = (func->name == prbname ? "run" : func->name);
-
                             body.push_back(fn);
                         } else body.push_back(fn);
                     } else

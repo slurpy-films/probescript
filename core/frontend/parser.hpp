@@ -121,7 +121,7 @@ private:
     bool notEOF();
     std::string getCurrentLine(Lexer::Token at);
 
-    std::vector<std::shared_ptr<AST::Stmt>> parseBody(bool methods = false, std::string prbname = "");
+    std::vector<std::shared_ptr<AST::Stmt>> parseBody(bool methods = false);
 
     template<typename T, typename... Args>
     std::shared_ptr<T> newnode(Lexer::Token tok, Args&&... args) {

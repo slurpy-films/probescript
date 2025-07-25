@@ -43,6 +43,11 @@ public:
 
     void startFunction();
     void endFunction(std::vector<std::string>& params);
+    
+    void startProbe();
+    void endProbe(std::string probeName);
+
+    void createNegate();
 
     void startIf();
     void endIf();

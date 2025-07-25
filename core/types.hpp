@@ -77,6 +77,7 @@ struct Type
 {
     TypeKind type;
     std::string name;
+    std::string probeName;
     TypeValPtr val = std::make_shared<TypeVal>();
     std::string typeName;
     bool isInstance = false;

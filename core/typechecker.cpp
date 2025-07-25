@@ -561,7 +561,10 @@ TypePtr TC::checkProbe(std::shared_ptr<AST::ProbeDeclarationType> prb, TypeEnvPt
             check(stmt, scope);
     }
 
-    return env->declareVar(prb->name, std::make_shared<Type>(TypeKind::Probe, "probe", std::make_shared<TypeVal>(props)), prb->token);
+    auto type = std::make_shared<Type>(TypeKind::Probe, "probe", std::make_shared<TypeVal>(props));
+    type->probeName = prb->name;
+
+    return env->declareVar(prb->name, type, prb->token);
 }
 
 void TC::checkProbeInheritance(TypePtr prb, TypeEnvPtr env)
@@ -622,12 +625,12 @@ TypePtr TC::checkCall(std::shared_ptr<AST::CallExprType> call, TypeEnvPtr env)
         return fn->val->returntype ? fn->val->returntype : std::make_shared<Type>(TypeKind::Any, "any");
     } else if (fn->type == TypeKind::Probe)
     {
-        if (fn->val->props.find("run") == fn->val->props.end() || fn->val->props["run"]->type != TypeKind::Function)
+        if (fn->val->props.find(fn->probeName) == fn->val->props.end() || fn->val->props[fn->probeName]->type != TypeKind::Function)
         {
             throw std::runtime_error(TypeError("Probe has no 'run' method or it is not of type function", call->calee->token));
         }
 
-        TypePtr run = fn->val->props["run"];
+        TypePtr run = fn->val->props[fn->probeName];
 
         TypeEnvPtr declenv = fn->val->declenv ? fn->val->declenv : scope;
 

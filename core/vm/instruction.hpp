@@ -20,6 +20,7 @@ enum class Opcode
     STORE,
     LOAD,
     MAKE_FUNCTION,
+    MAKE_PROBE,
     COMPARE,
     JUMP_IF_FALSE,
     START_SCOPE,
@@ -30,6 +31,7 @@ enum class Opcode
     LOAD_GLOBAL,
     LOAD_CONSOLE, // Special instruction for loading a console property like println
     RETURN,
+    NEGATE,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -58,6 +60,8 @@ inline std::string OpCodeToString(Opcode code)
             return "LOAD";
         case Opcode::MAKE_FUNCTION:
             return "MAKE_FUNCTION";
+        case Opcode::MAKE_PROBE:
+            return "MAKE_PROBE";
         case Opcode::COMPARE:
             return "COMPARE";
         case Opcode::JUMP_IF_FALSE:
@@ -102,20 +106,23 @@ struct Instruction
     size_t line;
     std::string propName = "";
 
-    explicit Instruction(Opcode op) : op(op), index(0), argc(0), boolop(BoolOperator::EQUALS), line(0) {}
+    explicit Instruction(Opcode op) : op(op) {}
     
-    Instruction(Opcode op, size_t index) : op(op), index(index), argc(0), boolop(BoolOperator::EQUALS), line(0) {}
+    Instruction(Opcode op, size_t index) : op(op), index(index)  {}
     
-    Instruction(Opcode op, int argc) : op(op), index(0), argc(argc), boolop(BoolOperator::EQUALS), line(0) {}
+    Instruction(Opcode op, int argc) : op(op), argc(argc) {}
     
-    Instruction(Opcode op, const std::string& name) : op(op), index(0), argc(0), name(name), boolop(BoolOperator::EQUALS), line(0) {}
+    Instruction(Opcode op, const std::string& name) : op(op), name(name) {}
     
     Instruction(Opcode op, const std::vector<std::shared_ptr<Instruction>>& body, const std::vector<std::string>& parameters)
-        : op(op), index(0), argc(0), body(body), parameters(parameters), boolop(BoolOperator::EQUALS), line(0) {}
+        : op(op), body(body), parameters(parameters) {}
     
-    Instruction(Opcode op, BoolOperator boolop) : op(op), index(0), argc(0), boolop(boolop), line(0) {}
+    Instruction(std::string name, Opcode op, const std::vector<std::shared_ptr<Instruction>>& body)
+        : name(name), op(op), body(body) {} // Probe constructor
     
-    Instruction(Opcode op, size_t line, bool) : op(op), index(0), argc(0), boolop(BoolOperator::EQUALS), line(line) {}
+    Instruction(Opcode op, BoolOperator boolop) : op(op), boolop(boolop) {}
+    
+    Instruction(Opcode op, size_t line, bool) : op(op), line(line) {}
 };
 
 } // namespace Probescript::VM

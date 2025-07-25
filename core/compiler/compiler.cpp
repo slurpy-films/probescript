@@ -10,6 +10,9 @@ void Compiler::compile()
     {
         gen(stmt);
     }
+
+    builder->createLoad("Main");
+    builder->createCall(0);
 }
 
 void Compiler::gen(std::shared_ptr<AST::Stmt> node)
@@ -54,6 +57,12 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ReturnStmt:
             genReturn(std::static_pointer_cast<AST::ReturnStmtType>(node));
             break;
+        case AST::NodeType::UnaryPrefix:
+            genUnaryPrefix(std::static_pointer_cast<AST::UnaryPrefixType>(node));
+            break;
+        case AST::NodeType::ProbeDeclaration:
+            genProbe(std::static_pointer_cast<AST::ProbeDeclarationType>(node));
+            break;
 
         default:
             throw std::runtime_error("Unknown AST node type");
@@ -86,6 +95,50 @@ void Compiler::genReturn(std::shared_ptr<AST::ReturnStmtType> returnStmt)
     gen(returnStmt->val),
 
     builder->createReturn();
+}
+
+void Compiler::genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe)
+{
+    builder->startProbe();
+
+    for (const auto stmt : probe->body)
+    {
+        gen(stmt);
+    }
+
+    builder->endProbe(probe->name);
+    builder->createStore(probe->name);
+}
+
+void Compiler::genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr)
+{
+    gen(unaryExpr->assigne);
+
+    std::string op = unaryExpr->op;
+    
+    if (op == "!")
+    {
+        builder->createNegate();
+        return;
+    }
+
+    if (op != "++" && op != "--")
+    {
+        throw std::runtime_error(CustomError("Unknown unary operator: " + op, "UnaryError", unaryExpr->token));
+    }
+    
+    if (unaryExpr->assigne->kind == AST::NodeType::Identifier)
+    {
+        std::string ident = std::static_pointer_cast<AST::IdentifierType>(unaryExpr->assigne)->symbol;
+
+        builder->createNumber(op == "++" ? 1 : -1);
+        builder->createAdd();
+        builder->createAssign(ident);
+        return;
+    }
+
+    // TODO: Add support for member expressions
+    throw std::runtime_error(CustomError("Unknown unary expression assigne", "UnaryError", unaryExpr->assigne->token));
 }
 
 void Compiler::genIdent(std::shared_ptr<AST::IdentifierType> ident)

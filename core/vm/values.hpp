@@ -52,6 +52,7 @@ enum class ValueType
     Object,
     NativeClass,
     Array,
+    Probe,
 };
 
 struct Value
@@ -253,6 +254,16 @@ struct FunctionValue : public Value
 
     FunctionValue(std::vector<std::shared_ptr<Instruction>> body, std::vector<std::string> parameters, ScopePtr scope)
         : Value(ValueType::Function), body(body), parameters(parameters), scope(scope) {}
+};
+
+struct ProbeValue : public Value
+{
+    std::vector<std::shared_ptr<Instruction>> body;
+    ScopePtr scope;
+    std::string name;
+
+    ProbeValue(std::string name, std::vector<std::shared_ptr<Instruction>> body, ScopePtr scope)
+        : Value(ValueType::Probe), name(name), body(body), scope(scope) {}
 };
 
 } // namespace Probescript::VM

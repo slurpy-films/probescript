@@ -149,6 +149,27 @@ void ByteCodeBuilder::endFunction(std::vector<std::string>& params)
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::MAKE_FUNCTION, fnInstructions, params));
 }
 
+void ByteCodeBuilder::startProbe()
+{
+    m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
+    m_instructions.clear();
+}
+
+void ByteCodeBuilder::endProbe(std::string probeName)
+{
+    auto prbInstructions = m_instructions;
+
+    m_instructions = m_functionStack.back()->m_instructions;
+    m_functionStack.pop_back();
+
+    m_instructions.push_back(std::make_shared<Instruction>(probeName, Opcode::MAKE_PROBE, prbInstructions));
+}
+
+void ByteCodeBuilder::createNegate()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::NEGATE));
+}
+
 void ByteCodeBuilder::set(size_t i, std::shared_ptr<Instruction> instr)
 {
     m_instructions[i] = instr;

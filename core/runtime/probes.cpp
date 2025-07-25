@@ -90,15 +90,18 @@ void Interpreter::inheritProbe(std::shared_ptr<Values::ProbeValue> prb, EnvPtr e
         if (stmt->kind == AST::NodeType::FunctionDeclaration)
         {
             std::shared_ptr<Values::FunctionValue> fn = std::static_pointer_cast<Values::FunctionValue>(evalFunctionDeclaration(std::static_pointer_cast<AST::FunctionDeclarationType>(stmt), parentenv, true));
-            if (fn->name == "run")
+            if (fn->name == prb->name)
             {
                 hasRun = true;
                 run = fn;
-            } else env->variables[fn->name] = fn;
-        } else if (stmt->kind == AST::NodeType::VarDeclaration) {
+            }
+            else env->variables[fn->name] = fn;
+        }
+        else if (stmt->kind == AST::NodeType::VarDeclaration) {
             eval(stmt, parentenv);
             eval(stmt, env);
-        } else
+        }
+        else
             eval(stmt, env);
     }
 

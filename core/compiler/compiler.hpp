@@ -36,9 +36,11 @@ private:
     void genIf(std::shared_ptr<AST::IfStmtType> stmt);
     void genWhile(std::shared_ptr<AST::WhileStmtType> stmt);
     void genReturn(std::shared_ptr<AST::ReturnStmtType> stmt);
+    void genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
+    void genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr);
     void genMemberAccess(std::shared_ptr<AST::MemberExprType> expr);
     void genNumber(std::shared_ptr<AST::NumericLiteralType> num);
     void genString(std::shared_ptr<AST::StringLiteralType> string);

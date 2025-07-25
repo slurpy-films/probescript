@@ -163,7 +163,29 @@ Signal Machine::run()
                     }
                     
                     push(std::make_shared<NullVal>());
+                    break;
+                }
 
+                if (fn->type == ValueType::Probe)
+                {
+                    auto probe = std::static_pointer_cast<ProbeValue>(fn);
+
+                    ScopePtr scope = std::make_shared<Scope>(probe->scope);
+
+                    auto body = probe->body;
+                    body.push_back(std::make_shared<Instruction>(Opcode::LOAD, probe->name)); // Load the run function
+                    body.push_back(std::make_shared<Instruction>(Opcode::CALL, 0)); // Call the run function (TODO: Enable arguments)
+                    body.push_back(std::make_shared<Instruction>(Opcode::RETURN));
+
+                    Machine vm(body, m_consts, scope);
+                    Signal result = vm.run();
+                    if (result.type == SignalType::Return)
+                    {
+                        push(result.val);
+                        break;
+                    }
+                    
+                    push(std::make_shared<NullVal>());
                     break;
                 }
 
@@ -185,9 +207,19 @@ Signal Machine::run()
                 push(m_scope->lookupVar(instr->name));
                 break;
             }
+            case Opcode::NEGATE:
+            {
+                push(std::make_shared<BooleanVal>(!pop()->toBool()));
+                break;
+            }
             case Opcode::MAKE_FUNCTION:
             {
                 push(std::make_shared<FunctionValue>(instr->body, instr->parameters, m_scope));
+                break;
+            }
+            case Opcode::MAKE_PROBE:
+            {
+                push(std::make_shared<ProbeValue>(instr->name, instr->body, m_scope));
                 break;
             }
             case Opcode::COMPARE:
