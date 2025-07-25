@@ -3,6 +3,7 @@
 #include <vector>
 #include <filesystem>
 #include <algorithm>
+#include <thread>
 
 #include "core/frontend/ast.hpp"
 #include "core/runtime/values.hpp"

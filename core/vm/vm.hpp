@@ -7,9 +7,12 @@
 #include <memory>
 #include <functional>
 #include <algorithm>
+#include <mutex>
+#include <thread>
 
 #include "instruction.hpp"
 #include "values.hpp"
+#include "utils.hpp"
 
 namespace Probescript::VM
 {
@@ -38,15 +41,18 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
         "println",
         std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
         {
-            for (auto& arg : args)
+            size_t len = args.size();
+            for (size_t i = 0; i < len; ++i)
             {
+                auto arg = args[i];
+
                 if (arg->type == ValueType::Number)
                 {
-                    std::cout << arg->toNum();
+                    std::cout << arg->toNum() << (args[i + 1] ? " " : "");
                 }
                 else
                 {
-                    std::cout << arg->toString();
+                    std::cout << arg->toString() << (args[i + 1] ? " " : "");
                 }
             }
 
@@ -58,15 +64,18 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
         "print",
         std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
         {
-            for (auto& arg : args)
+            size_t len = args.size();
+            for (size_t i = 0; i < len; ++i)
             {
+                auto arg = args[i];
+                
                 if (arg->type == ValueType::Number)
                 {
-                    std::cout << arg->toNum();
+                    std::cout << arg->toNum() << (args[i + 1] ? " " : "");
                 }
                 else
                 {
-                    std::cout << arg->toString();
+                    std::cout << arg->toString() << (args[i + 1] ? " " : "");
                 }
             }
 

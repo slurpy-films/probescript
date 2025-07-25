@@ -139,7 +139,7 @@ struct BooleanVal : public Value
         return boolean ? "true" : "false";
     }
 
-    bool compare(const ValuePtr o)
+    bool compare(const ValuePtr o) const override
     {
         return o->type == ValueType::Boolean && o->toBool() == boolean;
     }
@@ -156,9 +156,10 @@ struct BooleanVal : public Value
 struct ObjectVal : public Value
 {
     ObjectVal(std::unordered_map<std::string, ValuePtr> properties = {})
-        : Value(ValueType::Object) {
-            this->properties = properties;
-        }
+        : Value(ValueType::Object)
+    {
+        this->properties = properties;
+    }
 };
 
 struct NullVal : public Value
@@ -226,6 +227,11 @@ struct NativeFunctionVal : public Value
 {
     std::function<ValuePtr(std::vector<ValuePtr>)> call;
 
+    std::string toString() const override
+    {
+        return "[function]";
+    }
+
     NativeFunctionVal(std::function<ValuePtr(std::vector<ValuePtr>)> call)
         : Value(ValueType::NativeFunction), call(call) {}
 };
@@ -234,6 +240,11 @@ struct NativeClassVal : public Value
 {
     std::function<ValuePtr(std::vector<ValuePtr>)> call;
 
+    std::string toString() const override
+    {
+        return "[class]";
+    }
+
     NativeClassVal(std::function<ValuePtr(std::vector<ValuePtr>)> call)
         : Value(ValueType::NativeClass), call(call) {}
 };
@@ -241,6 +252,22 @@ struct NativeClassVal : public Value
 struct ArrayVal : public Value
 {
     std::vector<ValuePtr> items;
+
+    std::string toString() const override
+    {
+        std::ostringstream stream;
+        stream << "[";
+
+        size_t len = items.size();
+        for (size_t i = 0; i < len; ++i)
+        {
+            stream << items[i]->toString() << (items[i + 1] ? ", " : "");
+        }
+
+        stream << "]";
+
+        return stream.str();
+    }
 
     ArrayVal(std::vector<ValuePtr> items = {})
         : Value(ValueType::Array), items(items) {}
@@ -251,6 +278,11 @@ struct FunctionValue : public Value
     std::vector<std::shared_ptr<Instruction>> body;
     ScopePtr scope;
     std::vector<std::string> parameters;
+
+    std::string toString() const override
+    {
+        return "[function]";
+    }
 
     FunctionValue(std::vector<std::shared_ptr<Instruction>> body, std::vector<std::string> parameters, ScopePtr scope)
         : Value(ValueType::Function), body(body), parameters(parameters), scope(scope) {}

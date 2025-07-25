@@ -68,13 +68,25 @@ void Application::run()
     // Disabling sync with stdio makes printing super fast. Without this, printing every number from 0 - 99999 takes about 20 seconds,
     // but with it disabled, it only takes about two seconds.
     std::ios::sync_with_stdio(false);
+
+    // Start the flush thread
+    std::thread([]()
+    {
+        while (true)
+        {
+            std::cout << std::flush;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }).detach();
     
     if (m_command == "repl")
     {
         REPL repl;
         repl.start();
         return;
-    } else if (m_command == "vm") {
+    }
+    else if (m_command == "vm")
+    {
         std::vector<std::shared_ptr<VM::Instruction>> instructions;
         std::vector<VM::ValuePtr> constants;
 
@@ -124,8 +136,18 @@ void Application::run()
         }
 
         VM::Machine vm(instructions, constants, std::make_shared<VM::Scope>());
-        vm.run();
-    } else if (m_command == "run")
+        
+        try
+        {
+            vm.run();
+        }
+        catch (const std::exception& e)
+        {
+            std::cout << e.what() << std::flush;
+            exit(1);
+        }
+    }
+    else if (m_command == "run")
     {
         if (m_args.empty())
         {

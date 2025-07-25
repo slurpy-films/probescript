@@ -32,6 +32,7 @@ enum class Opcode
     LOAD_CONSOLE, // Special instruction for loading a console property like println
     RETURN,
     NEGATE,
+    LOAD_BOOL,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -82,6 +83,8 @@ inline std::string OpCodeToString(Opcode code)
             return "LOAD_CONSOLE";
         case Opcode::RETURN:
             return "RETURN";
+        case Opcode::LOAD_BOOL:
+            return "LOAD_BOOL";
         default:
             return "UNKNOWN";
     }
@@ -92,6 +95,9 @@ enum class BoolOperator
     EQUALS,
     GREATER,
     LESS,
+
+    OR,
+    AND,
 };
 
 struct Instruction
@@ -104,11 +110,14 @@ struct Instruction
     std::vector<std::string> parameters;
     BoolOperator boolop;
     size_t line;
-    std::string propName = "";
+    std::string property = "";
+    bool boolLiteralValue;
 
     explicit Instruction(Opcode op) : op(op) {}
     
     Instruction(Opcode op, size_t index) : op(op), index(index)  {}
+
+    Instruction(Opcode op, bool boolLiteralValue) : op(op), boolLiteralValue(boolLiteralValue)  {}
     
     Instruction(Opcode op, int argc) : op(op), argc(argc) {}
     

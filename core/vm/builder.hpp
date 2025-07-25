@@ -16,6 +16,8 @@ public:
     void createCall(size_t argc);
     void createPrint();
 
+    void createBoolLiteral(bool value);
+
     void createStore(const std::string& name);
     void createLoad(const std::string& name);
     void createAssign(const std::string& name);
@@ -35,6 +37,8 @@ public:
     void createEquals();
     void createGreaterThan();
     void createLessThan();
+    void createOr();
+    void createAnd();
 
     void createJump(size_t line);
     

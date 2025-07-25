@@ -44,6 +44,7 @@ private:
     void genMemberAccess(std::shared_ptr<AST::MemberExprType> expr);
     void genNumber(std::shared_ptr<AST::NumericLiteralType> num);
     void genString(std::shared_ptr<AST::StringLiteralType> string);
+    void genBoolean(std::shared_ptr<AST::BoolLiteralType> boolean);
     void genIdent(std::shared_ptr<AST::IdentifierType> ident);
     void genCall(std::shared_ptr<AST::CallExprType> call);
     void genBinExpr(std::shared_ptr<AST::BinaryExprType> expr);

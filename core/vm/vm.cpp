@@ -102,7 +102,23 @@ Signal Machine::run()
                     break;
                 }
 
-                throw std::runtime_error("Can only multiply numbers");
+                if (a->type == ValueType::String)
+                {
+                    std::ostringstream stream;
+
+                    int len = (int)b->toNum();
+                    std::string string = a->toString();
+
+                    for (int i = 0; i < len; ++i)
+                    {
+                        stream << string;
+                    }
+
+                    push(std::make_shared<StringVal>(stream.str()));
+                    break;
+                }
+
+                throw std::runtime_error("Can only multiply numbers and strings");
             }
             case Opcode::DIV:
             {
@@ -189,7 +205,7 @@ Signal Machine::run()
                     break;
                 }
 
-                throw std::runtime_error("Cannot call a value that is not a function");
+                throw std::runtime_error("Cannot call a value that is not a function: " + fn->toString());
                 break;
             }
             case Opcode::STORE:
@@ -233,26 +249,46 @@ Signal Machine::run()
                     }
                     case BoolOperator::GREATER:
                     {
-                        auto top = pop();
-                        if (top->type != ValueType::Number)
+                        auto left = pop();
+                        auto right = pop();
+
+                        if (left->type != ValueType::Number)
                         {
                             throw std::runtime_error("Can only use '>' on numbers");
                         }
 
-                        push(std::make_shared<BooleanVal>(top->toNum() > pop()->toNum()));
-
+                        push(std::make_shared<BooleanVal>(left->toNum() > right->toNum()));
                         break;
                     }
                     case BoolOperator::LESS:
                     {
-                        auto top = pop();
-                        if (top->type != ValueType::Number)
+                        auto left = pop();
+                        auto right = pop();
+
+                        if (left->type != ValueType::Number)
                         {
                             throw std::runtime_error("Can only use '<' on numbers");
                         }
 
-                        push(std::make_shared<BooleanVal>(top->toNum() < pop()->toNum()));
-
+                        push(std::make_shared<BooleanVal>(left->toNum() < right->toNum()));
+                        break;
+                    }
+                    case BoolOperator::AND:
+                    {
+                        auto left = pop();
+                        auto right = pop();
+                        
+                        push(std::make_shared<BooleanVal>(left->toBool() && right->toBool()));
+                        
+                        break;
+                    }
+                    case BoolOperator::OR:
+                    {
+                        auto left = pop();
+                        auto right = pop();
+                        
+                        push(std::make_shared<BooleanVal>(left->toBool() || right->toBool()));
+                        
                         break;
                     }
 
@@ -288,7 +324,7 @@ Signal Machine::run()
             }
             case Opcode::ACCESS_PROPERTY:
             {
-                std::string key = instr->propName;
+                std::string key = instr->property;
 
                 if (key.empty())
                 {
@@ -298,6 +334,13 @@ Signal Machine::run()
 
                 auto object = pop();
                 push(object->properties[key]);
+
+                break;
+            }
+            case Opcode::LOAD_BOOL:
+            {
+                push(std::make_shared<BooleanVal>(instr->boolLiteralValue));
+                break;
             }
             case Opcode::HALT:
                 return Signal();

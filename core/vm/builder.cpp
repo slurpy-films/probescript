@@ -165,6 +165,21 @@ void ByteCodeBuilder::endProbe(std::string probeName)
     m_instructions.push_back(std::make_shared<Instruction>(probeName, Opcode::MAKE_PROBE, prbInstructions));
 }
 
+void ByteCodeBuilder::createBoolLiteral(bool value)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::LOAD_BOOL, value));
+}
+
+void ByteCodeBuilder::createOr()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::OR));
+}
+
+void ByteCodeBuilder::createAnd()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::AND));
+}
+
 void ByteCodeBuilder::createNegate()
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::NEGATE));
@@ -192,7 +207,10 @@ void ByteCodeBuilder::createLoadConsole(std::string name)
 
 void ByteCodeBuilder::createMemberAccess(std::string property)
 {
-    m_instructions.push_back(std::make_shared<Instruction>(Opcode::ACCESS_PROPERTY, property));
+    auto instr = std::make_shared<Instruction>(Opcode::ACCESS_PROPERTY);
+
+    instr->property = property;
+    m_instructions.push_back(instr);
 }
 
 size_t ByteCodeBuilder::getInstructionLength()

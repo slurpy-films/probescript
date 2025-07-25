@@ -63,6 +63,9 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ProbeDeclaration:
             genProbe(std::static_pointer_cast<AST::ProbeDeclarationType>(node));
             break;
+        case AST::NodeType::BoolLiteral:
+            genBoolean(std::static_pointer_cast<AST::BoolLiteralType>(node));
+            break;
 
         default:
             throw std::runtime_error("Unknown AST node type");
@@ -82,6 +85,7 @@ void Compiler::genString(std::shared_ptr<AST::StringLiteralType> string)
 void Compiler::genCall(std::shared_ptr<AST::CallExprType> call)
 {
     gen(call->calee); // The calee is furthest down the stack
+
     for (auto& arg : call->args)
     {
         gen(arg);
@@ -90,9 +94,14 @@ void Compiler::genCall(std::shared_ptr<AST::CallExprType> call)
     builder->createCall(call->args.size());
 }
 
+void Compiler::genBoolean(std::shared_ptr<AST::BoolLiteralType> boolean)
+{
+    builder->createBoolLiteral(boolean->value);
+}
+
 void Compiler::genReturn(std::shared_ptr<AST::ReturnStmtType> returnStmt)
 {
-    gen(returnStmt->val),
+    gen(returnStmt->val);
 
     builder->createReturn();
 }
@@ -192,6 +201,14 @@ void Compiler::genBinExpr(std::shared_ptr<AST::BinaryExprType> expr)
     else if (op == "<")
     {
         builder->createLessThan();
+    }
+    else if (op == "&&")
+    {
+        builder->createAnd();
+    }
+    else if (op == "||")
+    {
+        builder->createOr();
     }
     else
     {
