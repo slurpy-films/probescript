@@ -5,7 +5,7 @@
 
 ![C++ CI](https://github.com/slurpy-films/probescript/actions/workflows/build.yml/badge.svg)
 
-**Probescript** is a statically-typed programming language designed for building complex systems through a unique modular architecture centered around **probes**.
+**Probescript** is a statically-typed programming language designed for building complex systems through a modular architecture centered around **probes**.
 
 ---
 

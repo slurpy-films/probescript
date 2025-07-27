@@ -42,6 +42,7 @@ private:
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
     void genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr);
+    void genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr);
     void genMemberAccess(std::shared_ptr<AST::MemberExprType> expr);
     void genNumber(std::shared_ptr<AST::NumericLiteralType> num);
     void genString(std::shared_ptr<AST::StringLiteralType> string);

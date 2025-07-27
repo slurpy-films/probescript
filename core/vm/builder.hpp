@@ -26,6 +26,8 @@ public:
     void createSub();
     void createMul();
     void createDiv();
+
+    void createPop();
     
     void createLoadGlobal(std::string globalName);
     void createLoadConsole(std::string name = "");

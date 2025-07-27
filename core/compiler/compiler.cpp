@@ -69,6 +69,9 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ForStmt:
             genFor(std::static_pointer_cast<AST::ForStmtType>(node));
             break;
+        case AST::NodeType::UnaryPostFix:
+            genUnaryPostfix(std::static_pointer_cast<AST::UnaryPostFixType>(node));
+            break;
 
         default:
             throw std::runtime_error("Unknown AST node type");
@@ -407,8 +410,6 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
     }
     
     size_t loopStart = builder->getInstructionLength();
-    builder->startScope();
-
     std::vector<size_t> jumpIndexes;
 
     for (const auto& cond : forStmt->conditions)
@@ -417,6 +418,8 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
         jumpIndexes.push_back(builder->getInstructionLength());
         builder->createJumpIfFalse(0);
     }
+
+    builder->startScope();
 
     for (const auto& stmt : forStmt->body)
     {
@@ -431,11 +434,41 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
     builder->endScope();
     builder->createJump(loopStart);
 
-    builder->endScope();
     for (const size_t& index : jumpIndexes)
     {
         builder->patchJumpIfFalse(index, builder->getInstructionLength());
     }
+
+    builder->endScope();
+}
+
+void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)
+{
+    if (unaryExpr->op != "++" && unaryExpr->op != "--")
+    {
+        throw std::runtime_error("Unknown unary operator");
+    }
+
+    gen(unaryExpr->assigne);
+    builder->createNumber(unaryExpr->op == "++" ? 1 : -1);
+    builder->createAdd();
+
+    if (unaryExpr->assigne->kind == AST::NodeType::Identifier)
+    {
+        std::string ident = std::static_pointer_cast<AST::IdentifierType>(unaryExpr->assigne)->symbol;
+
+        builder->createAssign(ident);
+        builder->createPop(); // Pop the result of the assignment as it will not be used
+        
+        builder->createNumber(unaryExpr->op == "++" ? 1 : -1);
+        builder->createLoad(ident);
+        builder->createSub();
+        return;
+    }
+
+    // TODO: Add support for member expressions
+    throw std::runtime_error(CustomError("Unknown unary expression assigne", "UnaryError", unaryExpr->assigne->token));
+    
 }
 
 std::vector<std::shared_ptr<VM::Instruction>> Compiler::getInstructions()

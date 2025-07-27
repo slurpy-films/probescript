@@ -92,6 +92,11 @@ void ByteCodeBuilder::patchJumpIfFalse(size_t i, size_t line)
     m_instructions[i]->line = line;
 }
 
+void ByteCodeBuilder::createPop()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::POP));
+}
+
 void ByteCodeBuilder::createGreaterThan()
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::GREATER));

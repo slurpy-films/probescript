@@ -238,6 +238,11 @@ Signal Machine::run()
                 push(std::make_shared<ProbeValue>(instr->name, instr->body, m_scope));
                 break;
             }
+            case Opcode::POP:
+            {
+                pop();
+                break;
+            }
             case Opcode::COMPARE:
             {
                 switch (instr->boolop)

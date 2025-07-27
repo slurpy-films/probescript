@@ -33,6 +33,7 @@ enum class Opcode
     RETURN,
     NEGATE,
     LOAD_BOOL,
+    POP,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -63,6 +64,8 @@ inline std::string OpCodeToString(Opcode code)
             return "MAKE_FUNCTION";
         case Opcode::MAKE_PROBE:
             return "MAKE_PROBE";
+        case Opcode::POP:
+            return "POP";
         case Opcode::COMPARE:
             return "COMPARE";
         case Opcode::JUMP_IF_FALSE:
