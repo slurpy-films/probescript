@@ -146,7 +146,7 @@ std::shared_ptr<AST::Stmt> Parser::parseForStmt()
     expect(Lexer::Semicolon, "Expected semicolon after condition in for loop");
 
     std::vector<std::shared_ptr<AST::Expr>> update;
-    while (at().type != Lexer::Semicolon && at().type != Lexer::END)
+    while (at().type != Lexer::ClosedParen && at().type != Lexer::END)
     {
         update.push_back(parseExpr());
         if (at().type == Lexer::Comma) eat();

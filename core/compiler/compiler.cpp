@@ -406,8 +406,8 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
         gen(stmt);
     }
     
-    builder->startScope();
     size_t loopStart = builder->getInstructionLength();
+    builder->startScope();
 
     std::vector<size_t> jumpIndexes;
 
@@ -428,11 +428,10 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
         gen(update);
     }
 
+    builder->endScope();
     builder->createJump(loopStart);
 
     builder->endScope();
-    builder->endScope();
-
     for (const size_t& index : jumpIndexes)
     {
         builder->patchJumpIfFalse(index, builder->getInstructionLength());
