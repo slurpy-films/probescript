@@ -291,6 +291,32 @@ Signal Machine::run()
                         
                         break;
                     }
+                    case BoolOperator::GREATER_THAN_OR_EQUAL_TO:
+                    {
+                        auto left = pop();
+                        auto right = pop();
+
+                        if (left->type != ValueType::Number)
+                        {
+                            throw std::runtime_error("Can only use '>=' on numbers");
+                        }
+
+                        push(std::make_shared<BooleanVal>(left->toNum() >= right->toNum()));
+                        break;
+                    }
+                    case BoolOperator::LESS_THAN_OR_EQUAL_TO:
+                    {
+                        auto left = pop();
+                        auto right = pop();
+
+                        if (left->type != ValueType::Number)
+                        {
+                            throw std::runtime_error("Can only use '<=' on numbers");
+                        }
+
+                        push(std::make_shared<BooleanVal>(left->toNum() <= right->toNum()));
+                        break;
+                    }
 
                     default:
                         throw std::runtime_error("Unknown comparison operator");

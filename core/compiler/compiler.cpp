@@ -66,6 +66,9 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::BoolLiteral:
             genBoolean(std::static_pointer_cast<AST::BoolLiteralType>(node));
             break;
+        case AST::NodeType::ForStmt:
+            genFor(std::static_pointer_cast<AST::ForStmtType>(node));
+            break;
 
         default:
             throw std::runtime_error("Unknown AST node type");
@@ -209,6 +212,14 @@ void Compiler::genBinExpr(std::shared_ptr<AST::BinaryExprType> expr)
     else if (op == "||")
     {
         builder->createOr();
+    }
+    else if (op == "<=")
+    {
+        builder->createLessThanOrEqualTo();
+    }
+    else if (op == ">=")
+    {
+        builder->createGreaterThanOrEqualTo();
     }
     else
     {
@@ -382,6 +393,49 @@ void Compiler::genAssign(std::shared_ptr<AST::AssignmentExprType> assign)
     else
     {
         throw std::runtime_error(CustomError("Unknown assignment operator", "AssignError", assign->token));
+    }
+}
+
+void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
+{
+    // Parent scope - holds the variables declared in the for-loop declarations
+    builder->startScope();
+
+    for (const auto& stmt : forStmt->declarations)
+    {
+        gen(stmt);
+    }
+    
+    builder->startScope();
+    size_t loopStart = builder->getInstructionLength();
+
+    std::vector<size_t> jumpIndexes;
+
+    for (const auto& cond : forStmt->conditions)
+    {
+        gen(cond);
+        jumpIndexes.push_back(builder->getInstructionLength());
+        builder->createJumpIfFalse(0);
+    }
+
+    for (const auto& stmt : forStmt->body)
+    {
+        gen(stmt);
+    }
+
+    for (const auto& update : forStmt->updates)
+    {
+        gen(update);
+    }
+
+    builder->createJump(loopStart);
+
+    builder->endScope();
+    builder->endScope();
+
+    for (const size_t& index : jumpIndexes)
+    {
+        builder->patchJumpIfFalse(index, builder->getInstructionLength());
     }
 }
 

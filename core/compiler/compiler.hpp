@@ -37,6 +37,7 @@ private:
     void genWhile(std::shared_ptr<AST::WhileStmtType> stmt);
     void genReturn(std::shared_ptr<AST::ReturnStmtType> stmt);
     void genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe);
+    void genFor(std::shared_ptr<AST::ForStmtType> forStmt);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);

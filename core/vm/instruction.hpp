@@ -96,6 +96,9 @@ enum class BoolOperator
     GREATER,
     LESS,
 
+    LESS_THAN_OR_EQUAL_TO,
+    GREATER_THAN_OR_EQUAL_TO,
+
     OR,
     AND,
 };

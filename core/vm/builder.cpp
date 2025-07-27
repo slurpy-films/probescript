@@ -180,6 +180,16 @@ void ByteCodeBuilder::createAnd()
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::AND));
 }
 
+void ByteCodeBuilder::createGreaterThanOrEqualTo()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::GREATER_THAN_OR_EQUAL_TO));
+}
+
+void ByteCodeBuilder::createLessThanOrEqualTo()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::LESS_THAN_OR_EQUAL_TO));
+}
+
 void ByteCodeBuilder::createNegate()
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::NEGATE));

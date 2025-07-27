@@ -37,6 +37,8 @@ public:
     void createEquals();
     void createGreaterThan();
     void createLessThan();
+    void createGreaterThanOrEqualTo();
+    void createLessThanOrEqualTo();
     void createOr();
     void createAnd();
 
