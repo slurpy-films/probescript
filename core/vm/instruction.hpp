@@ -9,17 +9,33 @@ namespace Probescript::VM
 
 enum class Opcode
 {
+    // Load a constant at 'index' index
     LOAD_CONST,
+
+    // Debug print instruction - this is never used by the compiler
     PRINT,
+
+    // Arithmetic instructions - perform operations onn the two top items of the stack
     ADD,
     SUB,
     MUL,
     DIV,
+
+    // Stop the VM and return prematurly
     HALT,
+
+    // Call the top of the stack after argc arguments have been popped
     CALL,
+
+    // Store the top of the stack as 'name' in the current scope
     STORE,
+
+    // Load 'name' from the current scope
     LOAD,
+
+    // Make a function with instruction->parameters parameters and instruction->body body
     MAKE_FUNCTION,
+    
     MAKE_PROBE,
     COMPARE,
     JUMP_IF_FALSE,
@@ -27,7 +43,20 @@ enum class Opcode
     END_SCOPE,
     JUMP,
     ASSIGN,
+
+    // Create an empty object
+    CREATE_OBJECT,
+
+    // ACCESS_PROPERTY:
+    // key: instruction->property (or top of stack)
+    // object: top of stack
     ACCESS_PROPERTY,
+
+    // ASSIGN_PROPERTY:
+    // key: instruction->property (or top of stack)
+    // new_value: top of stack
+    // object: top of stack
+    ASSIGN_PROPERTY,
     LOAD_GLOBAL,
     LOAD_CONSOLE, // Special instruction for loading a console property like println
     RETURN,

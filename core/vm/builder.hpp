@@ -32,7 +32,9 @@ public:
     void createLoadGlobal(std::string globalName);
     void createLoadConsole(std::string name = "");
 
+    void createObject();
     void createMemberAccess(std::string prop = "");
+    void createMemberAssign(std::string prop = "");
 
     void createReturn();
 
@@ -66,6 +68,7 @@ public:
 
     void set(size_t index, std::shared_ptr<Instruction> instr);
 
+    size_t getVarCounter(); // Get a unique number
     size_t getInstructionLength();
 
     std::vector<std::shared_ptr<Instruction>> getInstructions();
@@ -79,6 +82,8 @@ private:
 
     // Since the JUMP_IF_FALSE instruction increments the instruction pointer instead of setting it, we need to keep track of the line number
     std::vector<size_t> m_ifPatchStack;
+
+    size_t m_couter = 0;
 
     template <typename T, typename... Args>
     std::shared_ptr<T> mk(Args&&... args)

@@ -153,15 +153,6 @@ struct BooleanVal : public Value
         : Value(ValueType::Boolean), boolean(val) {}
 };
 
-struct ObjectVal : public Value
-{
-    ObjectVal(std::unordered_map<std::string, ValuePtr> properties = {})
-        : Value(ValueType::Object)
-    {
-        this->properties = properties;
-    }
-};
-
 struct NullVal : public Value
 {
     NullVal()
@@ -296,6 +287,81 @@ struct ProbeValue : public Value
 
     ProbeValue(std::string name, std::vector<std::shared_ptr<Instruction>> body, ScopePtr scope)
         : Value(ValueType::Probe), name(name), body(body), scope(scope) {}
+};
+
+struct ObjectVal : public Value, std::enable_shared_from_this<ObjectVal>
+{
+private:
+    std::string objectToString(ValuePtr prop, int depth = 0) const
+    {
+        if (depth > 3) return "[Object]"; // Prevent infinite recursion
+        
+        if (!prop) return "null";
+        
+        switch (prop->type)
+        {
+            case ValueType::Object:
+            {
+                auto obj = std::static_pointer_cast<ObjectVal>(prop);
+                if (obj->properties.empty()) return "{}";
+                
+                std::ostringstream stream;
+                std::ostringstream tabsStream;
+                for (int _ = 0; _ < depth; ++_)
+                {
+                    tabsStream << "    ";
+                }
+                std::string tabs = tabsStream.str();
+
+                stream << "\n" << tabs << "{";
+                
+                bool first = true;
+                for (const auto& [key, value] : obj->properties)
+                {
+                    if (!first) stream << ", ";
+                    stream << "\n" << tabs << "    ";
+                    stream << key << ": " << objectToString(value, depth + 1);
+                    first = false;
+                }
+                
+                stream << "\n" <<  tabs << "}";
+                return stream.str();
+            }
+            case ValueType::Array:
+            {
+                auto arr = std::static_pointer_cast<ArrayVal>(prop);
+                if (arr->items.empty()) return "[]";
+                
+                std::ostringstream stream;
+                stream << "[ ";
+                
+                for (size_t i = 0; i < arr->items.size(); ++i)
+                {
+                    if (i > 0) stream << ", ";
+                    stream << objectToString(arr->items[i], depth + 1);
+                }
+                
+                stream << " ]";
+                return stream.str();
+            }
+            case ValueType::String:
+                return "\"" + prop->toString() + "\"";
+            default:
+                return prop->toString();
+        }
+    }
+
+public:
+    std::string toString() const override
+    {
+        return objectToString(std::const_pointer_cast<ObjectVal>(shared_from_this()));
+    }
+
+    ObjectVal(std::unordered_map<std::string, ValuePtr> properties = {})
+        : Value(ValueType::Object)
+    {
+        this->properties = properties;
+    }
 };
 
 } // namespace Probescript::VM

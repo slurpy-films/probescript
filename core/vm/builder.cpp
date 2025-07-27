@@ -233,6 +233,25 @@ void ByteCodeBuilder::createMemberAccess(std::string property)
     m_instructions.push_back(instr);
 }
 
+void ByteCodeBuilder::createMemberAssign(std::string property)
+{
+    auto instr = std::make_shared<Instruction>(Opcode::ASSIGN_PROPERTY);
+
+    instr->property = property;
+    m_instructions.push_back(instr);
+}
+
+void ByteCodeBuilder::createObject()
+{
+    static auto instruction = std::make_shared<Instruction>(Opcode::CREATE_OBJECT);
+    m_instructions.push_back(instruction);
+}
+
+size_t ByteCodeBuilder::getVarCounter()
+{
+    return ++m_couter;
+}
+
 size_t ByteCodeBuilder::getInstructionLength()
 {
     return m_instructions.size();

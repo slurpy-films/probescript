@@ -75,6 +75,12 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ArrowFunction:
             genArrowFn(std::static_pointer_cast<AST::ArrowFunctionType>(node));
             break;
+        case AST::NodeType::MemberAssignment:
+            genMemberAssign(std::static_pointer_cast<AST::MemberAssignmentType>(node));
+            break;
+        case AST::NodeType::MapLiteral:
+            genMapLiteral(std::static_pointer_cast<AST::MapLiteralType>(node));
+            break;
 
         default:
             throw std::runtime_error("Unknown AST node type");
@@ -113,6 +119,33 @@ void Compiler::genReturn(std::shared_ptr<AST::ReturnStmtType> returnStmt)
     gen(returnStmt->val);
 
     builder->createReturn();
+}
+
+void Compiler::genMemberAssign(std::shared_ptr<AST::MemberAssignmentType> assign)
+{
+    // The object has to be at the bottom of the stack
+    gen(assign->object);
+    gen(assign->newvalue);
+
+    std::string property;
+    if (assign->computed)
+    {
+        gen(assign->property);
+        property = ""; // If the VM detects an empty property, it will assume the member expression is computed
+    }
+    else
+    {
+        property = std::static_pointer_cast<AST::IdentifierType>(assign->property)->symbol;
+    }
+    
+    if (assign->op == "=")
+    {
+        builder->createMemberAssign(property);
+    }
+    else
+    {
+        throw std::runtime_error(CustomError("Unknown assignment operator", "AssignError", assign->token));
+    }
 }
 
 void Compiler::genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe)
@@ -327,6 +360,23 @@ void Compiler::genVarDecl(std::shared_ptr<AST::VarDeclarationType> decl)
     builder->createStore(decl->identifier);
 }
 
+void Compiler::genMapLiteral(std::shared_ptr<AST::MapLiteralType> map)
+{
+    std::string tempMapName = "__tempMap__" + std::to_string(builder->getVarCounter());
+    builder->createObject();
+    builder->createStore(tempMapName);
+
+    for (const auto& prop : map->properties)
+    {
+        builder->createLoad(tempMapName);
+        gen(prop->val);
+        builder->createMemberAssign(prop->key);
+        builder->createPop(); // Pop the member assignment result as we don't really need it
+    }
+
+    builder->createLoad(tempMapName);
+}
+
 void Compiler::genIf(std::shared_ptr<AST::IfStmtType> ifStmt)
 {
     gen(ifStmt->condition);
@@ -497,7 +547,6 @@ void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)
 
     // TODO: Add support for member expressions
     throw std::runtime_error(CustomError("Unknown unary expression assigne", "UnaryError", unaryExpr->assigne->token));
-    
 }
 
 std::vector<std::shared_ptr<VM::Instruction>> Compiler::getInstructions()

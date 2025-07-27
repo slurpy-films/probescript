@@ -38,9 +38,11 @@ private:
     void genReturn(std::shared_ptr<AST::ReturnStmtType> stmt);
     void genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe);
     void genFor(std::shared_ptr<AST::ForStmtType> forStmt);
+    void genClass(std::shared_ptr<AST::ClassDefinitionType> cls);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
+    void genMemberAssign(std::shared_ptr<AST::MemberAssignmentType> memberAssign);
     void genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr);
     void genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr);
     void genMemberAccess(std::shared_ptr<AST::MemberExprType> expr);
@@ -51,6 +53,7 @@ private:
     void genCall(std::shared_ptr<AST::CallExprType> call);
     void genBinExpr(std::shared_ptr<AST::BinaryExprType> expr);
     void genArrowFn(std::shared_ptr<AST::ArrowFunctionType> arrowFn);
+    void genMapLiteral(std::shared_ptr<AST::MapLiteralType> map);
 };
 
 } // namespace Probescript

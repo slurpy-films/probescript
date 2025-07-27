@@ -373,9 +373,32 @@ Signal Machine::run()
 
                 break;
             }
+            case Opcode::ASSIGN_PROPERTY:
+            {
+                std::string key = instr->property;
+
+                if (key.empty()) // If the key is empty, we are working with a computed property
+                {
+                    auto top = pop();
+                    key = top->toString();
+                }
+
+                auto value = pop();
+                auto object = pop();
+                object->properties[key] = value;
+
+                push(object->properties[key]);
+
+                break;
+            }
             case Opcode::LOAD_BOOL:
             {
                 push(std::make_shared<BooleanVal>(instr->boolLiteralValue));
+                break;
+            }
+            case Opcode::CREATE_OBJECT:
+            {
+                push(std::make_shared<ObjectVal>()); // Simply push an empty object
                 break;
             }
             case Opcode::HALT:
