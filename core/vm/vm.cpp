@@ -275,8 +275,8 @@ Signal Machine::run()
                     }
                     case BoolOperator::AND:
                     {
-                        auto left = pop();
                         auto right = pop();
+                        auto left = pop();
                         
                         push(std::make_shared<BooleanVal>(left->toBool() && right->toBool()));
                         
