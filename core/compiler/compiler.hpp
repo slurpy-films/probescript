@@ -50,6 +50,7 @@ private:
     void genIdent(std::shared_ptr<AST::IdentifierType> ident);
     void genCall(std::shared_ptr<AST::CallExprType> call);
     void genBinExpr(std::shared_ptr<AST::BinaryExprType> expr);
+    void genArrowFn(std::shared_ptr<AST::ArrowFunctionType> arrowFn);
 };
 
 } // namespace Probescript

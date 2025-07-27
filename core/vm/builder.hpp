@@ -37,6 +37,7 @@ public:
     void createReturn();
 
     void createEquals();
+    void createNotEquals();
     void createGreaterThan();
     void createLessThan();
     void createGreaterThanOrEqualTo();

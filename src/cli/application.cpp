@@ -85,7 +85,7 @@ void Application::run()
         repl.start();
         return;
     }
-    else if (m_command == "vm")
+    else if (m_command == "run")
     {
         std::vector<std::shared_ptr<VM::Instruction>> instructions;
         std::vector<VM::ValuePtr> constants;
@@ -147,61 +147,6 @@ void Application::run()
             exit(1);
         }
     }
-    else if (m_command == "run")
-    {
-        if (m_args.empty())
-        {
-            std::cerr << "Run command expects 1 argument, 0 given";
-            exit(1);
-        }
-
-        fs::path fileName(m_args[0]);
-        try
-        {
-            Parser parser;
-            std::pair<std::unordered_map<std::string, fs::path>, Values::Val> indexedPair = ModuleIndexer::indexModules(fileName);
-            EnvPtr env = std::make_shared<Env>();
-
-            if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
-            {
-                fileName = fileName / indexedPair.second->properties["main"]->toString();
-            }
-
-            std::ifstream stream(fileName);
-            std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-
-            std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
-
-            g_currentCwd = std::filesystem::absolute(fileName).parent_path();
-
-            context->filename = std::filesystem::absolute(fileName).string();
-            context->file = file;
-            context->modules = indexedPair.first;
-            context->project = indexedPair.second;
-            
-            std::shared_ptr<AST::ProgramType> program = parser.parse(file, context);
-
-            std::shared_ptr<Typechecker::TypeEnv> typeenv = std::make_shared<Typechecker::TypeEnv>();
-
-
-            Typechecker::TC tc;
-            tc.checkProgram(program, typeenv, context);
-
-            Values::Val result = Interpreter::eval(program, env, context);
-
-            return;
-        }
-        catch (const std::runtime_error& err)
-        {
-            std::cerr << err.what();
-            exit(1);
-        }
-        catch (const ThrowException& err)
-        {
-            std::cerr << err.what();
-            exit(1);
-        }
-    }
     else if (m_command == "test")
     {
         if (m_args.empty())
@@ -257,10 +202,20 @@ void Application::run()
             exit(1);
         }
     }
-    else if (std::find(m_flags.begin(), m_flags.end(), "-h") != m_flags.end() || std::find(m_flags.begin(), m_flags.end(), "--help") != m_flags.end()) 
+    else if (
+        std::find(m_flags.begin(), m_flags.end(), "-h") != m_flags.end()
+        || std::find(m_flags.begin(), m_flags.end(), "--help") != m_flags.end()
+    )
+    { 
         showHelp(m_argv);
-    else if (std::find(m_flags.begin(), m_flags.end(), "-v") != m_flags.end() || std::find(m_flags.begin(), m_flags.end(), "--version") != m_flags.end()) 
+    }
+    else if (
+        std::find(m_flags.begin(), m_flags.end(), "-v") != m_flags.end()
+        || std::find(m_flags.begin(), m_flags.end(), "--version") != m_flags.end()
+    )
+    { 
         std::cout << "v" << __PROBESCRIPTVERSION__ << "\n";
+    }
     else if (m_command == "init") 
     {
         std::string name;

@@ -21,7 +21,7 @@
 #include "context.hpp"
 #include "prbtest.hpp"
 
-extern char __PROBESCRIPTVERSION__[];
+#include "VERSION.h"
 
 void showHelp(char* argv[]);
 

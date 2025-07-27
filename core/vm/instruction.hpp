@@ -96,6 +96,7 @@ inline std::string OpCodeToString(Opcode code)
 enum class BoolOperator
 {
     EQUALS,
+    NOT_EQUALS,
     GREATER,
     LESS,
 

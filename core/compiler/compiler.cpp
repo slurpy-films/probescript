@@ -72,6 +72,9 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::UnaryPostFix:
             genUnaryPostfix(std::static_pointer_cast<AST::UnaryPostFixType>(node));
             break;
+        case AST::NodeType::ArrowFunction:
+            genArrowFn(std::static_pointer_cast<AST::ArrowFunctionType>(node));
+            break;
 
         default:
             throw std::runtime_error("Unknown AST node type");
@@ -224,6 +227,10 @@ void Compiler::genBinExpr(std::shared_ptr<AST::BinaryExprType> expr)
     {
         builder->createGreaterThanOrEqualTo();
     }
+    else if (op == "!=")
+    {
+        builder->createNotEquals();
+    }
     else
     {
         throw std::runtime_error("Unknown binary operator: " + op);
@@ -252,6 +259,28 @@ void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn)
     builder->endFunction(paramNames);
 
     builder->createStore(fn->name);
+}
+
+void Compiler::genArrowFn(std::shared_ptr<AST::ArrowFunctionType> fn)
+{
+    builder->startFunction();
+
+    for (auto& stmt : fn->body)
+    {
+        gen(stmt);
+    }
+
+    std::vector<std::string> paramNames;
+    std::transform(
+        fn->params.begin(), fn->params.end(),
+        std::back_inserter(paramNames),
+        [](const std::shared_ptr<AST::VarDeclarationType>& param)
+        {
+            return param->identifier;
+        }
+    );
+
+    builder->endFunction(paramNames);
 }
 
 void Compiler::genMemberAccess(std::shared_ptr<AST::MemberExprType> member)
@@ -459,7 +488,7 @@ void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)
 
         builder->createAssign(ident);
         builder->createPop(); // Pop the result of the assignment as it will not be used
-        
+
         builder->createNumber(unaryExpr->op == "++" ? 1 : -1);
         builder->createLoad(ident);
         builder->createSub();

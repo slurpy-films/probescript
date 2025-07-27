@@ -175,6 +175,11 @@ void ByteCodeBuilder::createBoolLiteral(bool value)
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::LOAD_BOOL, value));
 }
 
+void ByteCodeBuilder::createNotEquals()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::NOT_EQUALS));
+}
+
 void ByteCodeBuilder::createOr()
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::COMPARE, BoolOperator::OR));

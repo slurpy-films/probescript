@@ -252,6 +252,11 @@ Signal Machine::run()
                         push(std::make_shared<BooleanVal>(pop()->compare(pop())));
                         break;
                     }
+                    case BoolOperator::NOT_EQUALS:
+                    {
+                        push(std::make_shared<BooleanVal>(!pop()->compare(pop())));
+                        break;
+                    }
                     case BoolOperator::GREATER:
                     {
                         auto left = pop();

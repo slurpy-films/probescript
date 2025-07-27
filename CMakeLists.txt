@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(
     src/cli
     src/standard_lib
+    src
     ${CMAKE_SOURCE_DIR}
     core
 )
