@@ -3,14 +3,7 @@
 #include <filesystem>
 #include <unordered_map>
 
-namespace Probescript::Values
-{
-    
-struct RuntimeVal;
-
-using Val = std::shared_ptr<RuntimeVal>;
-
-} // namespace Probescript::Values
+#include "core/vm/values.hpp"
 
 namespace Probescript
 {
@@ -30,7 +23,7 @@ struct Context
     std::string filename = "REPL";
     std::string file;
     std::unordered_map<std::string, std::filesystem::path> modules;
-    Values::Val project;
+    VM::ValuePtr project;
 };
 
 } // namespace Probescript

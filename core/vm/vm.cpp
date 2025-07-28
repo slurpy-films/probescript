@@ -1,8 +1,36 @@
 #include "vm.hpp"
 
+using namespace Probescript;
 using namespace Probescript::VM;
 
 extern std::unordered_map<std::string, ValuePtr> g_valueGlobals;
+
+ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> context)
+{
+    if (fn->type == ValueType::Function)
+    {
+        auto func = std::static_pointer_cast<FunctionValue>(fn);
+        auto scope = std::make_shared<Scope>(func->scope);
+
+        size_t size = func->parameters.size();
+        size_t argc = args.size();
+        for (size_t i = 0; i < size; ++i)
+        {
+            scope->declare(func->parameters[i], argc <= i ? std::make_shared<NullVal>() : args[i]);
+        }
+
+        auto constants = context->constants;
+        Machine vm(func->body, constants, scope);
+        return vm.run().val;
+    }
+
+    if (fn->type == ValueType::NativeFunction)
+    {
+        return std::static_pointer_cast<NativeFunctionVal>(fn)->call(args, context);
+    }
+
+    throw std::runtime_error("Cannot call a values that is not a function");
+}
 
 ValuePtr Machine::pop()
 {
@@ -155,7 +183,7 @@ Signal Machine::run()
 
                 if (fn->type == ValueType::NativeFunction)
                 {
-                    push(std::static_pointer_cast<NativeFunctionVal>(fn)->call(args));
+                    push(std::static_pointer_cast<NativeFunctionVal>(fn)->call(args, std::make_shared<FunctionContext>(m_consts)));
                     break;
                 }
 
@@ -409,5 +437,7 @@ Signal Machine::run()
         }
     }
 
-    return Signal();
+    auto s = Signal();
+    s.val = m_stack.empty() ? std::make_shared<NullVal>() : pop();
+    return s;
 }

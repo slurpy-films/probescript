@@ -148,7 +148,7 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
     },
     {
         "exit",
-        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
             exit(args.empty() ? 0 : args[0]->toNum());
             return std::make_shared<VM::NullVal>();
@@ -156,7 +156,7 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
     },
     {
         "keys",
-        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
             if (args.empty() || args[0]->type != VM::ValueType::Object) throw ThrowException(ArgumentError("Usage: keys(obj: Object)"));
 
@@ -172,7 +172,7 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
     },
     {
         "values",
-        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
             if (args.empty() || args[0]->type != VM::ValueType::Object) throw ThrowException(ArgumentError("Usage: values(obj: Object)"));
 
@@ -188,7 +188,7 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
     },
     {
         "copy",
-        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
             if (args.empty()) throw ThrowException(ArgumentError("Usage: copy(val: any)"));
 
@@ -197,7 +197,7 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
     },
     {
         "evaluate",
-        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
             if (args.empty()) throw ThrowException(ArgumentError("Usage: evaluate(val: string)"));
 
@@ -222,7 +222,7 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
     },
     {
         "sleep",
-        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+        std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
             // This function is disabled for now
             // When futures are added to the VM, this function will be re-added
@@ -239,20 +239,20 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
             std::regex regex(args[0]->toString());
             std::shared_ptr<VM::ObjectVal> obj = std::make_shared<VM::ObjectVal>();
 
-            obj->properties["test"] = std::make_shared<VM::NativeFunctionVal>([regex](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+            obj->properties["test"] = std::make_shared<VM::NativeFunctionVal>([regex](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
                 if (args.empty()) throw ThrowException(ArgumentError("Usage: regex.match(input: string)"));
 
                 return std::make_shared<VM::BooleanVal>(std::regex_match(args[0]->toString(), regex));
             });
 
-            obj->properties["search"] = std::make_shared<VM::NativeFunctionVal>([regex](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+            obj->properties["search"] = std::make_shared<VM::NativeFunctionVal>([regex](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
                 if (args.empty()) throw ThrowException(ArgumentError("Usage: regex.search(input: string)"));
                 return std::make_shared<VM::BooleanVal>(std::regex_search(args[0]->toString(), regex));
             });
 
-            obj->properties["replace"] = std::make_shared<VM::NativeFunctionVal>([regex](std::vector<VM::ValuePtr> args) -> VM::ValuePtr
+            obj->properties["replace"] = std::make_shared<VM::NativeFunctionVal>([regex](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
                 if (args.size() < 2) throw ThrowException(ArgumentError("Usage: regex.replace(input: string, replacement: string)"));
                 std::string result = std::regex_replace(args[0]->toString(), regex, args[1]->toString());

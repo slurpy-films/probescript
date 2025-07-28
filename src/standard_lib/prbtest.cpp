@@ -1,35 +1,37 @@
 #include "prbtest.hpp"
 
+#include "core/errors.hpp"
+
 using namespace Probescript;
 using namespace Probescript::Stdlib;
 using namespace Probescript::Stdlib::Prbtest;
 
 std::vector<TestCase> g_tests = {};
 
-Values::Val Prbtest::getValTestLib()
+VM::ValuePtr Prbtest::getValTestLib()
 {
-    return std::make_shared<Values::ObjectVal>(std::unordered_map<std::string, Values::Val>(
+    return std::make_shared<VM::ObjectVal>(std::unordered_map<std::string, VM::ValuePtr>(
     {
         {
             "assert",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
                 if (args.empty()) throw ThrowException(ArgumentError("Usage: assert(expression, message?: str)"));
                 if (!args[0]->toBool()) throw ThrowException(CustomError(args.size() < 2 ? "Assertion failed" : args[1]->toString(), "AssertError"));
-                return std::make_shared<Values::UndefinedVal>();
+                return std::make_shared<VM::NullVal>();
             })
         },
         {
             "test",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
                 if (args.size() < 2) throw ThrowException(ArgumentError("Usage: test(name: str, fn: function)"));
-                g_tests.push_back(TestCase(args[0]->toString(), [args]()
+                g_tests.push_back(TestCase(args[0]->toString(), [args, ctx]()
                 {
-                    Interpreter::evalCallWithFnVal(args[1], {}, std::make_shared<Env>());
+                    VM::call(args[1], {}, ctx);
                 }));
 
-                return std::make_shared<Values::UndefinedVal>();
+                return std::make_shared<VM::NullVal>();
             })
         }
     }));
@@ -61,7 +63,7 @@ void Prbtest::runTests(std::string file)
         {
             test.fn();
         }
-        catch(const ThrowException& e)
+        catch(const std::runtime_error& e)
         {
             messages += test.name + ": " + e.what();
             failed = true;

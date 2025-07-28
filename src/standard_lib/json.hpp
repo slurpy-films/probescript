@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/runtime/values.hpp"
-#include "core/env.hpp"
+#include "core/vm/values.hpp"
+
 #include "core/utils.hpp"
 #include "core/errors.hpp"
 #include "core/types.hpp"
@@ -34,11 +34,10 @@ struct Token
 class JSONParser
 {
 public:
-    JSONParser(std::string& file, EnvPtr env = std::make_shared<Env>()) : file(file), env(env) {}
-    Values::Val parse();
+    JSONParser(std::string& file) : file(file) {}
+    VM::ValuePtr parse();
 
 private:
-    EnvPtr env;
     std::string& file;
     std::vector<Token> tokens;
     bool tokenize();
@@ -51,22 +50,22 @@ private:
         return str.length() == 1 && isdigit(str[0]);
     }
 
-    inline Values::Val parseTokens() {
+    inline VM::ValuePtr parseTokens() {
         return parseValue();
     }
     
-    Values::Val parseValue();
+    VM::ValuePtr parseValue();
     
-    Values::Val parseObject();
+    VM::ValuePtr parseObject();
 
-    Values::Val parseArray();
+    VM::ValuePtr parseArray();
 
     inline Token eat() {
         return shift(tokens);
     }
 };
 
-Values::Val getValJsonModule();
+VM::ValuePtr getValJsonModule();
 Typechecker::TypePtr getTypeJsonModule();
 
 } // namespace Probescript::Stdlib::JSON

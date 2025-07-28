@@ -53,7 +53,7 @@ void Scope::init()
 {
     m_ready = true;
     
-    declare("print", std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
+    declare("print", std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> _ctx) -> ValuePtr
     {
         for (auto& arg : args)
         {

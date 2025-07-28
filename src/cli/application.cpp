@@ -101,7 +101,7 @@ void Application::run()
             try
             {
                 Parser parser;
-                std::pair<std::unordered_map<std::string, fs::path>, Values::Val> indexedPair = ModuleIndexer::indexModules(fileName);
+                std::pair<std::unordered_map<std::string, fs::path>, VM::ValuePtr> indexedPair = ModuleIndexer::indexModules(fileName);
 
                 if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
                 {
@@ -159,7 +159,7 @@ void Application::run()
         try
         {
             Parser parser;
-            std::pair<std::unordered_map<std::string, fs::path>, Values::Val> indexedPair = ModuleIndexer::indexModules(fileName);
+            std::pair<std::unordered_map<std::string, fs::path>, VM::ValuePtr> indexedPair = ModuleIndexer::indexModules(fileName);
             EnvPtr env = std::make_shared<Env>();
 
             if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())

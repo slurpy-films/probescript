@@ -6,7 +6,8 @@
 #include <regex>
 #include <algorithm>
 
-#include "core/runtime/values.hpp"
+#include "core/vm/values.hpp"
+#include "core/vm/vm.hpp"
 #include "core/runtime/interpreter.hpp"
 #include "core/utils.hpp"
 #include "core/types.hpp"
@@ -33,9 +34,8 @@ struct Response
     std::function<void(std::string, std::unordered_map<std::string, std::string>)> send;
 };
 
-Values::Val getValHttpModule();
+VM::ValuePtr getValHttpModule();
 Typechecker::TypePtr getTypeHttpModule();
-
 
 inline std::string trim(const std::string& str) {
     const auto start = str.find_first_not_of(" \t\r");

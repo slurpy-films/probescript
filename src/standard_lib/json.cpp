@@ -4,9 +4,9 @@ using namespace Probescript;
 using namespace Probescript::Stdlib;
 using namespace Probescript::Stdlib::JSON;
 
-Values::Val JSONParser::parse()
+VM::ValuePtr JSONParser::parse()
 {
-    if (tokenize()) return std::make_shared<Values::UndefinedVal>();
+    if (tokenize()) return std::make_shared<VM::NullVal>();
     return parseTokens();
 }
 
@@ -116,16 +116,16 @@ bool JSONParser::tokenize()
     return false;
 }
 
-Values::Val JSONParser::parseValue() {
+VM::ValuePtr JSONParser::parseValue() {
     switch (tokens[0].type) {
         case TokenType::String:
-            return std::make_shared<Values::StringVal>(eat().val);
+            return std::make_shared<VM::StringVal>(eat().val);
         case TokenType::Number:
-            return std::make_shared<Values::NumberVal>(eat().val);
+            return std::make_shared<VM::NumberVal>(std::stod(eat().val));
         case TokenType::OpenBrace:
             return parseObject();
         case TokenType::Boolean:
-            return std::make_shared<Values::BooleanVal>(eat().val == "true");
+            return std::make_shared<VM::BooleanVal>(eat().val == "true");
         case TokenType::OpenBracket:
             return parseArray();
         default:
@@ -133,14 +133,14 @@ Values::Val JSONParser::parseValue() {
     }
 }
 
-Values::Val JSONParser::parseObject()
+VM::ValuePtr JSONParser::parseObject()
 {
     eat();
-    std::shared_ptr<Values::ObjectVal> o = std::make_shared<Values::ObjectVal>();
+    std::shared_ptr<VM::ObjectVal> o = std::make_shared<VM::ObjectVal>();
     if (tokens[0].type == TokenType::ClosedBrace)
     {
         eat();
-        return std::make_shared<Values::ObjectVal>();
+        return std::make_shared<VM::ObjectVal>();
     }
 
     if (tokens[0].type != TokenType::String)
@@ -150,7 +150,7 @@ Values::Val JSONParser::parseObject()
     std::string key = eat().val;
 
     eat();
-    Values::Val val = parseValue();
+    VM::ValuePtr val = parseValue();
     o->properties[key] = val;
     while (tokens[0].type != TokenType::ClosedBrace)
     {
@@ -165,7 +165,7 @@ Values::Val JSONParser::parseObject()
         }
         std::string key = eat().val;
         eat();
-        Values::Val val = parseValue();
+        VM::ValuePtr val = parseValue();
         o->properties[key] = val;
     }
 
@@ -173,9 +173,9 @@ Values::Val JSONParser::parseObject()
     return o;
 }
 
-Values::Val JSONParser::parseArray() {
+VM::ValuePtr JSONParser::parseArray() {
     eat();
-    std::vector<Values::Val> items;
+    std::vector<VM::ValuePtr> items;
     items.push_back(parseValue());
     while (!tokens.empty() && tokens[0].type == TokenType::Comma) {
         eat();
@@ -187,29 +187,29 @@ Values::Val JSONParser::parseArray() {
     }
     eat();
 
-    return std::make_shared<Values::ArrayVal>(items);
+    return std::make_shared<VM::ArrayVal>(items);
 }
 
-Values::Val JSON::getValJsonModule()
+VM::ValuePtr JSON::getValJsonModule()
 {
     return
-    std::make_shared<Values::ObjectVal>(std::unordered_map<std::string, Values::Val>({
+    std::make_shared<VM::ObjectVal>(std::unordered_map<std::string, VM::ValuePtr>({
         {
             "parse",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
-                if (args.empty() || args[0]->type != Values::ValueType::String) throw ThrowException(ArgumentError("Usage: json.parse(input: str)"));
+                if (args.empty() || args[0]->type != VM::ValueType::String) throw ThrowException(ArgumentError("Usage: json.parse(input: str)"));
 
-                JSON::JSONParser parser(std::static_pointer_cast<Values::StringVal>(args[0])->string, env);
+                JSON::JSONParser parser(std::static_pointer_cast<VM::StringVal>(args[0])->string);
                 return parser.parse();
             })
         },
         {
             "to_string",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
                 if (args.empty()) throw ThrowException(ArgumentError("Usage: json.to_string(object)"));
-                return std::make_shared<Values::StringVal>(args[0]->toJSON());
+                return std::make_shared<VM::StringVal>(args[0]->toString());
             })
         }
     }));

@@ -4,9 +4,10 @@
 #include <vector>
 #include <functional>
 
-#include "core/runtime/values.hpp"
-#include "core/runtime/interpreter.hpp"
-#include "core/env.hpp"
+#include "core/vm/values.hpp"
+#include "core/vm/vm.hpp"
+
+#include "core/types.hpp"
 
 namespace Probescript::Stdlib::Prbtest
 {
@@ -21,7 +22,7 @@ struct TestCase
 };
 
 
-Values::Val getValTestLib();
+VM::ValuePtr getValTestLib();
 Typechecker::TypePtr getTypeTestLib();
 
 void runTests(std::string file);

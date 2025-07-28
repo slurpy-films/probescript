@@ -17,6 +17,8 @@
 namespace Probescript::VM
 {
 
+ValuePtr call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> context);
+
 enum class SignalType
 {
     Blank,
@@ -39,7 +41,7 @@ struct Signal
 static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::unordered_map<std::string, ValuePtr>({
     {
         "println",
-        std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
+        std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> ctx) -> ValuePtr
         {
             size_t len = args.size();
             for (size_t i = 0; i < len; ++i)
@@ -62,7 +64,7 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
     },
     {
         "print",
-        std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
+        std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> ctx) -> ValuePtr
         {
             size_t len = args.size();
             for (size_t i = 0; i < len; ++i)
@@ -84,7 +86,7 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
     },
     {
         "prompt",
-        std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args) -> ValuePtr
+        std::make_shared<NativeFunctionVal>([](std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> ctx) -> ValuePtr
         {
             for (auto& arg : args)
             {

@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <iomanip>
+#include <future>
 
 #include "instruction.hpp"
 
@@ -53,6 +54,7 @@ enum class ValueType
     NativeClass,
     Array,
     Probe,
+    Future,
 };
 
 struct Value
@@ -65,7 +67,7 @@ struct Value
 
     virtual std::string toString() const
     {
-        return "";
+        return "null";
     }
 
     virtual double toNum() const
@@ -214,16 +216,33 @@ struct StringVal : public Value
     }
 };
 
+struct FutureVal : public Value
+{
+    std::shared_future<ValuePtr> future;
+
+    FutureVal(std::shared_future<ValuePtr> future)
+        : Value(ValueType::Future), future(future) {}
+};
+
+struct FunctionContext
+{
+    std::vector<ValuePtr> constants;
+
+    FunctionContext(std::vector<ValuePtr> constants)
+        : constants(constants) {}
+};
+
 struct NativeFunctionVal : public Value
 {
-    std::function<ValuePtr(std::vector<ValuePtr>)> call;
+    using NativeFunction = std::function<ValuePtr(std::vector<ValuePtr>, std::shared_ptr<FunctionContext>)>;
+    NativeFunction call;
 
     std::string toString() const override
     {
         return "[function]";
     }
 
-    NativeFunctionVal(std::function<ValuePtr(std::vector<ValuePtr>)> call)
+    NativeFunctionVal(NativeFunction call)
         : Value(ValueType::NativeFunction), call(call) {}
 };
 
@@ -320,7 +339,7 @@ private:
                 {
                     if (!first) stream << ", ";
                     stream << "\n" << tabs << "    ";
-                    stream << key << ": " << objectToString(value, depth + 1);
+                    stream << '"' << key << '"' << ": " << objectToString(value, depth + 1);
                     first = false;
                 }
                 
@@ -352,6 +371,11 @@ private:
     }
 
 public:
+    bool hasProperty(std::string prop)
+    {
+        return properties.find(prop) != properties.end();
+    }
+
     std::string toString() const override
     {
         return objectToString(std::const_pointer_cast<ObjectVal>(shared_from_this()));

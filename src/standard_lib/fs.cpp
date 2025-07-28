@@ -3,20 +3,20 @@
 using namespace Probescript;
 using namespace Probescript::Stdlib;
 
-Values::Val Fs::getValFsModule()
+VM::ValuePtr Fs::getValFsModule()
 {
-    return std::make_shared<Values::ObjectVal>(std::unordered_map<std::string, Values::Val>(
+    return std::make_shared<VM::ObjectVal>(std::unordered_map<std::string, VM::ValuePtr>(
     {
         {
             "read_file",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
-                if (args.size() != 1 || args[0]->type != Values::ValueType::String)
+                if (args.size() != 1 || args[0]->type != VM::ValueType::String)
                 {
                     throw ThrowException(ArgumentError("readFile: Expected one string argument (file path)"));
                 }
 
-                fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<Values::StringVal>(args[0])->string);
+                fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<VM::StringVal>(args[0])->string);
 
                 if (!fs::exists(filePath))
                 {
@@ -40,20 +40,20 @@ Values::Val Fs::getValFsModule()
                 }
 
                 file.close();
-                return std::make_shared<Values::StringVal>(fileContent);
+                return std::make_shared<VM::StringVal>(fileContent);
         })
         },
         {
             "write_file",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
-                if (args.size() != 2 || args[0]->type != Values::ValueType::String || args[1]->type != Values::ValueType::String)
+                if (args.size() != 2 || args[0]->type != VM::ValueType::String || args[1]->type != VM::ValueType::String)
                 {
                     throw ThrowException(ArgumentError("writeFile: Expected two string arguments (path, content)"));
                 }
 
-                fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<Values::StringVal>(args[0])->string);
-                std::string content = std::static_pointer_cast<Values::StringVal>(args[1])->string;
+                fs::path filePath = g_currentCwd / fs::path(std::static_pointer_cast<VM::StringVal>(args[0])->string);
+                std::string content = std::static_pointer_cast<VM::StringVal>(args[1])->string;
 
                 std::ofstream file(filePath);
                 if (!file.is_open())
@@ -64,56 +64,56 @@ Values::Val Fs::getValFsModule()
                 file << content;
                 file.close();
 
-                return std::make_shared<Values::UndefinedVal>();
+                return std::make_shared<VM::NullVal>();
             }
         )
         },
         {
             "exists",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
-                if (args.size() != 1 || args[0]->type != Values::ValueType::String)
+                if (args.size() != 1 || args[0]->type != VM::ValueType::String)
                 {
                     throw ThrowException(ArgumentError("exists: Expected one string argument (path)"));
                 }
 
-                std::string path = std::static_pointer_cast<Values::StringVal>(args[0])->string;
-                return std::make_shared<Values::BooleanVal>(fs::exists(path));
+                std::string path = std::static_pointer_cast<VM::StringVal>(args[0])->string;
+                return std::make_shared<VM::BooleanVal>(fs::exists(path));
             })
         },
         {
             "is_directory",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
-                if (args.size() != 1 || args[0]->type != Values::ValueType::String)
+                if (args.size() != 1 || args[0]->type != VM::ValueType::String)
                 {
                     throw ThrowException(ArgumentError("isDirectory: Expected one string argument (path)"));
                 }
 
-                std::string path = std::static_pointer_cast<Values::StringVal>(args[0])->string;
-                return std::make_shared<Values::BooleanVal>(fs::is_directory(path));
+                std::string path = std::static_pointer_cast<VM::StringVal>(args[0])->string;
+                return std::make_shared<VM::BooleanVal>(fs::is_directory(path));
             })
         },
         {
             "list_dir",
-            std::make_shared<Values::NativeFnValue>([](std::vector<Values::Val> args, EnvPtr env) -> Values::Val
+            std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
             {
-                if (args.size() != 1 || args[0]->type != Values::ValueType::String)
+                if (args.size() != 1 || args[0]->type != VM::ValueType::String)
                 {
                     throw ThrowException(ArgumentError("listDir: Expected one string argument (path)"));
                 }
 
-                std::string path = std::static_pointer_cast<Values::StringVal>(args[0])->string;
+                std::string path = std::static_pointer_cast<VM::StringVal>(args[0])->string;
 
                 if (!fs::is_directory(path))
                 {
                     throw ThrowException(ArgumentError("Provided path is not a directory: " + path));
                 }
 
-                auto array = std::make_shared<Values::ArrayVal>();
+                auto array = std::make_shared<VM::ArrayVal>();
                 for (const auto& entry : fs::directory_iterator(path))
                 {
-                    array->items.push_back(std::make_shared<Values::StringVal>(entry.path().string()));
+                    array->items.push_back(std::make_shared<VM::StringVal>(entry.path().string()));
                 }
 
                 return array;

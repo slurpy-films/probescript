@@ -4,7 +4,7 @@
 #include <string>
 #include <fstream>
 
-#include "core/runtime/values.hpp"
+#include "core/vm/values.hpp"
 #include "core/types.hpp"
 #include "core/env.hpp"
 #include "core/errors.hpp"
@@ -16,7 +16,7 @@ extern fs::path g_currentCwd;
 namespace Probescript::Stdlib::Fs
 {
 
-Values::Val getValFsModule();
+VM::ValuePtr getValFsModule();
 Typechecker::TypePtr getTypeFsModule();
 
 } // namespace Probescript::Stdlib

@@ -12,7 +12,7 @@
 #include "core/runtime/interpreter.hpp"
 
 #include "core/vm/vm.hpp"
-#include "core/vm/builder.hpp"
+#include "core/vm/values.hpp"
 
 #include "core/compiler/compiler.hpp"
 

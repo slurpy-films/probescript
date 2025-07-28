@@ -745,13 +745,9 @@ TypePtr TC::checkArrowFunction(std::shared_ptr<AST::ArrowFunctionType> fn, TypeE
 
 TypePtr TC::checkImportStmt(std::shared_ptr<AST::ImportStmtType> stmt, TypeEnvPtr env, std::shared_ptr<Context> ctx)
 {
-    std::unordered_map<std::string, TypePtr> stdlib;
-    for (const auto& [key, pair] : g_stdlib)
-        stdlib[key] = pair.second;
-
-    if (stdlib.find(stmt->name) != stdlib.end())
+    if (g_typeStdlib.find(stmt->name) != g_typeStdlib.end())
     {
-        TypePtr lib = stdlib[stmt->name];
+        TypePtr lib = g_typeStdlib[stmt->name];
         if (!stmt->hasMember)
         {
             return env->declareVar(stmt->customIdent ? stmt->ident : stmt->name, lib, stmt->token);

@@ -1,16 +1,19 @@
 #pragma once
+
 #include <unordered_map>
 #include <string>
 #include <fstream>
 #include <filesystem>
 #include <unordered_set>
+
 #include "frontend/ast.hpp"
+#include "frontend/parser.hpp"
+
 #include "errors.hpp"
 #include "context.hpp"
-#include "frontend/parser.hpp"
 #include "types.hpp"
 
-extern std::unordered_map<std::string, std::pair<Probescript::Values::Val, Probescript::Typechecker::TypePtr>> g_stdlib;
+extern std::unordered_map<std::string, Probescript::Typechecker::TypePtr> g_typeStdlib;
 extern std::unordered_map<std::string, Probescript::Typechecker::TypePtr> g_typeGlobals;
 
 namespace fs = std::filesystem;

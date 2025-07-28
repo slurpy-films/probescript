@@ -7,9 +7,8 @@
 #include <chrono>
 #include <random>
 
-#include "core/runtime/values.hpp"
+#include "core/vm/values.hpp"
 #include "core/types.hpp"
-#include "core/env.hpp"
 #include "core/errors.hpp"
 
 #include "http.hpp"
