@@ -29,7 +29,7 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
         return std::static_pointer_cast<NativeFunctionVal>(fn)->call(args, context);
     }
 
-    throw std::runtime_error("Cannot call a values that is not a function");
+    throw std::runtime_error("Cannot call a value that is not a function");
 }
 
 ValuePtr Machine::pop()
@@ -234,6 +234,28 @@ Signal Machine::run()
                 }
 
                 throw std::runtime_error("Cannot call a value that is not a function: " + fn->toString());
+                break;
+            }
+            case Opcode::NEW:
+            {
+                std::vector<ValuePtr> args;
+
+                for (size_t i = 0; i < instr->argc; i++)
+                {
+                    args.push_back(pop());
+                };
+
+                std::reverse(args.begin(), args.end());
+
+                ValuePtr cls = pop();
+
+                if (cls->type == ValueType::NativeClass)
+                {
+                    push(std::static_pointer_cast<NativeClassVal>(cls)->call(args));
+                    break;
+                }
+
+                throw std::runtime_error("Cannot construct a value that is not a class: " + cls->toString());
                 break;
             }
             case Opcode::STORE:

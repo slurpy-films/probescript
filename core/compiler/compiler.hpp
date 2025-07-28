@@ -54,6 +54,7 @@ private:
     void genBinExpr(std::shared_ptr<AST::BinaryExprType> expr);
     void genArrowFn(std::shared_ptr<AST::ArrowFunctionType> arrowFn);
     void genMapLiteral(std::shared_ptr<AST::MapLiteralType> map);
+    void genNewExpr(std::shared_ptr<AST::NewExprType> expr);
 };
 
 } // namespace Probescript

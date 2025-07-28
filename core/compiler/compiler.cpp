@@ -81,9 +81,12 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::MapLiteral:
             genMapLiteral(std::static_pointer_cast<AST::MapLiteralType>(node));
             break;
-
+        case AST::NodeType::NewExpr:
+            genNewExpr(std::static_pointer_cast<AST::NewExprType>(node));
+            break;
+            
         default:
-            throw std::runtime_error("Unknown AST node type");
+            throw std::runtime_error("Unknown AST node type: " + std::to_string((int)node->kind));
     }
 }
 
@@ -101,12 +104,24 @@ void Compiler::genCall(std::shared_ptr<AST::CallExprType> call)
 {
     gen(call->calee); // The calee is furthest down the stack
 
-    for (auto& arg : call->args)
+    for (const auto& arg : call->args)
     {
         gen(arg);
     }
 
     builder->createCall(call->args.size());
+}
+
+void Compiler::genNewExpr(std::shared_ptr<AST::NewExprType> expr)
+{
+    gen(expr->constructor);
+
+    for (const auto& arg : expr->args)
+    {
+        gen(arg);
+    }
+
+    builder->createNew(expr->args.size());
 }
 
 void Compiler::genBoolean(std::shared_ptr<AST::BoolLiteralType> boolean)

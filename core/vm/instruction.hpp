@@ -58,11 +58,14 @@ enum class Opcode
     // object: top of stack
     ASSIGN_PROPERTY,
     LOAD_GLOBAL,
+
     LOAD_CONSOLE, // Special instruction for loading a console property like println
     RETURN,
     NEGATE,
     LOAD_BOOL,
-    POP,
+    POP, // Discard the top item of the stack
+
+    NEW,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -73,6 +76,8 @@ inline std::string OpCodeToString(Opcode code)
             return "LOAD_CONST";
         case Opcode::PRINT:
             return "PRINT";
+        case Opcode::NEW:
+            return "NEW";
         case Opcode::ADD:
             return "ADD";
         case Opcode::SUB:

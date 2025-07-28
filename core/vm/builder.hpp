@@ -13,7 +13,10 @@ class ByteCodeBuilder
 public:
     void createNumber(double num);
     void createString(const std::string& str);
+    
     void createCall(size_t argc);
+    void createNew(size_t argc);
+    
     void createPrint();
 
     void createBoolLiteral(bool value);

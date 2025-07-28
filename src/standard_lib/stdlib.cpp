@@ -204,5 +204,5 @@ std::unordered_map<std::string, VM::ValuePtr> g_valStdlib =
     }
 };
 
-// This will be removed when the lagacy interpreter is removed
+// This will be removed when the legacy interpreter is removed
 std::unordered_map<std::string, std::pair<Probescript::Values::Val, Probescript::Typechecker::TypePtr>> g_stdlib = {};

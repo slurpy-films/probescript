@@ -46,16 +46,8 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
             size_t len = args.size();
             for (size_t i = 0; i < len; ++i)
             {
-                auto arg = args[i];
-
-                if (arg->type == ValueType::Number)
-                {
-                    std::cout << arg->toNum() << (args[i + 1] ? " " : "");
-                }
-                else
-                {
-                    std::cout << arg->toString() << (args[i + 1] ? " " : "");
-                }
+                std::cout << args[i]->toString();
+                if (i + 1 < args.size()) std::cout << " ";
             }
 
             std::cout << '\n';
@@ -69,16 +61,8 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
             size_t len = args.size();
             for (size_t i = 0; i < len; ++i)
             {
-                auto arg = args[i];
-                
-                if (arg->type == ValueType::Number)
-                {
-                    std::cout << arg->toNum() << (args[i + 1] ? " " : "");
-                }
-                else
-                {
-                    std::cout << arg->toString() << (args[i + 1] ? " " : "");
-                }
+                std::cout << args[i]->toString();
+                if (i + 1 < args.size()) std::cout << " ";
             }
 
             return std::make_shared<NullVal>();
