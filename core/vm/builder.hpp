@@ -16,6 +16,8 @@ public:
     
     void createCall(size_t argc);
     void createNew(size_t argc);
+
+    void createLoadStdlib(const std::string& name);
     
     void createPrint();
 

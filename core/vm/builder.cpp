@@ -62,6 +62,11 @@ void ByteCodeBuilder::createNew(size_t argc)
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::NEW, static_cast<int>(argc)));
 }
 
+void ByteCodeBuilder::createLoadStdlib(const std::string& name)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::LOAD_STDLIB, name));
+}
+
 void ByteCodeBuilder::createPrint()
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::PRINT));

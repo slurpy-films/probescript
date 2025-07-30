@@ -3,6 +3,7 @@
 using namespace Probescript;
 
 extern std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals;
+extern std::unordered_map<std::string, VM::ValuePtr> g_valueStdlib;
 
 void Compiler::compile()
 {
@@ -84,7 +85,16 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::NewExpr:
             genNewExpr(std::static_pointer_cast<AST::NewExprType>(node));
             break;
-            
+        case AST::NodeType::ImportStmt:
+            genImport(std::static_pointer_cast<AST::ImportStmtType>(node));
+            break;
+        case AST::NodeType::BreakStmt:
+            genBreak(std::static_pointer_cast<AST::BreakStmtType>(node));
+            break;
+        case AST::NodeType::ContinueStmt:
+            genContinue(std::static_pointer_cast<AST::ContinueStmtType>(node));
+            break;
+
         default:
             throw std::runtime_error("Unknown AST node type: " + std::to_string((int)node->kind));
     }
@@ -161,6 +171,17 @@ void Compiler::genMemberAssign(std::shared_ptr<AST::MemberAssignmentType> assign
     {
         throw std::runtime_error(CustomError("Unknown assignment operator", "AssignError", assign->token));
     }
+}
+
+void Compiler::genImport(std::shared_ptr<AST::ImportStmtType> stmt)
+{
+    if (g_valueStdlib.find(stmt->name) == g_valueStdlib.end())
+    {
+        throw std::runtime_error(CustomError("Only standard library imports are availiable at this point", "ImportError", stmt->token));
+    }
+
+    builder->createLoadStdlib(stmt->name);
+    builder->createStore(stmt->customIdent ? stmt->ident : stmt->name);
 }
 
 void Compiler::genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe)
@@ -424,24 +445,88 @@ void Compiler::genIf(std::shared_ptr<AST::IfStmtType> ifStmt)
     }
 }
 
+void Compiler::enterLoop()
+{
+    m_breakPatchesStack.push_back(std::vector<size_t>());
+    m_continuePatchesStack.push_back(std::vector<size_t>());
+}
+
+void Compiler::exitLoop(size_t continueTarget, size_t breakTarget)
+{
+    std::cout << "Break: " << breakTarget << " Continue: " << continueTarget << "\n";
+    if (m_breakPatchesStack.empty() || m_continuePatchesStack.empty())
+    {
+        throw std::runtime_error("Internal compiler error");
+    }
+
+    for (size_t patchIndex : m_breakPatchesStack.back())
+    {
+        builder->set(patchIndex, std::make_shared<VM::Instruction>(VM::Opcode::JUMP, breakTarget, true));
+    }
+
+    for (size_t patchIndex : m_continuePatchesStack.back())
+    {
+        builder->set(patchIndex, std::make_shared<VM::Instruction>(VM::Opcode::JUMP, continueTarget, true));
+    }
+
+    m_breakPatchesStack.pop_back();
+    m_continuePatchesStack.pop_back();
+}
+
+bool Compiler::isInLoop() const
+{
+    return !m_breakPatchesStack.empty();
+}
+
+void Compiler::genBreak(std::shared_ptr<AST::BreakStmtType> stmt)
+{
+    if (!isInLoop())
+    {
+        throw std::runtime_error(CustomError("'break' outside loop", "BreakError", stmt->token));
+    }
+
+    size_t patchIndex = builder->getInstructionLength();
+    builder->createJump(0); // This will be patched later by the exitLoop method
+
+    m_breakPatchesStack.back().push_back(patchIndex);
+}
+
+void Compiler::genContinue(std::shared_ptr<AST::ContinueStmtType> stmt)
+{
+    if (!isInLoop())
+    {
+        throw std::runtime_error(CustomError("'continue' outside loop", "ContinueError", stmt->token));
+    }
+
+    size_t patchIndex = builder->getInstructionLength();
+    builder->createJump(0); // This will be patched later by the exitLoop method
+
+    m_continuePatchesStack.back().push_back(patchIndex);
+}
+
 void Compiler::genWhile(std::shared_ptr<AST::WhileStmtType> whileStmt)
 {
-    size_t loopStart = builder->getInstructionLength();
-
+    enterLoop();
+    
+    size_t conditionStart = builder->getInstructionLength();
     gen(whileStmt->condition);
-
+    
     size_t jumpIfFalseIndex = builder->getInstructionLength();
     builder->createJumpIfFalse(0);
-
+    
     builder->startScope();
     for (const auto& stmt : whileStmt->body)
     {
         gen(stmt);
     }
     builder->endScope();
-
-    builder->createJump(loopStart);
-    builder->patchJumpIfFalse(jumpIfFalseIndex, builder->getInstructionLength());
+    
+    builder->createJump(conditionStart);
+    size_t loopEnd = builder->getInstructionLength();
+    
+    builder->patchJumpIfFalse(jumpIfFalseIndex, loopEnd);
+    
+    exitLoop(conditionStart, loopEnd);
 }
 
 void Compiler::genAssign(std::shared_ptr<AST::AssignmentExprType> assign)
@@ -495,6 +580,8 @@ void Compiler::genAssign(std::shared_ptr<AST::AssignmentExprType> assign)
 
 void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
 {
+    enterLoop(); // Start tracking break and continue statements
+
     // Parent scope - holds the variables declared in the for-loop declarations
     builder->startScope();
 
@@ -528,12 +615,16 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
     builder->endScope();
     builder->createJump(loopStart);
 
+    size_t loopEnd = builder->getInstructionLength();
+
     for (const size_t& index : jumpIndexes)
     {
         builder->patchJumpIfFalse(index, builder->getInstructionLength());
     }
 
     builder->endScope();
+
+    exitLoop(loopStart, loopEnd);
 }
 
 void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)

@@ -66,6 +66,8 @@ enum class Opcode
     POP, // Discard the top item of the stack
 
     NEW,
+
+    LOAD_STDLIB, // Load a standard library module
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -174,5 +176,114 @@ struct Instruction
     
     Instruction(Opcode op, size_t line, bool) : op(op), line(line) {}
 };
+
+inline std::string InstructionToString(const std::shared_ptr<Instruction>& instr, size_t lineNumber = 0)
+{
+    if (!instr) return "NULL";
+    
+    std::string result = std::to_string(lineNumber) + ": " + OpCodeToString(instr->op);
+    
+    switch (instr->op)
+    {
+        case Opcode::LOAD_CONST:
+            result += " " + std::to_string(instr->index);
+            break;
+            
+        case Opcode::STORE:
+        case Opcode::LOAD:
+        case Opcode::ASSIGN:
+        case Opcode::LOAD_GLOBAL:
+        case Opcode::LOAD_STDLIB:
+            result += " \"" + instr->name + "\"";
+            break;
+            
+        case Opcode::LOAD_CONSOLE:
+            if (!instr->property.empty())
+                result += " \"" + instr->property + "\"";
+            break;
+            
+        case Opcode::CALL:
+        case Opcode::NEW:
+            result += " " + std::to_string(instr->argc);
+            break;
+            
+        case Opcode::JUMP:
+        case Opcode::JUMP_IF_FALSE:
+            result += " " + std::to_string(instr->line);
+            break;
+            
+        case Opcode::MAKE_FUNCTION:
+            result += " [";
+            for (size_t i = 0; i < instr->parameters.size(); ++i)
+            {
+                if (i > 0) result += ", ";
+                result += "\"" + instr->parameters[i] + "\"";
+            }
+            result += "] {\n | ";
+            for (size_t i = 0; i < instr->body.size(); ++i)
+            {
+                if (i > 0) result += "\n | ";
+                result += InstructionToString(instr->body[i], i);
+            }
+            result += "\n}";
+            break;
+            
+        case Opcode::MAKE_PROBE:
+            result += " \"" + instr->name + "\" {\n";
+            for (size_t i = 0; i < instr->body.size(); ++i)
+            {
+                if (i > 0) result += "\n | ";
+                result += InstructionToString(instr->body[i], i);
+            }
+            result += "\n}";
+            break;
+            
+        case Opcode::ACCESS_PROPERTY:
+        case Opcode::ASSIGN_PROPERTY:
+            if (!instr->property.empty())
+                result += " \"" + instr->property + "\"";
+            break;
+            
+        case Opcode::COMPARE:
+            result += " ";
+            switch (instr->boolop)
+            {
+                case BoolOperator::EQUALS:
+                    result += "EQUALS";
+                    break;
+                case BoolOperator::NOT_EQUALS:
+                    result += "NOT_EQUALS";
+                    break;
+                case BoolOperator::GREATER:
+                    result += "GREATER";
+                    break;
+                case BoolOperator::LESS:
+                    result += "LESS";
+                    break;
+                case BoolOperator::LESS_THAN_OR_EQUAL_TO:
+                    result += "LESS_THAN_OR_EQUAL_TO";
+                    break;
+                case BoolOperator::GREATER_THAN_OR_EQUAL_TO:
+                    result += "GREATER_THAN_OR_EQUAL_TO";
+                    break;
+                case BoolOperator::OR:
+                    result += "OR";
+                    break;
+                case BoolOperator::AND:
+                    result += "AND";
+                    break;
+            }
+            break;
+            
+        case Opcode::LOAD_BOOL:
+            result += " " + std::string(instr->boolLiteralValue ? "true" : "false");
+            break;
+            
+        default:
+            break;
+    }
+    
+    return result;
+}
 
 } // namespace Probescript::VM

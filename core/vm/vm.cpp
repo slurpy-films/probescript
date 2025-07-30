@@ -4,6 +4,7 @@ using namespace Probescript;
 using namespace Probescript::VM;
 
 extern std::unordered_map<std::string, ValuePtr> g_valueGlobals;
+extern std::unordered_map<std::string, ValuePtr> g_valueStdlib;
 
 ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<FunctionContext> context)
 {
@@ -449,6 +450,11 @@ Signal Machine::run()
             case Opcode::CREATE_OBJECT:
             {
                 push(std::make_shared<ObjectVal>()); // Simply push an empty object
+                break;
+            }
+            case Opcode::LOAD_STDLIB:
+            {
+                push(g_valueStdlib[instr->name]);
                 break;
             }
             case Opcode::HALT:

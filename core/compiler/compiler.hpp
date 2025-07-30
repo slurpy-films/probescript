@@ -27,6 +27,9 @@ public:
 private:
     std::shared_ptr<VM::ByteCodeBuilder> builder;
     std::shared_ptr<AST::ProgramType> m_program;
+
+    std::vector<std::vector<size_t>> m_breakPatchesStack;
+    std::vector<std::vector<size_t>> m_continuePatchesStack;
         
     void gen(std::shared_ptr<AST::Stmt> node);
     
@@ -38,7 +41,9 @@ private:
     void genReturn(std::shared_ptr<AST::ReturnStmtType> stmt);
     void genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe);
     void genFor(std::shared_ptr<AST::ForStmtType> forStmt);
-    void genClass(std::shared_ptr<AST::ClassDefinitionType> cls);
+    void genImport(std::shared_ptr<AST::ImportStmtType> stmt);
+    void genBreak(std::shared_ptr<AST::BreakStmtType> breakStmt);
+    void genContinue(std::shared_ptr<AST::ContinueStmtType> continueStmt);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
@@ -55,6 +60,11 @@ private:
     void genArrowFn(std::shared_ptr<AST::ArrowFunctionType> arrowFn);
     void genMapLiteral(std::shared_ptr<AST::MapLiteralType> map);
     void genNewExpr(std::shared_ptr<AST::NewExprType> expr);
+
+    void enterLoop();
+    void exitLoop(size_t continueTarget, size_t breakTarget);
+    bool isInLoop() const;
+
 };
 
 } // namespace Probescript

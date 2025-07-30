@@ -49,7 +49,7 @@ Application::Application(int argc, char* argv[])
 
         if (arg.find("--") == 0 || arg.find("-") == 0)
         {
-            m_flags.push_back(arg);
+            m_flags.insert(arg);
         }
         else if (m_command.empty())
         {
@@ -132,6 +132,17 @@ void Application::run()
             {
                 std::cerr << err.what();
                 exit(1);
+            }
+        }
+
+        // If the -l flag is present, log out all the instructions
+        if (m_flags.count("-l"))
+        {
+            size_t lineNumber = 0;
+
+            for (const auto& instr : instructions)
+            {
+                std::cout << VM::InstructionToString(instr, lineNumber++) << "\n";
             }
         }
 

@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <thread>
+#include <unordered_set>
 
 #include "core/frontend/ast.hpp"
 #include "core/runtime/values.hpp"
@@ -34,6 +35,6 @@ public:
 private:
     std::string m_command;
     std::vector<std::string> m_args;
-    std::vector<std::string> m_flags;
+    std::unordered_set<std::string> m_flags;
     char** m_argv;
 };

@@ -88,7 +88,7 @@ std::unordered_map<std::string, Typechecker::TypePtr> g_typeStdlib =
     }
 };
 
-std::unordered_map<std::string, VM::ValuePtr> g_valStdlib =
+std::unordered_map<std::string, VM::ValuePtr> g_valueStdlib =
 {
     {
         "http",

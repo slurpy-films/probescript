@@ -1,8 +1,6 @@
-*.exe
-*.out
-*.o
 .vscode
-testing/
-dist/
-makefile
+
+# Build artifacts
+*.exe
 build
+probescript 
