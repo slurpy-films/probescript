@@ -11,7 +11,7 @@
 
 ## Philosophy
 
-The core of probescript's design is the **probe**. A **probe** is an isolated unit of code, similar to a class, that is fully self-contained. Unlike traditional classes, probes do not expose their internal state or behavior. They can only executed directly, and the only thing you get back is the result of the **run** function of the probe.
+At the core of probescript's design is the **probe**. A **probe** is an isolated unit of code, similar to a class, that is fully self-contained. Unlike traditional classes, probes do not expose their internal state or behavior. They can only be executed directly, and the only thing you get back is the result of the **run** function of the probe.
 
 This strict isolation encourages clear module boundaries, promotes separation of concerns, and makes large codebases more predictable and maintainable.
 

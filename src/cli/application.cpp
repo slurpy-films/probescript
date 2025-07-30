@@ -232,7 +232,7 @@ void Application::run()
         try
         {
             vm.run();
-            Stdlib::Prbtest::runTests(fileName);
+            Stdlib::Prbtest::runTests(fileName.string());
         }
         catch (const std::exception& e)
         {
