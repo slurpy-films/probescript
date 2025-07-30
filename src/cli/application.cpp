@@ -121,6 +121,10 @@ void Application::run()
                 context->project = indexedPair.second;
                 
                 std::shared_ptr<AST::ProgramType> program = parser.parse(file, context);
+
+                // Perform typechecks
+                Typechecker::TC typechecker;
+                typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
                 
                 Compiler compiler(program);
                 compiler.compile();
@@ -162,67 +166,90 @@ void Application::run()
     {
         if (m_args.empty())
         {
-            std::cerr << "Run command expects 1 argument, 0 given";
+            std::cerr << "'test' command expects 1 argument, 0 given";
             exit(1);
         }
-
         fs::path fileName(m_args[0]);
+
+        std::vector<std::shared_ptr<VM::Instruction>> instructions;
+        std::vector<VM::ValuePtr> constants;
+
+        {
+            try
+            {
+                Parser parser;
+                std::pair<std::unordered_map<std::string, fs::path>, VM::ValuePtr> indexedPair = ModuleIndexer::indexModules(fileName);
+
+                if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
+                {
+                    fileName = fileName / indexedPair.second->properties["main"]->toString();
+                }
+
+                std::ifstream stream(fileName);
+                std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+                std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
+
+                g_currentCwd = std::filesystem::absolute(fileName).parent_path();
+
+                context->filename = std::filesystem::absolute(fileName).string();
+                context->file = file;
+                context->modules = indexedPair.first;
+                context->project = indexedPair.second;
+                
+                std::shared_ptr<AST::ProgramType> program = parser.parse(file, context);
+
+                // Perform typechecks
+                Typechecker::TC typechecker;
+                typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
+                
+                Compiler compiler(program);
+                compiler.compile();
+
+                instructions = compiler.getInstructions();
+                constants = compiler.getConstants();
+            }
+            catch (const std::exception& err)
+            {
+                std::cerr << err.what();
+                exit(1);
+            }
+        }
+
+        // If the -l flag is present, log out all the instructions
+        if (m_flags.count("-l"))
+        {
+            size_t lineNumber = 0;
+
+            for (const auto& instr : instructions)
+            {
+                std::cout << VM::InstructionToString(instr, lineNumber++) << "\n";
+            }
+        }
+
+        VM::Machine vm(instructions, constants, std::make_shared<VM::Scope>());
+        
         try
         {
-            Parser parser;
-            std::pair<std::unordered_map<std::string, fs::path>, VM::ValuePtr> indexedPair = ModuleIndexer::indexModules(fileName);
-            EnvPtr env = std::make_shared<Env>();
-
-            if (std::filesystem::is_directory(fileName) && indexedPair.second->properties.find("main") != indexedPair.second->properties.end())
-            {
-                fileName = fileName / indexedPair.second->properties["main"]->toString();
-            }
-
-            std::ifstream stream(fileName);
-            std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-
-            std::shared_ptr<Context> context = std::make_shared<Context>(RuntimeType::Normal, "Main");
-
-            g_currentCwd = std::filesystem::absolute(fileName).parent_path();
-
-            context->filename = std::filesystem::absolute(fileName).string();
-            context->file = file;
-            context->modules = indexedPair.first;
-            context->project = indexedPair.second;
-            
-            std::shared_ptr<AST::ProgramType> program = parser.parse(file, context);
-
-            std::shared_ptr<Typechecker::TypeEnv> typeenv = std::make_shared<Typechecker::TypeEnv>();
-
-            Typechecker::TC tc;
-            tc.checkProgram(program, typeenv, context);
-        
-
-            Values::Val result = Interpreter::eval(program, env, context);
-
-            Stdlib::Prbtest::runTests(fileName.string());
+            vm.run();
+            Stdlib::Prbtest::runTests(fileName);
         }
-        catch (const std::runtime_error& err)
+        catch (const std::exception& e)
         {
-            std::cerr << err.what();
-            exit(1);
-        }
-        catch (const ThrowException& err)
-        {
-            std::cerr << err.what();
+            std::cout << e.what() << std::flush;
             exit(1);
         }
     }
     else if (
-        std::find(m_flags.begin(), m_flags.end(), "-h") != m_flags.end()
-        || std::find(m_flags.begin(), m_flags.end(), "--help") != m_flags.end()
+        m_flags.count("-h")
+        || m_flags.count("--help")
     )
     { 
         showHelp(m_argv);
     }
     else if (
-        std::find(m_flags.begin(), m_flags.end(), "-v") != m_flags.end()
-        || std::find(m_flags.begin(), m_flags.end(), "--version") != m_flags.end()
+        m_flags.count("-v")
+        || m_flags.count("--version")
     )
     { 
         std::cout << "v" << __PROBESCRIPTVERSION__ << "\n";

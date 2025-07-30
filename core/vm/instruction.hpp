@@ -124,6 +124,8 @@ inline std::string OpCodeToString(Opcode code)
             return "ASSIGN";
         case Opcode::ACCESS_PROPERTY:
             return "ACCESS_PROPERTY";
+        case Opcode::ASSIGN_PROPERTY:
+            return "ASSIGN_PROPERTY";
         case Opcode::LOAD_GLOBAL:
             return "LOAD_GLOBAL";
         case Opcode::LOAD_CONSOLE:
@@ -134,6 +136,8 @@ inline std::string OpCodeToString(Opcode code)
             return "LOAD_BOOL";
         case Opcode::MAKE_CLASS:
             return "MAKE_CLASS";
+        case Opcode::NEGATE:
+            return "NEGATE";
         default:
             return "UNKNOWN";
     }

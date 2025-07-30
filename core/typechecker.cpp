@@ -704,11 +704,6 @@ TypePtr TC::checkMemberExpr(std::shared_ptr<AST::MemberExprType> expr, TypeEnvPt
         }
     }
 
-    if (obj->type == TypeKind::Module)
-    {
-        throw std::runtime_error(TypeError("Object does not have that property", expr->property->token));
-    }
-
     return std::make_shared<Type>(TypeKind::Any, "any");
 }
 

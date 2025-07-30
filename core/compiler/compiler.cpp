@@ -106,6 +106,10 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::TemplateCall:
             gen(std::static_pointer_cast<AST::TemplateCallType>(node)->caller);
             break;
+        case AST::NodeType::CastExpr:
+            gen(std::static_pointer_cast<AST::CastExprType>(node)->left);
+            break;
+            
         case AST::NodeType::Empty:
             break;
 
@@ -368,16 +372,16 @@ void Compiler::genArrowFn(std::shared_ptr<AST::ArrowFunctionType> fn)
 
 void Compiler::genClass(std::shared_ptr<AST::ClassDefinitionType> cls)
 {
+    if (cls->doesExtend)
+    {
+        gen(cls->extends);
+    }
+
     builder->startClass();
 
     for (const auto& stmt : cls->body)
     {
         gen(stmt);
-    }
-
-    if (cls->doesExtend)
-    {
-        gen(cls->extends);
     }
 
     builder->endClass(cls->doesExtend);
@@ -458,8 +462,8 @@ void Compiler::genIf(std::shared_ptr<AST::IfStmtType> ifStmt)
         gen(stmt);
     }
 
-    if (ifStmt->hasElse) builder->createJump(0);
     size_t index = builder->getInstructionLength();
+    if (ifStmt->hasElse) builder->createJump(0);
 
     builder->endScope();
     builder->endIf();
@@ -474,7 +478,7 @@ void Compiler::genIf(std::shared_ptr<AST::IfStmtType> ifStmt)
         }
 
         builder->endScope();
-        builder->set(index, std::make_shared<VM::Instruction>(VM::Opcode::JUMP, builder->getInstructionLength()));
+        builder->set(index, std::make_shared<VM::Instruction>(VM::Opcode::JUMP, builder->getInstructionLength(), true));
     }
 }
 
