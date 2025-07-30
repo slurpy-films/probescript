@@ -138,6 +138,8 @@ inline std::string OpCodeToString(Opcode code)
             return "MAKE_CLASS";
         case Opcode::NEGATE:
             return "NEGATE";
+        case Opcode::LOAD_STDLIB:
+            return "LOAD_STDLIB";
         default:
             return "UNKNOWN";
     }

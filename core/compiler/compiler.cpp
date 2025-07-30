@@ -199,7 +199,25 @@ void Compiler::genImport(std::shared_ptr<AST::ImportStmtType> stmt)
     }
 
     builder->createLoadStdlib(stmt->name);
-    builder->createStore(stmt->customIdent ? stmt->ident : stmt->name);
+    
+    std::string identifier = stmt->name;
+
+    // If the import statement has a member expression we need to evaluate it
+    if (stmt->hasMember)
+    {
+        if (!stmt->module->kind == AST::NodeType::MemberExpr)
+        {
+            throw std::runtime_error(CustomError("You can only use member expressions to directly import", "ImportError", stmt->token));
+        }
+
+        builder->createStore(stmt->name);
+
+        auto memberExpr = std::static_pointer_cast<AST::MemberExprType>(stmt->module);
+        genMemberAccess(memberExpr);
+        identifier = memberExpr->lastProp;
+    }
+
+    builder->createStore(stmt->customIdent ? stmt->ident : identifier);
 }
 
 void Compiler::genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe)

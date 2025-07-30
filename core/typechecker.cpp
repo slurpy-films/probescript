@@ -730,6 +730,8 @@ TypePtr TC::checkArrowFunction(std::shared_ptr<AST::ArrowFunctionType> fn, TypeE
         parameters.push_back(std::make_shared<Parameter>(param->identifier, type, param->token, (param->value && param->value->kind != AST::NodeType::UndefinedLiteral)));
     }
 
+    m_currentret = g_anyty;
+
     for (std::shared_ptr<AST::Stmt> stmt : fn->body)
     {
         check(stmt, scope);
