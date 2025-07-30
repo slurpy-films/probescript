@@ -55,6 +55,7 @@ enum class ValueType
     Array,
     Probe,
     Future,
+    Class,
 };
 
 struct Value
@@ -244,6 +245,20 @@ struct NativeFunctionVal : public Value
 
     NativeFunctionVal(NativeFunction call)
         : Value(ValueType::NativeFunction), call(call) {}
+};
+
+struct ClassVal : public Value
+{
+    std::vector<std::shared_ptr<Instruction>> body;
+    ScopePtr scope;
+
+    std::string toString() const override
+    {
+        return "[class]";
+    }
+
+    ClassVal(std::vector<std::shared_ptr<Instruction>> body, ScopePtr scope)
+        : Value(ValueType::Class), body(body), scope(scope) {}
 };
 
 struct NativeClassVal : public Value

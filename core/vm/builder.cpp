@@ -92,6 +92,11 @@ void ByteCodeBuilder::createJump(size_t line)
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::JUMP, line, true));
 }
 
+void ByteCodeBuilder::createNull()
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::LOAD_NULL));
+}
+
 void ByteCodeBuilder::createJumpIfFalse(size_t line)
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::JUMP_IF_FALSE, line, true));
@@ -154,14 +159,35 @@ void ByteCodeBuilder::startFunction()
     m_instructions.clear();
 }
 
-void ByteCodeBuilder::endFunction(std::vector<std::string>& params)
+void ByteCodeBuilder::endFunction(std::vector<std::string>& params, std::string name)
 {
     auto fnInstructions = m_instructions;
 
     m_instructions = m_functionStack.back()->m_instructions;
     m_functionStack.pop_back();
 
-    m_instructions.push_back(std::make_shared<Instruction>(Opcode::MAKE_FUNCTION, fnInstructions, params));
+    auto fn = std::make_shared<Instruction>(Opcode::MAKE_FUNCTION, fnInstructions, params);
+    fn->name = name;
+
+    m_instructions.push_back(fn);
+}
+
+void ByteCodeBuilder::startClass()
+{
+    m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
+    m_instructions.clear();
+}
+
+void ByteCodeBuilder::endClass(bool extends)
+{
+    auto clsInstructions = m_instructions;
+
+    m_instructions = m_functionStack.back()->m_instructions;
+    m_functionStack.pop_back();
+
+    auto cls = std::make_shared<Instruction>(Opcode::MAKE_CLASS, clsInstructions, extends);
+
+    m_instructions.push_back(cls);
 }
 
 void ByteCodeBuilder::startProbe()

@@ -49,6 +49,7 @@ enum NodeType {
     TemplateCall,
     CastExpr,
     AwaitExpr,
+    Empty,
 };
 
 struct Expr;
@@ -60,6 +61,12 @@ struct Stmt {
     virtual ~Stmt() = default;
     virtual std::string toString() const { return ""; }
     virtual std::string value() const { return "default"; }
+};
+
+struct EmptyStmt : public Stmt
+{
+    EmptyStmt()
+        : Stmt(NodeType::Empty) {}
 };
 
 struct ProgramType : public Stmt {

@@ -1,5 +1,4 @@
-import prbtest.assert;
-import prbtest.test;
+import prbtest;
 
 probe Main
 {
@@ -15,16 +14,16 @@ probe Main
                 break;
         }
 
-        test("that 'i' is 101", fn()
+        prbtest.test("that 'i' is 101", fn()
         {
-            assert(i == 101, "'i' is " + i);
+            prbtest.assert(i == 101, "'i' is " + i);
         });
 
         for (; j < 666; j++) {};
 
-        test("that 'j' is 666", fn()
+        prbtest.test("that 'j' is 666", fn()
         {
-            assert(j == 666, "'j' is " + j);
+            prbtest.assert(j == 666, "'j' is " + j);
         })
     }
 }

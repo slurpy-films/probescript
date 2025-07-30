@@ -108,6 +108,8 @@ private:
     ValuePtr pop();
     void push(ValuePtr val);
 
+    Signal runInstruction(std::shared_ptr<Instruction> instr);
+
     const ValuePtr s_null = std::make_shared<NullVal>();
 };
 

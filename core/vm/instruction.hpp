@@ -12,6 +12,9 @@ enum class Opcode
     // Load a constant at 'index' index
     LOAD_CONST,
 
+    // Load null
+    LOAD_NULL,
+
     // Debug print instruction - this is never used by the compiler
     PRINT,
 
@@ -35,6 +38,9 @@ enum class Opcode
 
     // Make a function with instruction->parameters parameters and instruction->body body
     MAKE_FUNCTION,
+
+    // Make a class with instruction->body body and the class on the top of the stack's body if instruction->extends
+    MAKE_CLASS,
     
     MAKE_PROBE,
     COMPARE,
@@ -68,6 +74,8 @@ enum class Opcode
     NEW,
 
     LOAD_STDLIB, // Load a standard library module
+
+    DEFAULT_PARAM, // Checks if 'name' is a default parameter, and if so assigns the top of the stack to it
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -124,6 +132,8 @@ inline std::string OpCodeToString(Opcode code)
             return "RETURN";
         case Opcode::LOAD_BOOL:
             return "LOAD_BOOL";
+        case Opcode::MAKE_CLASS:
+            return "MAKE_CLASS";
         default:
             return "UNKNOWN";
     }
@@ -156,6 +166,8 @@ struct Instruction
     std::string property = "";
     bool boolLiteralValue;
 
+    bool extends;
+
     explicit Instruction(Opcode op) : op(op) {}
     
     Instruction(Opcode op, size_t index) : op(op), index(index)  {}
@@ -171,6 +183,9 @@ struct Instruction
     
     Instruction(std::string name, Opcode op, const std::vector<std::shared_ptr<Instruction>>& body)
         : name(name), op(op), body(body) {} // Probe constructor
+
+    Instruction(Opcode op, std::vector<std::shared_ptr<Instruction>>& body, bool extends)
+        : op(op), body(body), extends(extends) {} 
     
     Instruction(Opcode op, BoolOperator boolop) : op(op), boolop(boolop) {}
     
@@ -219,20 +234,30 @@ inline std::string InstructionToString(const std::shared_ptr<Instruction>& instr
                 if (i > 0) result += ", ";
                 result += "\"" + instr->parameters[i] + "\"";
             }
-            result += "] {\n | ";
+            result += "] {\n| ";
             for (size_t i = 0; i < instr->body.size(); ++i)
             {
-                if (i > 0) result += "\n | ";
+                if (i > 0) result += "\n| ";
                 result += InstructionToString(instr->body[i], i);
             }
             result += "\n}";
             break;
             
         case Opcode::MAKE_PROBE:
-            result += " \"" + instr->name + "\" {\n";
+            result += " \"" + instr->name + "\" {\n| ";
             for (size_t i = 0; i < instr->body.size(); ++i)
             {
-                if (i > 0) result += "\n | ";
+                if (i > 0) result += "\n| ";
+                result += InstructionToString(instr->body[i], i);
+            }
+            result += "\n}";
+            break;
+
+        case Opcode::MAKE_CLASS:
+            result += " {\n| ";
+            for (size_t i = 0; i < instr->body.size(); ++i)
+            {
+                if (i > 0) result += "\n| ";
                 result += InstructionToString(instr->body[i], i);
             }
             result += "\n}";

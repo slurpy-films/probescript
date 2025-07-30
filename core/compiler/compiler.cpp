@@ -28,6 +28,12 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::Identifier:
             genIdent(std::static_pointer_cast<AST::IdentifierType>(node));
             break;
+        case AST::NodeType::NullLiteral:
+            builder->createNull();
+            break;
+        case AST::NodeType::UndefinedLiteral:
+            builder->createNull(); // After 0.0.6, undefined is deprecated in favor of null
+            break;
         case AST::NodeType::CallExpr:
             genCall(std::static_pointer_cast<AST::CallExprType>(node));
             break;
@@ -93,6 +99,14 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
             break;
         case AST::NodeType::ContinueStmt:
             genContinue(std::static_pointer_cast<AST::ContinueStmtType>(node));
+            break;
+        case AST::NodeType::ClassDefinition:
+            genClass(std::static_pointer_cast<AST::ClassDefinitionType>(node));
+            break;
+        case AST::NodeType::TemplateCall:
+            gen(std::static_pointer_cast<AST::TemplateCallType>(node)->caller);
+            break;
+        case AST::NodeType::Empty:
             break;
 
         default:
@@ -325,7 +339,7 @@ void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn)
         }
     );
 
-    builder->endFunction(paramNames);
+    builder->endFunction(paramNames, fn->name);
 
     builder->createStore(fn->name);
 }
@@ -349,7 +363,26 @@ void Compiler::genArrowFn(std::shared_ptr<AST::ArrowFunctionType> fn)
         }
     );
 
-    builder->endFunction(paramNames);
+    builder->endFunction(paramNames, "_");
+}
+
+void Compiler::genClass(std::shared_ptr<AST::ClassDefinitionType> cls)
+{
+    builder->startClass();
+
+    for (const auto& stmt : cls->body)
+    {
+        gen(stmt);
+    }
+
+    if (cls->doesExtend)
+    {
+        gen(cls->extends);
+    }
+
+    builder->endClass(cls->doesExtend);
+
+    builder->createStore(cls->name);
 }
 
 void Compiler::genMemberAccess(std::shared_ptr<AST::MemberExprType> member)
@@ -453,10 +486,9 @@ void Compiler::enterLoop()
 
 void Compiler::exitLoop(size_t continueTarget, size_t breakTarget)
 {
-    std::cout << "Break: " << breakTarget << " Continue: " << continueTarget << "\n";
     if (m_breakPatchesStack.empty() || m_continuePatchesStack.empty())
     {
-        throw std::runtime_error("Internal compiler error");
+        throw std::runtime_error("Internal compiler error\n");
     }
 
     for (size_t patchIndex : m_breakPatchesStack.back())
@@ -631,7 +663,7 @@ void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)
 {
     if (unaryExpr->op != "++" && unaryExpr->op != "--")
     {
-        throw std::runtime_error("Unknown unary operator");
+        throw std::runtime_error("Unknown unary operator\n");
     }
 
     gen(unaryExpr->assigne);

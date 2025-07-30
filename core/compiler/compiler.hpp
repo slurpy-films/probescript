@@ -44,6 +44,7 @@ private:
     void genImport(std::shared_ptr<AST::ImportStmtType> stmt);
     void genBreak(std::shared_ptr<AST::BreakStmtType> breakStmt);
     void genContinue(std::shared_ptr<AST::ContinueStmtType> continueStmt);
+    void genClass(std::shared_ptr<AST::ClassDefinitionType> cls);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);

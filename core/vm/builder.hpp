@@ -13,6 +13,7 @@ class ByteCodeBuilder
 public:
     void createNumber(double num);
     void createString(const std::string& str);
+    void createNull();
     
     void createCall(size_t argc);
     void createNew(size_t argc);
@@ -58,7 +59,10 @@ public:
     void patchJumpIfFalse(size_t i, size_t line);
 
     void startFunction();
-    void endFunction(std::vector<std::string>& params);
+    void endFunction(std::vector<std::string>& params, std::string name);
+
+    void startClass();
+    void endClass(bool extends);
     
     void startProbe();
     void endProbe(std::string probeName);

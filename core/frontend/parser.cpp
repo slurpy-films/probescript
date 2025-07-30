@@ -75,7 +75,7 @@ std::shared_ptr<AST::Stmt> Parser::parseStmt()
             stmt = parseTryStmt();
             break;
         case Lexer::Semicolon:
-            stmt = newnode<AST::UndefinedLiteralType>(eat());
+            stmt = newnode<AST::EmptyStmt>(eat());
             break;
         default:
             stmt = parseExpr();

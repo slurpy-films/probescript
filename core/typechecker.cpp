@@ -126,6 +126,8 @@ TypePtr TC::check(std::shared_ptr<AST::Stmt> node, TypeEnvPtr env, std::shared_p
             return checkUnaryPostfix(std::static_pointer_cast<AST::UnaryPostFixType>(node), env);
         case AST::NodeType::AwaitExpr:
             return checkAwaitExpr(std::static_pointer_cast<AST::AwaitExprType>(node), env);
+        case AST::NodeType::Empty:
+            return g_anyty;
         default:
             return std::make_shared<Type>(TypeKind::Any, "any");
     }
