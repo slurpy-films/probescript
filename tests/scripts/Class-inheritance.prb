@@ -3,7 +3,7 @@ class Test
     a: num = 13;
 }
 
-class NotTest extends Test
+class NotTest
 {
     b: str = "test";
     new()

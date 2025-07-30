@@ -37,7 +37,7 @@ ValuePtr Machine::pop()
 {
     if (m_stack.empty())
     {
-        throw std::runtime_error("Stack underflow"); 
+        throw std::runtime_error("Stack underflow\n"); 
     }
 
     ValuePtr last = m_stack.back();
@@ -292,6 +292,11 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                     }
                 }
 
+                if (thisObj->properties.find("new") != thisObj->properties.end())
+                {
+                    call(thisObj->properties["new"], args, std::make_shared<FunctionContext>(m_consts));
+                }
+
                 push(thisObj);
                 break;
             }
@@ -457,6 +462,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         }
         case Opcode::ACCESS_PROPERTY:
         {
+            static auto null = std::make_shared<NullVal>();
             std::string key = instr->property;
 
             if (key.empty())
@@ -466,7 +472,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             }
 
             auto object = pop();
-            push(object->properties[key]);
+            push(object->properties.find(key) != object->properties.end() ? object->properties[key] : null);
 
             break;
         }
