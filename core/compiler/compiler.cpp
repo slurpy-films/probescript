@@ -125,6 +125,10 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ThrowStmt:
             genThrow(std::static_pointer_cast<AST::ThrowStmtType>(node));
             break;
+        case AST::NodeType::TryStmt:
+            genTry(std::static_pointer_cast<AST::TryStmtType>(node));
+            break;
+            
         case AST::NodeType::Empty:
             break;
 
@@ -282,6 +286,20 @@ void Compiler::genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe)
 
     builder->endProbe(probe->name);
     builder->createStore(probe->name);
+}
+
+void Compiler::genTry(std::shared_ptr<AST::TryStmtType> tryStmt)
+{
+    genFunction(tryStmt->catchHandler, true); // Only get the value, we do not want to store this function
+
+    builder->startCatch();
+
+    for (const auto stmt : tryStmt->body)
+    {
+        gen(stmt);
+    }
+
+    builder->endCatch();
 }
 
 void Compiler::genExport(std::shared_ptr<AST::ExportStmtType> exportStmt)
@@ -469,7 +487,7 @@ void Compiler::genBinExpr(std::shared_ptr<AST::BinaryExprType> expr)
     }
 }
 
-void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn)
+void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn, bool onlyValue)
 {
     builder->startFunction();
 
@@ -490,7 +508,10 @@ void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn)
 
     builder->endFunction(paramNames, fn->name);
 
-    builder->createStore(fn->name);
+    if (!onlyValue)
+    {
+        builder->createStore(fn->name);
+    }
 }
 
 void Compiler::genArrowFn(std::shared_ptr<AST::ArrowFunctionType> fn)

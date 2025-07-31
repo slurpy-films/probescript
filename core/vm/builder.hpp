@@ -69,6 +69,9 @@ public:
     void startClass();
     void endClass(bool extends);
 
+    void startCatch();
+    void endCatch();
+
     void createExport(const std::string& name);
     
     void startProbe();

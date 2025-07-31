@@ -22,7 +22,7 @@ public:
     ThrowException(const std::string& m);
     ThrowException(Probescript::VM::ValuePtr value);
 
-    Probescript::VM::ValuePtr getValue();
+    Probescript::VM::ValuePtr getValue() const;
     const char* what() const noexcept;
 private:
     Probescript::VM::ValuePtr m_value;

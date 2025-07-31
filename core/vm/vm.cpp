@@ -235,7 +235,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            throw std::runtime_error("Cannot call a value that is not a function: " + fn->toString() + "\n");
+            throw std::runtime_error("Cannot call a value that is not a function or a probe: " + fn->toString() + "\n");
             break;
         }
         case Opcode::NEW:
@@ -576,6 +576,26 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             auto err = pop();
             throw ThrowException(err);
             break; // Break for good measure
+        }
+        case Opcode::CATCH:
+        {
+            auto catcher = pop();
+
+            m_scope = std::make_shared<Scope>(m_scope);
+            try
+            {
+                for (const auto& instruction : instr->body)
+                {
+                    runInstruction(instruction);
+                }
+            }
+            catch(const ThrowException& e)
+            {
+                call(catcher, { e.getValue() }, std::make_shared<FunctionContext>(m_consts));
+            }
+
+            m_scope = m_scope->getParent();
+            break;
         }
         case Opcode::HALT:
             return Signal();

@@ -89,6 +89,9 @@ enum class Opcode
 
     // Throw the top of the stack as a ThrowException
     THROW,
+
+    // Evaluate instruction->body with the top of the stack as the catch handler
+    CATCH,
 };
 
 inline std::string OpCodeToString(Opcode code)

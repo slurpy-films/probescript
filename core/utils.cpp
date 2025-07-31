@@ -10,7 +10,7 @@ ThrowException::ThrowException(const std::string& m)
 ThrowException::ThrowException(ValuePtr value)
     : m_value(value), m_message(value->toString()) {}
 
-ValuePtr ThrowException::getValue()
+ValuePtr ThrowException::getValue() const
 {
     return m_value;
 }

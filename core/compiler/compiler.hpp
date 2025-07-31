@@ -40,7 +40,7 @@ private:
     void gen(std::shared_ptr<AST::Stmt> node);
     
     // Statement generator methods
-    void genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn);
+    void genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn, bool onlyValue = false);
     void genVarDecl(std::shared_ptr<AST::VarDeclarationType> decl);
     void genIf(std::shared_ptr<AST::IfStmtType> stmt);
     void genWhile(std::shared_ptr<AST::WhileStmtType> stmt);
@@ -52,6 +52,7 @@ private:
     void genContinue(std::shared_ptr<AST::ContinueStmtType> continueStmt);
     void genClass(std::shared_ptr<AST::ClassDefinitionType> cls);
     void genExport(std::shared_ptr<AST::ExportStmtType> exportStmt);
+    void genTry(std::shared_ptr<AST::TryStmtType> tryStmt);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);

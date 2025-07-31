@@ -196,6 +196,24 @@ void ByteCodeBuilder::endFunction(std::vector<std::string>& params, const std::s
     m_instructions.push_back(fn);
 }
 
+void ByteCodeBuilder::startCatch()
+{
+    m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
+    m_instructions.clear();
+}
+
+void ByteCodeBuilder::endCatch()
+{
+    auto catchInstructions = m_instructions;
+
+    m_instructions = m_functionStack.back()->m_instructions;
+    m_functionStack.pop_back();
+
+    auto instr = std::make_shared<Instruction>(Opcode::CATCH, catchInstructions);
+
+    m_instructions.push_back(instr);
+}
+
 void ByteCodeBuilder::startClass()
 {
     m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));

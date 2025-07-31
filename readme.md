@@ -117,3 +117,6 @@ fn add(a, b) {
 ```
 
 ---
+
+## Documentation
+As of now, there is no documentation, but it is coming soon.
