@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <variant>
 #include <memory>
 
 namespace Probescript::VM
@@ -79,8 +78,17 @@ enum class Opcode
     LOAD_STDLIB, // Load a standard library module
 
     DEFAULT_PARAM, // Checks if 'name' is a default parameter, and if so assigns the top of the stack to it
-    
+
     EXPORT,
+
+    // Create an empty array
+    CREATE_ARRAY,
+
+    // Push the top of the stack to the new top of the stack
+    PUSH_ARRAY,
+
+    // Throw the top of the stack as a ThrowException
+    THROW,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -149,6 +157,14 @@ inline std::string OpCodeToString(Opcode code)
             return "MAKE_MODULE";
         case Opcode::EXPORT:
             return "EXPORT";
+        case Opcode::LOAD_NULL:
+            return "LOAD_NULL";
+        case Opcode::THROW:
+            return "THROW";
+        case Opcode::CREATE_ARRAY:
+            return "CREATE_ARRAY";
+        case Opcode::PUSH_ARRAY:
+            return "PUSH_TO_ARRAY";
         default:
             return "UNKNOWN";
     }

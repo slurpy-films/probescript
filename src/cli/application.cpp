@@ -37,7 +37,7 @@ void showHelp(char* argv[])
                 << ConsoleColors::BLUE << "  run " << ConsoleColors::RESET << "  Run a probescript file\n"
                 << ConsoleColors::BLUE << "  repl" << ConsoleColors::RESET << "  Start the probescript REPL\n"
                 << ConsoleColors::BLUE << "  test" << ConsoleColors::RESET << "  Run tests on a probescript file using the 'prbtest' standard library\n"
-                << ConsoleColors::BLUE << "  init" << ConsoleColors::RESET << "  Initialize a probescript project\n";
+                << ConsoleColors::BLUE << "  init" << ConsoleColors::RESET << "  initialise a probescript project\n";
 }
 
 Application::Application(int argc, char* argv[])
@@ -64,9 +64,6 @@ Application::Application(int argc, char* argv[])
 
 void Application::run()
 {
-    // std::cout is by default really slow so it is in sync with printf, but we don't need printf so we can disable this.
-    // Disabling sync with stdio makes printing super fast. Without this, printing every number from 0 - 99999 takes about 20 seconds,
-    // but with it disabled, it only takes about two seconds.
     std::ios::sync_with_stdio(false);
 
     // Start the flush thread
@@ -259,7 +256,7 @@ void Application::run()
         std::string name;
         std::string main;
 
-        std::cout << "Probescript project initializer\n\n";
+        std::cout << "Probescript project initialiser\n\n";
         std::cout << "Project name: ";
         std::getline(std::cin, name);
 
@@ -285,7 +282,7 @@ void Application::run()
         outMainFile.close();
         outProjectFile.close();
 
-        std::cout << "Project initialized! Run it with " << m_argv[0] << " run " << name << "\n";
+        std::cout << "Project initialised! Run it with " << m_argv[0] << " run " << name << "\n";
     } else
     {
         std::cerr << "Unknown command: " << m_command;

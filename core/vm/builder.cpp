@@ -1,4 +1,6 @@
 #include "builder.hpp"
+#include "vm/instruction.hpp"
+#include <memory>
 
 using namespace Probescript::VM;
 
@@ -143,6 +145,23 @@ void ByteCodeBuilder::endIf()
     m_instructions[jumpIndex]->line = line;
 }
 
+void ByteCodeBuilder::createArray()
+{
+    static auto createArrayInstr = std::make_shared<Instruction>(Opcode::CREATE_ARRAY);
+    m_instructions.push_back(createArrayInstr);
+}
+
+void ByteCodeBuilder::pushToArray()
+{
+    static auto pushToArrayInstr = std::make_shared<Instruction>(Opcode::PUSH_ARRAY);
+    m_instructions.push_back(pushToArrayInstr);
+}
+
+void ByteCodeBuilder::createThrow()
+{
+    static auto throwInstr = std::make_shared<Instruction>(Opcode::THROW);
+    m_instructions.push_back(throwInstr);
+}
 void ByteCodeBuilder::createExport(const std::string& name)
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::EXPORT, name));

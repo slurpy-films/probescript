@@ -11,11 +11,9 @@
 namespace fs = std::filesystem;
 
 #include "frontend/ast.hpp"
-#include "frontend/parser.hpp"
 
 #include "vm/builder.hpp"
 
-#include "core/errors.hpp"
 
 namespace Probescript
 {
@@ -70,6 +68,8 @@ private:
     void genArrowFn(std::shared_ptr<AST::ArrowFunctionType> arrowFn);
     void genMapLiteral(std::shared_ptr<AST::MapLiteralType> map);
     void genNewExpr(std::shared_ptr<AST::NewExprType> expr);
+    void genArrayLiteral(std::shared_ptr<AST::ArrayLiteralType> array);
+    void genThrow(std::shared_ptr<AST::ThrowStmtType> stmt);
 
     void enterLoop();
     void exitLoop(size_t continueTarget, size_t breakTarget);

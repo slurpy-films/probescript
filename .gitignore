@@ -1,6 +1,9 @@
-.vscode
+# clangd cache
+.cache
 
 # Build artifacts
-*.exe
+probescript
 build
-probescript 
+dist
+
+.vscode

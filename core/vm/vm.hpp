@@ -2,18 +2,13 @@
 
 #include <string>
 #include <vector>
-#include <variant>
 #include <iostream>
 #include <memory>
-#include <functional>
-#include <algorithm>
-#include <mutex>
-#include <thread>
+
 #include <unordered_map>
 
 #include "instruction.hpp"
 #include "values.hpp"
-#include "utils.hpp"
 
 namespace Probescript::VM
 {
@@ -51,7 +46,6 @@ static std::shared_ptr<ObjectVal> s_Console = std::make_shared<ObjectVal>(std::u
                 std::cout << args[i]->toString();
                 if (i + 1 < args.size()) std::cout << " ";
             }
-
             std::cout << '\n';
             return std::make_shared<NullVal>();
         })

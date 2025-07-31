@@ -1,11 +1,23 @@
 #include "utils.hpp"
 
+#include "vm/values.hpp"
+
+using namespace Probescript::VM;
+
 ThrowException::ThrowException(const std::string& m)
-    : m_msg(m) {}
+    : m_value(std::make_shared<StringVal>(m)), m_message(m) {}
+
+ThrowException::ThrowException(ValuePtr value)
+    : m_value(value), m_message(value->toString()) {}
+
+ValuePtr ThrowException::getValue()
+{
+    return m_value;
+}
 
 const char* ThrowException::what() const noexcept
 {
-    return m_msg.c_str();
+    return m_message.c_str();
 }
 
 bool isNum(const std::string& str)

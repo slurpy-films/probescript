@@ -1,5 +1,7 @@
 #include "globals.hpp"
 
+#include "core/vm/vm.hpp"
+
 using namespace Probescript;
 
 std::unordered_map<std::string, Typechecker::TypePtr> g_typeGlobals =

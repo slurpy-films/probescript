@@ -284,9 +284,10 @@ struct ArrayVal : public Value
         stream << "[";
 
         size_t len = items.size();
+
         for (size_t i = 0; i < len; ++i)
         {
-            stream << items[i]->toString() << (items[i + 1] ? ", " : "");
+            stream << items[i]->toString() << (i + 1 < len ? ", " : "");
         }
 
         stream << "]";

@@ -5,14 +5,28 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include <memory>
+
+// Forward declare Value and ValuePtr to avoid circual includes
+namespace Probescript::VM
+{
+
+struct Value;
+using ValuePtr = std::shared_ptr<Value>;
+
+} // namespace Probescript::VM
 
 class ThrowException : public std::exception
 {
 public:
     ThrowException(const std::string& m);
+    ThrowException(Probescript::VM::ValuePtr value);
+
+    Probescript::VM::ValuePtr getValue();
     const char* what() const noexcept;
 private:
-    std::string m_msg;
+    Probescript::VM::ValuePtr m_value;
+    std::string m_message;
 };
 
 bool isNum(const std::string& str);

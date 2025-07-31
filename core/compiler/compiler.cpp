@@ -1,5 +1,12 @@
 #include "compiler.hpp"
 
+#include "errors.hpp"
+
+#include "frontend/ast.hpp"
+#include "frontend/parser.hpp"
+#include <memory>
+#include <string>
+
 using namespace Probescript;
 
 extern std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals;
@@ -112,7 +119,12 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ExportStmt:
             genExport(std::static_pointer_cast<AST::ExportStmtType>(node));
             break;
-            
+        case AST::NodeType::ArrayLiteral:
+            genArrayLiteral(std::static_pointer_cast<AST::ArrayLiteralType>(node));
+            break;
+        case AST::NodeType::ThrowStmt:
+            genThrow(std::static_pointer_cast<AST::ThrowStmtType>(node));
+            break;
         case AST::NodeType::Empty:
             break;
 
@@ -129,6 +141,12 @@ void Compiler::genNumber(std::shared_ptr<AST::NumericLiteralType> num)
 void Compiler::genString(std::shared_ptr<AST::StringLiteralType> string)
 {
     builder->createString(string->strValue);
+}
+
+void Compiler::genThrow(std::shared_ptr<AST::ThrowStmtType> stmt)
+{
+    gen(stmt->err);
+    builder->createThrow();
 }
 
 void Compiler::genCall(std::shared_ptr<AST::CallExprType> call)
@@ -219,7 +237,7 @@ void Compiler::genImport(std::shared_ptr<AST::ImportStmtType> stmt)
             for (const auto& stmt : program->body)
             {
                 gen(stmt);
-            }
+            } 
             builder->endModule();
         }
         else
@@ -238,9 +256,9 @@ void Compiler::genImport(std::shared_ptr<AST::ImportStmtType> stmt)
     // If the import statement has a member expression we need to evaluate it
     if (stmt->hasMember)
     {
-        if (!stmt->module->kind == AST::NodeType::MemberExpr)
+        if (stmt->module->kind != AST::NodeType::MemberExpr)
         {
-            throw std::runtime_error(CustomError("You can only use member expressions to directly import", "ImportError", stmt->token));
+            throw std::runtime_error(CustomError("You can only use member expressions to import directly", "ImportError", stmt->token));
         }
 
         builder->createStore(stmt->name);
@@ -303,6 +321,43 @@ void Compiler::genExport(std::shared_ptr<AST::ExportStmtType> exportStmt)
             throw std::runtime_error(CustomError("Only variables, classes, identifiers, probes, and functions can be exported", "ExportError", exportStmt->exporting->token));
         }
     }
+}
+
+void Compiler::genArrayLiteral(std::shared_ptr<AST::ArrayLiteralType> array)
+{
+    std::string name = "__tempArray__" + std::to_string(builder->getVarCounter());
+    builder->createArray();
+    builder->createStore(name);
+
+    builder->createPop(); // Pop the result of STORE
+
+    for (const auto& item : array->items)
+    {
+        builder->createLoad(name);
+        gen(item);
+        builder->pushToArray();
+    }
+
+    builder->createLoad(name);
+}
+
+void Compiler::genMapLiteral(std::shared_ptr<AST::MapLiteralType> map)
+{
+    std::string tempMapName = "__tempMap__" + std::to_string(builder->getVarCounter());
+    builder->createObject();
+    builder->createStore(tempMapName);
+
+    builder->createPop(); // Pop the result of STORE
+
+    for (const auto& prop : map->properties)
+    {
+        builder->createLoad(tempMapName);
+        gen(prop->val);
+        builder->createMemberAssign(prop->key);
+        builder->createPop(); // Pop the member assignment result as we don't need it
+    }
+
+    builder->createLoad(tempMapName);
 }
 
 void Compiler::genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr)
@@ -521,23 +576,6 @@ void Compiler::genVarDecl(std::shared_ptr<AST::VarDeclarationType> decl)
     gen(decl->value);
 
     builder->createStore(decl->identifier);
-}
-
-void Compiler::genMapLiteral(std::shared_ptr<AST::MapLiteralType> map)
-{
-    std::string tempMapName = "__tempMap__" + std::to_string(builder->getVarCounter());
-    builder->createObject();
-    builder->createStore(tempMapName);
-
-    for (const auto& prop : map->properties)
-    {
-        builder->createLoad(tempMapName);
-        gen(prop->val);
-        builder->createMemberAssign(prop->key);
-        builder->createPop(); // Pop the member assignment result as we don't really need it
-    }
-
-    builder->createLoad(tempMapName);
 }
 
 void Compiler::genIf(std::shared_ptr<AST::IfStmtType> ifStmt)

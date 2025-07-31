@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "instruction.hpp"
-#include "vm.hpp"
+#include "values.hpp"
 
 namespace Probescript::VM
 {
@@ -32,6 +32,11 @@ public:
     void createSub();
     void createMul();
     void createDiv();
+
+    void createArray();
+    void pushToArray();
+
+    void createThrow();
 
     void createPop();
     

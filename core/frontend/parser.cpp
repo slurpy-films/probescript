@@ -133,7 +133,7 @@ std::shared_ptr<AST::Stmt> Parser::parseForStmt()
         else break;
     }
 
-    expect(Lexer::Semicolon, "Expected semicolon after initializer in for loop");
+    expect(Lexer::Semicolon, "Expected semicolon after initialiser in for loop");
 
     std::vector<std::shared_ptr<AST::Expr>> cond;
     while (at().type != Lexer::Semicolon && at().type != Lexer::END)
@@ -194,7 +194,7 @@ std::shared_ptr<AST::Stmt> Parser::parseModuleDeclaration()
     Token tk = eat();
     expect(Lexer::Identifier, "Expected Identifier after module declaration");
 
-    return newnode<AST::UndefinedLiteralType>(tk);
+    return newnode<AST::EmptyStmt>(tk);
 }
 
 std::shared_ptr<AST::Stmt> Parser::parseWhileStmt()

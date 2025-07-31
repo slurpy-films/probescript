@@ -1,4 +1,8 @@
 #include "vm.hpp"
+#include "utils.hpp"
+
+#include <memory>
+#include <algorithm>
 
 using namespace Probescript;
 using namespace Probescript::VM;
@@ -31,7 +35,7 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
         return std::static_pointer_cast<NativeFunctionVal>(fn)->call(args, context);
     }
 
-    throw std::runtime_error("Cannot call a value that is not a function");
+    throw std::runtime_error("Cannot call a value that is not a function\n");
 }
 
 ValuePtr Machine::pop()
@@ -102,7 +106,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            throw std::runtime_error("Can only add strings and numbers");
+            throw std::runtime_error("Can only add strings and numbers\n");
         }
         case Opcode::SUB:
         {
@@ -115,7 +119,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            throw std::runtime_error("Can only subract numbers");
+            throw std::runtime_error("Can only subract numbers\n");
         }
         case Opcode::MUL:
         {
@@ -144,7 +148,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            throw std::runtime_error("Can only multiply numbers and strings");
+            throw std::runtime_error("Can only multiply numbers and strings\n");
         }
         case Opcode::DIV:
         {
@@ -157,7 +161,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            throw std::runtime_error("Can only divide numbers");
+            throw std::runtime_error("Can only divide numbers\n");
         }
         case Opcode::PRINT:
             std::cout << pop()->toString();
@@ -231,7 +235,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            throw std::runtime_error("Cannot call a value that is not a function: " + fn->toString());
+            throw std::runtime_error("Cannot call a value that is not a function: " + fn->toString() + "\n");
             break;
         }
         case Opcode::NEW:
@@ -548,6 +552,30 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             m_exports[instr->name] = value;
 
             break;
+        }
+        case Opcode::CREATE_ARRAY:
+        {
+            push(std::make_shared<ArrayVal>());
+            break;
+        }
+        case Opcode::PUSH_ARRAY:
+        {
+            auto val = pop();
+            auto array = pop();
+
+            if (array->type != ValueType::Array)
+            {
+                throw std::runtime_error("Cannot push to non-array");
+            }
+
+            std::static_pointer_cast<ArrayVal>(array)->items.push_back(val);
+            break;
+        }
+        case Opcode::THROW:
+        {
+            auto err = pop();
+            throw ThrowException(err);
+            break; // Break for good measure
         }
         case Opcode::HALT:
             return Signal();
