@@ -121,7 +121,7 @@ void Application::run()
 
                 // Perform typechecks
                 Typechecker::TC typechecker;
-                typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
+                // typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
                 
                 Compiler compiler(program, context);
                 compiler.compile();

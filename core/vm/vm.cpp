@@ -458,6 +458,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         case Opcode::START_SCOPE:
         {
             m_scope = std::make_shared<Scope>(m_scope);
+            ++m_scopeCount;
             break;
         }
         case Opcode::END_SCOPE:
@@ -580,6 +581,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         case Opcode::CATCH:
         {
             auto catcher = pop();
+            size_t scopeCount = m_scopeCount;
 
             m_scope = std::make_shared<Scope>(m_scope);
             try
@@ -591,10 +593,16 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             }
             catch(const ThrowException& e)
             {
+                // First ensure scope cleanup
+                while (m_scopeCount > scopeCount && m_scope && m_scope->getParent()) {
+                    m_scope = m_scope->getParent();
+                    m_scopeCount--;
+                }
+
+                // Then we can call catch
                 call(catcher, { e.getValue() }, std::make_shared<FunctionContext>(m_consts));
             }
 
-            m_scope = m_scope->getParent();
             break;
         }
         case Opcode::SWITCH_TOP:

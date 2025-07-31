@@ -101,6 +101,9 @@ private:
     ScopePtr m_scope;
     std::unordered_map<std::string, ValuePtr> m_exports;
 
+    // This variable will be incremented by one every time START_SCOPE is called to ensure proper cleanup
+    int m_scopeCount = 0;
+
     size_t ip = 0; // instruction pointer
     ValuePtr pop();
     void push(ValuePtr val);
