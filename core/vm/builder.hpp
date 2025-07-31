@@ -72,6 +72,8 @@ public:
     void startCatch();
     void endCatch();
 
+    void createSwitchTop();
+
     void createExport(const std::string& name);
     
     void startProbe();

@@ -597,6 +597,16 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             m_scope = m_scope->getParent();
             break;
         }
+        case Opcode::SWITCH_TOP:
+        {
+            auto top = pop();
+            auto newTop = pop();
+
+            m_stack.push_back(top);
+            m_stack.push_back(newTop);
+
+            break;
+        }
         case Opcode::HALT:
             return Signal();
 

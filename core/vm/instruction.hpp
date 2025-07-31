@@ -92,6 +92,8 @@ enum class Opcode
 
     // Evaluate instruction->body with the top of the stack as the catch handler
     CATCH,
+
+    SWITCH_TOP,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -168,6 +170,12 @@ inline std::string OpCodeToString(Opcode code)
             return "CREATE_ARRAY";
         case Opcode::PUSH_ARRAY:
             return "PUSH_TO_ARRAY";
+        case Opcode::CATCH:
+            return "CATCH";
+        case Opcode::SWITCH_TOP:
+            return "SWITCH_TOP";
+        case Opcode::CREATE_OBJECT:
+            return "CREATE_OBJECT";
         default:
             return "UNKNOWN";
     }
@@ -301,6 +309,16 @@ inline std::string InstructionToString(const std::shared_ptr<Instruction>& instr
             break;
 
         case Opcode::MAKE_MODULE:
+            result += " {\n| ";
+            for (size_t i = 0; i < instr->body.size(); ++i)
+            {
+                if (i > 0) result += "\n| ";
+                result += InstructionToString(instr->body[i], i);
+            }
+            result += "\n}";
+            break;
+
+        case Opcode::CATCH:
             result += " {\n| ";
             for (size_t i = 0; i < instr->body.size(); ++i)
             {

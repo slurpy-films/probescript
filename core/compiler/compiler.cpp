@@ -405,7 +405,30 @@ void Compiler::genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr)
         return;
     }
 
-    // TODO: Add support for member expressions
+    if (unaryExpr->assigne->kind == AST::NodeType::MemberExpr)
+    {
+        std::string tempName = "__tempUnary__" + std::to_string(builder->getVarCounter());
+        builder->createStore(tempName);
+
+        builder->createPop(); // Pop the result of STORE
+
+        auto member = std::make_shared<AST::MemberAssignmentType>(
+            std::static_pointer_cast<AST::MemberExprType>(unaryExpr->assigne)->object,
+            std::static_pointer_cast<AST::MemberExprType>(unaryExpr->assigne)->property,
+            std::make_shared<AST::BinaryExprType>(
+                std::make_shared<AST::IdentifierType>(tempName),
+                std::make_shared<AST::NumericLiteralType>(1),
+                unaryExpr->op == "++" ? "+" : "-"
+            ),
+            std::static_pointer_cast<AST::MemberExprType>(unaryExpr->assigne)->computed,
+            "="
+        );
+
+        genMemberAssign(member);
+
+        return;
+    }
+
     throw std::runtime_error(CustomError("Unknown unary expression assigne", "UnaryError", unaryExpr->assigne->token));
 }
 
@@ -836,7 +859,38 @@ void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)
         return;
     }
 
-    // TODO: Add support for member expressions
+    if (unaryExpr->assigne->kind == AST::NodeType::MemberExpr)
+    {
+        std::string tempName = "__tempUnary__" + std::to_string(builder->getVarCounter());
+        builder->createStore(tempName);
+
+        builder->createPop(); // Pop the result of STORE
+
+        auto member = std::make_shared<AST::MemberAssignmentType>(
+            std::static_pointer_cast<AST::MemberExprType>(unaryExpr->assigne)->object,
+            std::static_pointer_cast<AST::MemberExprType>(unaryExpr->assigne)->property,
+            std::make_shared<AST::IdentifierType>(tempName),
+            std::static_pointer_cast<AST::MemberExprType>(unaryExpr->assigne)->computed,
+            "="
+        );
+
+        genMemberAssign(member);
+        builder->createNumber(1);
+        builder->createSwitchTop(); // Flip the top of the stack so we don't get 1 - member
+        
+        // Set it back to what it was first
+        if (unaryExpr->op == "++")
+        {
+            builder->createSub();
+        }
+        else
+        {
+            builder->createAdd();
+        }
+
+        return;
+    }
+
     throw std::runtime_error(CustomError("Unknown unary expression assigne", "UnaryError", unaryExpr->assigne->token));
 }
 

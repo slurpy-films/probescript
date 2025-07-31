@@ -214,6 +214,13 @@ void ByteCodeBuilder::endCatch()
     m_instructions.push_back(instr);
 }
 
+void ByteCodeBuilder::createSwitchTop()
+{
+    static auto switchTopInstr = std::make_shared<Instruction>(Opcode::SWITCH_TOP);
+
+    m_instructions.push_back(switchTopInstr);
+}
+
 void ByteCodeBuilder::startClass()
 {
     m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
