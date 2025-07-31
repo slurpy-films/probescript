@@ -1,0 +1,28 @@
+import prbtest.test;
+import prbtest.assert;
+
+probe Main
+{
+    Main()
+    {
+        var a = 0;
+
+        test('Unary postfix operators', fn()
+        {
+            var result = a++;
+            assert(result == 0, "a++ = " + result);
+
+            result = a--;
+            assert(result == 1, "a-- = " + result);
+        });
+
+        test('Unary prefix operators', fn()
+        {
+            var result = ++a;
+            assert(result == 1, "++a = " + result);
+
+            result = --a;
+            assert(result == 0, "--a = " + result);
+        });
+    }
+}

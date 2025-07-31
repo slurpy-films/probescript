@@ -1,0 +1,40 @@
+import prbtest.test;
+import prbtest.assert;
+
+probe Main
+{
+    Main()
+    {
+        var obj = { a: 13, b: "some string" };
+
+        test('Member access', fn()
+        {
+            assert(obj.a == 13, "obj.a = " + obj.a);
+            assert(obj.b == "some string", "obj.b = " + obj.b);
+        });
+
+        test('Member assignment', fn()
+        {
+            obj.a = 16;
+            assert(obj.a == 16, "Expected obj.a to be 16 after assignment but it is " + obj.a);
+
+            obj.b = "some other string";
+            assert(obj.b == "some other string", "Expected obj.b to be 'some other string' after assignment but it is " + obj.b);
+        });
+
+        test("Unary member operations", fn()
+        {
+            var objA = obj.a++;
+            assert(objA == 16, "Expected obj.a++ to be 16 but it is " + objA);
+
+            objA = obj.a--;
+            assert(objA == 17, "Expected obj.a-- to be 17 but it is " + objA);
+
+            objA = ++obj.a;
+            assert(objA == 17, "Expected ++obj.a to be 17 but it is " + objA);
+            
+            objA = --obj.a;
+            assert(objA == 16, "Expected --obj.a to be 16 but it is " + objA);
+        });
+    }
+}

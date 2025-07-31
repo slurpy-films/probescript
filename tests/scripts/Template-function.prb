@@ -10,14 +10,14 @@ class B extends A
 
 probe Main
 {
-    template<A, B>(): A
+    template<A, B>(b: B): A
     {
-        return new B();
+        return b;
     }
 
     Main()
     {
-        var a: B = template<A, B>() as B;
+        var a: B = template<A, B>(new B()) as B;
 
         if (!a.a)
         {

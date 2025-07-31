@@ -596,12 +596,14 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 // First ensure scope cleanup
                 while (m_scopeCount > scopeCount && m_scope && m_scope->getParent()) {
                     m_scope = m_scope->getParent();
-                    m_scopeCount--;
+                    --m_scopeCount;
                 }
 
                 // Then we can call catch
                 call(catcher, { e.getValue() }, std::make_shared<FunctionContext>(m_consts));
             }
+            
+            m_scope = m_scope->getParent();
 
             break;
         }

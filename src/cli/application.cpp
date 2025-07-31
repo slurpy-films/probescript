@@ -229,13 +229,14 @@ void Application::run()
         try
         {
             vm.run();
-            Stdlib::Prbtest::runTests(fileName.string());
         }
         catch (const std::exception& e)
         {
             std::cout << e.what() << std::flush;
             exit(1);
         }
+
+        Stdlib::Prbtest::runTests(fileName.string());
     }
     else if (
         m_flags.count("-h")

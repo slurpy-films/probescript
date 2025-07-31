@@ -63,7 +63,7 @@ void Prbtest::runTests(std::string file)
         {
             test.fn();
         }
-        catch(const std::runtime_error& e)
+        catch(const std::exception& e)
         {
             messages += test.name + ": " + e.what();
             failed = true;

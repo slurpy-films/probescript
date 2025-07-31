@@ -1,0 +1,47 @@
+import prbtest.test;
+import prbtest.assert;
+
+probe Main
+{
+    some_fn_that_will_fail()
+    {
+        throw "Oh no!";
+    }
+
+    Main()
+    {
+        var a = 13;
+
+        try
+        {
+            // Test scope cleanup after try
+            var a = 15;
+
+            throw "some_error";
+        }
+        catch (err)
+        {
+            test("'err' is 'some_error'", fn()
+            {
+                assert(err == "some_error");
+            });
+        }
+
+        test("'a' is 13", fn()
+        {
+            assert(a == 13, "'a' = " + a);
+        });
+
+        try
+        {
+            some_fn_that_will_fail();
+        }
+        catch (err)
+        {
+            test("'err' after call exception is 'Oh no!'", fn()
+            {
+                assert(err == "Oh no!");
+            })
+        }
+    }
+}
