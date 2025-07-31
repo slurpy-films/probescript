@@ -71,11 +71,16 @@ enum class Opcode
     LOAD_BOOL,
     POP, // Discard the top item of the stack
 
+
+    MAKE_MODULE,
+
     NEW,
 
     LOAD_STDLIB, // Load a standard library module
 
     DEFAULT_PARAM, // Checks if 'name' is a default parameter, and if so assigns the top of the stack to it
+    
+    EXPORT,
 };
 
 inline std::string OpCodeToString(Opcode code)
@@ -140,6 +145,10 @@ inline std::string OpCodeToString(Opcode code)
             return "NEGATE";
         case Opcode::LOAD_STDLIB:
             return "LOAD_STDLIB";
+        case Opcode::MAKE_MODULE:
+            return "MAKE_MODULE";
+        case Opcode::EXPORT:
+            return "EXPORT";
         default:
             return "UNKNOWN";
     }
@@ -192,6 +201,9 @@ struct Instruction
 
     Instruction(Opcode op, std::vector<std::shared_ptr<Instruction>>& body, bool extends)
         : op(op), body(body), extends(extends) {} 
+
+    Instruction(Opcode op, std::vector<std::shared_ptr<Instruction>>& body)
+        : op(op), body(body) {} // MAKE_MODULE constructor 
     
     Instruction(Opcode op, BoolOperator boolop) : op(op), boolop(boolop) {}
     
@@ -260,6 +272,16 @@ inline std::string InstructionToString(const std::shared_ptr<Instruction>& instr
             break;
 
         case Opcode::MAKE_CLASS:
+            result += " {\n| ";
+            for (size_t i = 0; i < instr->body.size(); ++i)
+            {
+                if (i > 0) result += "\n| ";
+                result += InstructionToString(instr->body[i], i);
+            }
+            result += "\n}";
+            break;
+
+        case Opcode::MAKE_MODULE:
             result += " {\n| ";
             for (size_t i = 0; i < instr->body.size(); ++i)
             {

@@ -126,7 +126,7 @@ void Application::run()
                 Typechecker::TC typechecker;
                 typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
                 
-                Compiler compiler(program);
+                Compiler compiler(program, context);
                 compiler.compile();
 
                 instructions = compiler.getInstructions();
@@ -203,7 +203,7 @@ void Application::run()
                 Typechecker::TC typechecker;
                 typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
                 
-                Compiler compiler(program);
+                Compiler compiler(program, context);
                 compiler.compile();
 
                 instructions = compiler.getInstructions();

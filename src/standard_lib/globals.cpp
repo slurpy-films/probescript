@@ -205,8 +205,13 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
             {
                 std::string code = args[0]->toString();
                 auto parsed = Parser().parse(code);
+
+                auto context = std::make_shared<Context>();
+                context->filename = "EVALUATE";
+                context->file = code;
+                context->modules = {};
                 
-                Compiler compiler(parsed);
+                Compiler compiler(parsed, context);
                 compiler.compile();
 
                 VM::Machine vm(compiler.getInstructions(), compiler.getConstants(), std::make_shared<VM::Scope>());

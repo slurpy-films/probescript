@@ -15,6 +15,7 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
 
         size_t size = func->parameters.size();
         size_t argc = args.size();
+
         for (size_t i = 0; i < size; ++i)
         {
             scope->declare(func->parameters[i], argc <= i ? std::make_shared<NullVal>() : args[i]);
@@ -306,7 +307,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         }
         case Opcode::STORE:
         {
-            m_scope->declare(instr->name, pop());
+            push(m_scope->declare(instr->name, pop()));
             break;
         }
         case Opcode::ASSIGN:
@@ -509,6 +510,14 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             push(g_valueStdlib[instr->name]);
             break;
         }
+        case Opcode::MAKE_MODULE:
+        {
+            Machine vm(instr->body, m_consts, std::make_shared<Scope>());
+            Signal result = vm.run();
+
+            push(std::make_shared<ObjectVal>(result.exports));
+            break;
+        }
         case Opcode::MAKE_CLASS:
         {
             std::vector<std::shared_ptr<Instruction>> body;
@@ -531,6 +540,13 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             }
 
             push(std::make_shared<ClassVal>(body, m_scope));
+            break;
+        }
+        case Opcode::EXPORT:
+        {
+            auto value = pop();
+            m_exports[instr->name] = value;
+
             break;
         }
         case Opcode::HALT:
@@ -557,5 +573,6 @@ Signal Machine::run()
 
     auto s = Signal();
     s.val = m_stack.empty() ? std::make_shared<NullVal>() : pop();
+    s.exports = m_exports;
     return s;
 }

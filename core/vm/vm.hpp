@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #include "instruction.hpp"
 #include "values.hpp"
@@ -30,6 +31,7 @@ struct Signal
 {
     SignalType type;
     ValuePtr val;
+    std::unordered_map<std::string, ValuePtr> exports;
 
     Signal(SignalType type = SignalType::Blank)
         : type(type) {}
@@ -103,6 +105,7 @@ private:
     std::vector<ValuePtr> m_stack;
     std::vector<ValuePtr> m_consts;
     ScopePtr m_scope;
+    std::unordered_map<std::string, ValuePtr> m_exports;
 
     size_t ip = 0; // instruction pointer
     ValuePtr pop();

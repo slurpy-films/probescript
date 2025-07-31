@@ -143,6 +143,11 @@ void ByteCodeBuilder::endIf()
     m_instructions[jumpIndex]->line = line;
 }
 
+void ByteCodeBuilder::createExport(const std::string& name)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::EXPORT, name));
+}
+
 void ByteCodeBuilder::startScope()
 {
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::START_SCOPE));
@@ -159,7 +164,7 @@ void ByteCodeBuilder::startFunction()
     m_instructions.clear();
 }
 
-void ByteCodeBuilder::endFunction(std::vector<std::string>& params, std::string name)
+void ByteCodeBuilder::endFunction(std::vector<std::string>& params, const std::string& name)
 {
     auto fnInstructions = m_instructions;
 
@@ -190,13 +195,32 @@ void ByteCodeBuilder::endClass(bool extends)
     m_instructions.push_back(cls);
 }
 
+
+void ByteCodeBuilder::startModule()
+{
+    m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
+    m_instructions.clear();
+}
+
+void ByteCodeBuilder::endModule()
+{
+    auto moduleInstructions = m_instructions;
+
+    m_instructions = m_functionStack.back()->m_instructions;
+    m_functionStack.pop_back();
+
+    auto mod = std::make_shared<Instruction>(Opcode::MAKE_MODULE, moduleInstructions);
+
+    m_instructions.push_back(mod);
+}
+
 void ByteCodeBuilder::startProbe()
 {
     m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
     m_instructions.clear();
 }
 
-void ByteCodeBuilder::endProbe(std::string probeName)
+void ByteCodeBuilder::endProbe(const std::string& probeName)
 {
     auto prbInstructions = m_instructions;
 

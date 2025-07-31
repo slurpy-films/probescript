@@ -59,13 +59,15 @@ public:
     void patchJumpIfFalse(size_t i, size_t line);
 
     void startFunction();
-    void endFunction(std::vector<std::string>& params, std::string name);
+    void endFunction(std::vector<std::string>& params, const std::string& name);
 
     void startClass();
     void endClass(bool extends);
+
+    void createExport(const std::string& name);
     
     void startProbe();
-    void endProbe(std::string probeName);
+    void endProbe(const std::string& probeName);
 
     void createNegate();
 
@@ -74,6 +76,9 @@ public:
 
     void startScope();
     void endScope();
+
+    void startModule();
+    void endModule();
 
     void set(size_t index, std::shared_ptr<Instruction> instr);
 

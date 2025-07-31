@@ -109,6 +109,9 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::CastExpr:
             gen(std::static_pointer_cast<AST::CastExprType>(node)->left);
             break;
+        case AST::NodeType::ExportStmt:
+            genExport(std::static_pointer_cast<AST::ExportStmtType>(node));
+            break;
             
         case AST::NodeType::Empty:
             break;
@@ -195,11 +198,41 @@ void Compiler::genImport(std::shared_ptr<AST::ImportStmtType> stmt)
 {
     if (g_valueStdlib.find(stmt->name) == g_valueStdlib.end())
     {
-        throw std::runtime_error(CustomError("Only standard library imports are availiable at this point", "ImportError", stmt->token));
+        auto modules = m_context->modules;
+
+        if (modules.find(stmt->name) != modules.end())
+        {
+            fs::path path(modules[stmt->name]);
+            std::ifstream stream(path);
+
+            std::string file((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+            auto context = std::make_shared<Context>();
+            context->file = file;
+            context->filename = path.string();
+            context->modules = modules;
+            
+            Parser parser;
+            std::shared_ptr<AST::ProgramType> program = parser.parse(file, context);
+            
+            builder->startModule();
+            for (const auto& stmt : program->body)
+            {
+                gen(stmt);
+            }
+            builder->endModule();
+        }
+        else
+        {
+            throw std::runtime_error(
+                CustomError("Module '" + stmt->name + "' not found", "ImportError", stmt->token));
+        }
+    }
+    else
+    {
+        builder->createLoadStdlib(stmt->name);
     }
 
-    builder->createLoadStdlib(stmt->name);
-    
     std::string identifier = stmt->name;
 
     // If the import statement has a member expression we need to evaluate it
@@ -231,6 +264,45 @@ void Compiler::genProbe(std::shared_ptr<AST::ProbeDeclarationType> probe)
 
     builder->endProbe(probe->name);
     builder->createStore(probe->name);
+}
+
+void Compiler::genExport(std::shared_ptr<AST::ExportStmtType> exportStmt)
+{
+    gen(exportStmt->exporting);
+
+    switch (exportStmt->exporting->kind)
+    {
+        case AST::NodeType::FunctionDeclaration:
+        {
+            builder->createExport(std::static_pointer_cast<AST::FunctionDeclarationType>(exportStmt->exporting)->name);
+            break;
+        }
+        case AST::NodeType::VarDeclaration:
+        {
+           builder->createExport(std::static_pointer_cast<AST::VarDeclarationType>(exportStmt->exporting)->identifier);
+           break; 
+        }
+        case AST::NodeType::ClassDefinition:
+        {
+            builder->createExport(std::static_pointer_cast<AST::ClassDefinitionType>(exportStmt->exporting)->name);
+            break;
+        }
+        case AST::NodeType::ProbeDeclaration:
+        {
+            builder->createExport(std::static_pointer_cast<AST::ProbeDeclarationType>(exportStmt->exporting)->name);
+            break;
+        }
+        case AST::NodeType::Identifier:
+        {
+            builder->createExport(std::static_pointer_cast<AST::IdentifierType>(exportStmt->exporting)->symbol);
+            break;
+        }
+
+        default:
+        {
+            throw std::runtime_error(CustomError("Only variables, classes, identifiers, probes, and functions can be exported", "ExportError", exportStmt->exporting->token));
+        }
+    }
 }
 
 void Compiler::genUnaryPrefix(std::shared_ptr<AST::UnaryPrefixType> unaryExpr)

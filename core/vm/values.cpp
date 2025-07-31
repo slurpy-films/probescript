@@ -40,7 +40,7 @@ ScopePtr Scope::resolve(const std::string& varName)
     }
     else
     {
-        throw std::runtime_error("Cannot resolve variable " + varName + " as it does not exist");
+        throw std::runtime_error("Cannot resolve variable " + varName + " as it does not exist\n");
     }
 }
 

@@ -4,8 +4,14 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <sstream>
+#include <fstream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 #include "frontend/ast.hpp"
+#include "frontend/parser.hpp"
 
 #include "vm/builder.hpp"
 
@@ -17,8 +23,8 @@ namespace Probescript
 class Compiler
 {
 public:
-    Compiler(std::shared_ptr<AST::ProgramType> program)
-        : m_program(program), builder(std::make_shared<VM::ByteCodeBuilder>()) {}
+    Compiler(std::shared_ptr<AST::ProgramType> program, std::shared_ptr<Context> context)
+        : m_program(program), builder(std::make_shared<VM::ByteCodeBuilder>()), m_context(context) {}
 
     void compile();
 
@@ -27,6 +33,8 @@ public:
 private:
     std::shared_ptr<VM::ByteCodeBuilder> builder;
     std::shared_ptr<AST::ProgramType> m_program;
+
+    std::shared_ptr<Context> m_context;
 
     std::vector<std::vector<size_t>> m_breakPatchesStack;
     std::vector<std::vector<size_t>> m_continuePatchesStack;
@@ -45,6 +53,7 @@ private:
     void genBreak(std::shared_ptr<AST::BreakStmtType> breakStmt);
     void genContinue(std::shared_ptr<AST::ContinueStmtType> continueStmt);
     void genClass(std::shared_ptr<AST::ClassDefinitionType> cls);
+    void genExport(std::shared_ptr<AST::ExportStmtType> exportStmt);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
@@ -65,7 +74,6 @@ private:
     void enterLoop();
     void exitLoop(size_t continueTarget, size_t breakTarget);
     bool isInLoop() const;
-
 };
 
 } // namespace Probescript
