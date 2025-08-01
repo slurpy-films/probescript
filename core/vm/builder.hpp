@@ -74,6 +74,8 @@ public:
 
     void createSwitchTop();
 
+    void createDefaultParam(const std::string& name);
+
     void createExport(const std::string& name);
     
     void startProbe();

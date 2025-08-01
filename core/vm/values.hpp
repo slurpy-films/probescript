@@ -158,8 +158,10 @@ struct BooleanVal : public Value
 
 struct NullVal : public Value
 {
-    NullVal()
-        : Value(ValueType::Null) {}
+    bool isDefaultParam = false;
+
+    NullVal(bool isDefaultParam = false)
+        : Value(ValueType::Null), isDefaultParam(isDefaultParam) {}
 
     std::string toString() const override
     {

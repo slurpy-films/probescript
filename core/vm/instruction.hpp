@@ -77,7 +77,7 @@ enum class Opcode
 
     LOAD_STDLIB, // Load a standard library module
 
-    DEFAULT_PARAM, // Checks if 'name' is a default parameter, and if so assigns the top of the stack to it
+    DEFAULT_PARAM, // Checks if 'name' is a default parameter, and if so it assigns the top of the stack to it
 
     EXPORT,
 
@@ -176,6 +176,8 @@ inline std::string OpCodeToString(Opcode code)
             return "SWITCH_TOP";
         case Opcode::CREATE_OBJECT:
             return "CREATE_OBJECT";
+        case Opcode::DEFAULT_PARAM:
+            return "DEFAULT_PARAM";
         default:
             return "UNKNOWN";
     }

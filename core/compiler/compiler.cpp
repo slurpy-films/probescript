@@ -514,20 +514,22 @@ void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn, boo
 {
     builder->startFunction();
 
+    std::vector<std::string> paramNames;
+    for (const auto& param : fn->parameters)
+    {
+        paramNames.push_back(param->identifier);
+        if (param->value && param->value->kind != AST::NodeType::UndefinedLiteral)
+        {
+            gen(param->value);
+            builder->createDefaultParam(param->identifier);
+        }
+    }
+
     for (auto& stmt : fn->body)
     {
         gen(stmt);
     }
 
-    std::vector<std::string> paramNames;
-    std::transform(
-        fn->parameters.begin(), fn->parameters.end(),
-        std::back_inserter(paramNames),
-        [](const std::shared_ptr<AST::VarDeclarationType>& param)
-        {
-            return param->identifier;
-        }
-    );
 
     builder->endFunction(paramNames, fn->name);
 

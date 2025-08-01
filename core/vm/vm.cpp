@@ -22,7 +22,7 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
 
         for (size_t i = 0; i < size; ++i)
         {
-            scope->declare(func->parameters[i], argc <= i ? std::make_shared<NullVal>() : args[i]);
+            scope->declare(func->parameters[i], argc <= i ? std::make_shared<NullVal>(true) : args[i]);
         }
 
         auto constants = context->constants;
@@ -191,12 +191,14 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
 
             if (fn->type == ValueType::Function)
             {
+                static auto defaultNull = std::make_shared<NullVal>(true);
+
                 auto func = std::static_pointer_cast<FunctionValue>(fn);
                 ScopePtr scope = std::make_shared<Scope>(func->scope);
                 
                 for (size_t i = 0; i < func->parameters.size(); ++i)
                 {
-                    scope->declare(func->parameters[i], (args[i] ? args[i] : s_null));
+                    scope->declare(func->parameters[i], (args.size() > i ? args[i] : defaultNull));
                 }
 
                 Machine vm(func->body, m_consts, scope);
@@ -508,6 +510,18 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         case Opcode::CREATE_OBJECT:
         {
             push(std::make_shared<ObjectVal>()); // Simply push an empty object
+            break;
+        }
+        case Opcode::DEFAULT_PARAM:
+        {
+            ValuePtr val = pop();
+            ValuePtr null = m_scope->lookupVar(instr->name);
+
+            if (null->type == ValueType::Null && std::static_pointer_cast<NullVal>(null)->isDefaultParam)
+            {
+                m_scope->assign(instr->name, val);
+            }
+
             break;
         }
         case Opcode::LOAD_STDLIB:

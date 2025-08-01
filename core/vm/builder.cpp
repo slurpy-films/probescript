@@ -221,6 +221,11 @@ void ByteCodeBuilder::createSwitchTop()
     m_instructions.push_back(switchTopInstr);
 }
 
+void ByteCodeBuilder::createDefaultParam(const std::string& name)
+{
+    m_instructions.push_back(std::make_shared<Instruction>(Opcode::DEFAULT_PARAM, name));
+}
+
 void ByteCodeBuilder::startClass()
 {
     m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));
