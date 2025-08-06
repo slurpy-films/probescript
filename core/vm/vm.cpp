@@ -50,6 +50,8 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
         {
             return result.val;
         }
+
+        return std::make_shared<NullVal>();
     }
 
     if (fn->type == ValueType::NativeFunction)
