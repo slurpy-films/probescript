@@ -223,6 +223,21 @@ struct FutureVal : public Value
 {
     std::shared_future<ValuePtr> future;
 
+    std::string toString() const override
+    {
+        std::string status = "pending";
+
+        if (
+            future.valid()
+            && future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready
+        )
+        {
+            status = "done";
+        }
+
+        return "[Future (" + status + ")]";
+    }
+
     FutureVal(std::shared_future<ValuePtr> future)
         : Value(ValueType::Future), future(future) {}
 };
@@ -306,6 +321,7 @@ struct FunctionValue : public Value
     std::vector<std::shared_ptr<Instruction>> body;
     ScopePtr scope;
     std::vector<std::string> parameters;
+    bool async = false;
 
     std::string toString() const override
     {

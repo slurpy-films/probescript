@@ -231,10 +231,13 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
         "sleep",
         std::make_shared<VM::NativeFunctionVal>([](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext> ctx) -> VM::ValuePtr
         {
-            // This function is disabled for now
-            // When futures are added to the VM, this function will be re-added
+            auto fut = std::async(std::launch::async, [args]() -> VM::ValuePtr
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(args.empty() ? 0 : (int)args[0]->toNum()));
+                return std::make_shared<VM::NullVal>();
+            });
 
-            return std::make_shared<VM::NullVal>();
+            return std::make_shared<VM::FutureVal>(fut.share());
         })
     },
     {

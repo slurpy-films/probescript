@@ -226,6 +226,18 @@ void ByteCodeBuilder::createDefaultParam(const std::string& name)
     m_instructions.push_back(std::make_shared<Instruction>(Opcode::DEFAULT_PARAM, name));
 }
 
+void ByteCodeBuilder::createAsync()
+{
+    static auto instr = std::make_shared<Instruction>(Opcode::MAKE_ASYNC);
+    m_instructions.push_back(instr);
+}
+
+void ByteCodeBuilder::createAwait()
+{
+    static auto instr = std::make_shared<Instruction>(Opcode::AWAIT);
+    m_instructions.push_back(instr);
+}
+
 void ByteCodeBuilder::startClass()
 {
     m_functionStack.push_back(std::make_shared<ByteCodeBuilder>(*this));

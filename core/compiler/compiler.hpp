@@ -53,6 +53,7 @@ private:
     void genClass(std::shared_ptr<AST::ClassDefinitionType> cls);
     void genExport(std::shared_ptr<AST::ExportStmtType> exportStmt);
     void genTry(std::shared_ptr<AST::TryStmtType> tryStmt);
+    void genThrow(std::shared_ptr<AST::ThrowStmtType> stmt);
 
     // Expression generator methods
     void genAssign(std::shared_ptr<AST::AssignmentExprType> assign);
@@ -70,7 +71,7 @@ private:
     void genMapLiteral(std::shared_ptr<AST::MapLiteralType> map);
     void genNewExpr(std::shared_ptr<AST::NewExprType> expr);
     void genArrayLiteral(std::shared_ptr<AST::ArrayLiteralType> array);
-    void genThrow(std::shared_ptr<AST::ThrowStmtType> stmt);
+    void genAwait(std::shared_ptr<AST::AwaitExprType> expr);
 
     void enterLoop();
     void exitLoop(size_t continueTarget, size_t breakTarget);

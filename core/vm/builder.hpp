@@ -76,6 +76,9 @@ public:
 
     void createDefaultParam(const std::string& name);
 
+    void createAsync();
+    void createAwait();
+
     void createExport(const std::string& name);
     
     void startProbe();

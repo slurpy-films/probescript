@@ -122,6 +122,9 @@ void Compiler::gen(std::shared_ptr<AST::Stmt> node)
         case AST::NodeType::ArrayLiteral:
             genArrayLiteral(std::static_pointer_cast<AST::ArrayLiteralType>(node));
             break;
+        case AST::NodeType::AwaitExpr:
+            genAwait(std::static_pointer_cast<AST::AwaitExprType>(node));
+            break;
         case AST::NodeType::ThrowStmt:
             genThrow(std::static_pointer_cast<AST::ThrowStmtType>(node));
             break;
@@ -533,10 +536,22 @@ void Compiler::genFunction(std::shared_ptr<AST::FunctionDeclarationType> fn, boo
 
     builder->endFunction(paramNames, fn->name);
 
+    if (fn->isAsync)
+    {
+        builder->createAsync();
+    }
+
     if (!onlyValue)
     {
         builder->createStore(fn->name);
     }
+}
+
+void Compiler::genAwait(std::shared_ptr<AST::AwaitExprType> expr)
+{
+    gen(expr->caller);
+
+    builder->createAwait();
 }
 
 void Compiler::genArrowFn(std::shared_ptr<AST::ArrowFunctionType> fn)

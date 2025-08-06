@@ -94,6 +94,12 @@ enum class Opcode
     CATCH,
 
     SWITCH_TOP,
+
+    // Make the function at the top of the stack an async function
+    MAKE_ASYNC,
+
+    // Await the future at the top of the stack
+    AWAIT,
 };
 
 inline std::string OpCodeToString(Opcode code)

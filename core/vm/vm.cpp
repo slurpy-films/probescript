@@ -15,6 +15,7 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
     if (fn->type == ValueType::Function)
     {
         auto func = std::static_pointer_cast<FunctionValue>(fn);
+
         auto scope = std::make_shared<Scope>(func->scope);
 
         size_t size = func->parameters.size();
@@ -26,8 +27,29 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
         }
 
         auto constants = context->constants;
-        Machine vm(func->body, constants, scope);
-        return vm.run().val;
+        std::shared_ptr<Machine> vm = std::make_shared<Machine>(func->body, constants, scope);
+
+        if (func->async)
+        {
+            auto fut = std::async(std::launch::async, [func, vm]() -> ValuePtr
+            {
+                Signal result = vm->run();
+                if (result.type == SignalType::Return)
+                {
+                    return result.val;
+                }
+                
+                return std::make_shared<NullVal>();
+            });
+
+            return std::make_shared<FutureVal>(fut.share());
+        }
+        
+        Signal result = vm->run();
+        if (result.type == SignalType::Return)
+        {
+            return result.val;
+        }
     }
 
     if (fn->type == ValueType::NativeFunction)
@@ -84,7 +106,8 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            // This will push a nullptr if it does not exist, but we expect the compiler to never use this instruction on anything other than
+            // This will push a null pointer if it does not exist,
+            // but we expect the compiler to never use this instruction on anything other than
             // console.println, console.print or console.prompt
             push(s_Console->properties[instr->name]);
             break;
@@ -194,6 +217,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 static auto defaultNull = std::make_shared<NullVal>(true);
 
                 auto func = std::static_pointer_cast<FunctionValue>(fn);
+
                 ScopePtr scope = std::make_shared<Scope>(func->scope);
                 
                 for (size_t i = 0; i < func->parameters.size(); ++i)
@@ -201,9 +225,27 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                     scope->declare(func->parameters[i], (args.size() > i ? args[i] : defaultNull));
                 }
 
-                Machine vm(func->body, m_consts, scope);
+                std::shared_ptr<Machine> vm = std::make_shared<Machine>(func->body, m_consts, scope);
+
+                if (func->async)
+                {
+                    auto fut = std::async(std::launch::async, [func, vm]() -> ValuePtr
+                    {
+                        Signal result = vm->run();
+                        if (result.type == SignalType::Return)
+                        {
+                            return result.val;
+                        }
+                        
+                        return std::make_shared<NullVal>();
+                    });
+
+                    push(std::make_shared<FutureVal>(fut.share()));
+
+                    break;
+                }
                 
-                Signal result = vm.run();
+                Signal result = vm->run();
                 if (result.type == SignalType::Return)
                 {
                     push(result.val);
@@ -238,6 +280,17 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
             }
 
             throw std::runtime_error("Cannot call a value that is not a function or a probe: " + fn->toString() + "\n");
+            break;
+        }
+        case Opcode::AWAIT:
+        {
+            auto fut = pop();
+            if (fut->type != ValueType::Future)
+            {
+                throw std::runtime_error("Can only await futures\n");
+            }
+
+            push(std::static_pointer_cast<FutureVal>(fut)->future.get());
             break;
         }
         case Opcode::NEW:
@@ -334,6 +387,21 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         case Opcode::MAKE_FUNCTION:
         {
             push(std::make_shared<FunctionValue>(instr->body, instr->parameters, m_scope));
+            break;
+        }
+        case Opcode::MAKE_ASYNC:
+        {
+            auto fn = pop();
+
+            // This should never happen, but we add a check just in case
+            if (fn->type != ValueType::Function)
+            {
+                throw std::runtime_error("Can only make functions async");
+            }
+
+            auto castedFn = std::static_pointer_cast<FunctionValue>(fn);
+            castedFn->async = true;
+            push(castedFn);
             break;
         }
         case Opcode::MAKE_PROBE:
