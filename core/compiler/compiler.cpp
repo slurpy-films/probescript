@@ -832,6 +832,8 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
         gen(stmt);
     }
 
+    size_t continueTarget = builder->getInstructionLength();
+
     for (const auto& update : forStmt->updates)
     {
         gen(update);
@@ -849,7 +851,7 @@ void Compiler::genFor(std::shared_ptr<AST::ForStmtType> forStmt)
 
     builder->endScope();
 
-    exitLoop(loopStart, loopEnd);
+    exitLoop(continueTarget, loopEnd);
 }
 
 void Compiler::genUnaryPostfix(std::shared_ptr<AST::UnaryPostFixType> unaryExpr)
