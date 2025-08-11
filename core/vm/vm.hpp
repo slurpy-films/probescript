@@ -11,6 +11,8 @@
 #include "instruction.hpp"
 #include "values.hpp"
 
+extern std::unordered_map<std::string, Probescript::VM::ValuePtr> g_valueGlobals;
+
 namespace Probescript::VM
 {
 
@@ -92,15 +94,26 @@ class Machine
 {
 public:
     Machine(const std::vector<std::shared_ptr<Instruction>>& bytecode, std::vector<ValuePtr> consts, ScopePtr scope)
-        : m_bytecode(bytecode), m_scope(scope), m_consts(consts) {}
+        : m_bytecode(bytecode), m_scope(scope), m_consts(consts), m_globals(g_valueGlobals) {}
+
+    Machine()
+        : m_globals(g_valueGlobals) {}
+
+    void load(const std::vector<std::shared_ptr<Instruction>>& bytecode, std::vector<ValuePtr> consts);
 
     Signal run();
+
+    void registerGlobal(const std::string& name, ValuePtr value);
+
+    ValuePtr lookup(std::string name);
+    std::unordered_map<std::string, ValuePtr> getGlobals();
 private:
     std::vector<std::shared_ptr<Instruction>> m_bytecode;
     std::vector<ValuePtr> m_stack;
     std::vector<ValuePtr> m_consts;
     ScopePtr m_scope;
     std::unordered_map<std::string, ValuePtr> m_exports;
+    std::unordered_map<std::string, ValuePtr> m_globals;
 
     // This variable will be incremented by one every time START_SCOPE is called to ensure proper cleanup
     int m_scopeCount = 0;

@@ -79,6 +79,27 @@ void Machine::push(ValuePtr val)
     m_stack.push_back(val);
 }
 
+void Machine::registerGlobal(const std::string& name, ValuePtr value)
+{
+    m_globals[name] = value;
+}
+
+std::unordered_map<std::string, ValuePtr> Machine::getGlobals()
+{
+    return m_globals;
+}
+
+ValuePtr Machine::lookup(std::string name)
+{
+    return m_scope->lookupVar(name);
+}
+
+void Machine::load(const std::vector<std::shared_ptr<Instruction>>& bytecode, std::vector<ValuePtr> consts)
+{
+    m_bytecode = bytecode;
+    m_consts = consts;
+}
+
 Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
 {
     switch (instr->op)
@@ -95,7 +116,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         }
         case Opcode::LOAD_GLOBAL:
         {
-            push(g_valueGlobals[instr->name]);
+            push(m_globals[instr->name]);
             break;
         }
         case Opcode::LOAD_CONSOLE:
@@ -108,7 +129,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 break;
             }
 
-            // This will push a null pointer if it does not exist,
+            // This will terminate the process if it fails,
             // but we expect the compiler to never use this instruction on anything other than
             // console.println, console.print or console.prompt
             push(s_Console->properties[instr->name]);

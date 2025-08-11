@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <filesystem>
+#include <unordered_set>
 
 namespace fs = std::filesystem;
 
@@ -14,6 +15,8 @@ namespace fs = std::filesystem;
 
 #include "vm/builder.hpp"
 
+extern std::unordered_map<std::string, Probescript::VM::ValuePtr> g_valueGlobals;
+extern std::unordered_map<std::string, Probescript::VM::ValuePtr> g_valueStdlib;
 
 namespace Probescript
 {
@@ -26,11 +29,14 @@ public:
 
     void compile();
 
+    void registerGlobal(const std::string& name);
+
     std::vector<std::shared_ptr<VM::Instruction>> getInstructions();
     std::vector<VM::ValuePtr> getConstants();
 private:
     std::shared_ptr<VM::ByteCodeBuilder> builder;
     std::shared_ptr<AST::ProgramType> m_program;
+    std::unordered_set<std::string> m_globals;
 
     std::shared_ptr<Context> m_context;
 

@@ -9,9 +9,6 @@
 
 using namespace Probescript;
 
-extern std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals;
-extern std::unordered_map<std::string, VM::ValuePtr> g_valueStdlib;
-
 void Compiler::compile()
 {
     for (auto& stmt : m_program->body)
@@ -21,6 +18,11 @@ void Compiler::compile()
 
     builder->createLoad("Main");
     builder->createCall(0);
+}
+
+void Compiler::registerGlobal(const std::string& name)
+{
+    m_globals.insert(name);
 }
 
 void Compiler::gen(std::shared_ptr<AST::Stmt> node)
@@ -443,7 +445,7 @@ void Compiler::genIdent(std::shared_ptr<AST::IdentifierType> ident)
         return;
     }
 
-    if (g_valueGlobals.find(ident->symbol) != g_valueGlobals.end())
+    if (m_globals.count(ident->symbol))
     {
         builder->createLoadGlobal(ident->symbol);
         return;

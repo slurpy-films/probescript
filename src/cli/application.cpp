@@ -4,6 +4,8 @@ using namespace Probescript;
 
 fs::path g_currentCwd = std::filesystem::current_path();
 
+extern std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals;
+
 // For webassembly
 extern "C"
 {
@@ -124,6 +126,10 @@ void Application::run()
                 // typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
                 
                 Compiler compiler(program, context);
+                for (const auto& [key, _] : g_valueGlobals)
+                {
+                    compiler.registerGlobal(key);
+                }
                 compiler.compile();
 
                 instructions = compiler.getInstructions();
@@ -201,6 +207,10 @@ void Application::run()
                 typechecker.checkProgram(program, std::make_shared<Typechecker::TypeEnv>(), context);
                 
                 Compiler compiler(program, context);
+                for (const auto& [key, _] : g_valueGlobals)
+                {
+                    compiler.registerGlobal(key);
+                }
                 compiler.compile();
 
                 instructions = compiler.getInstructions();
