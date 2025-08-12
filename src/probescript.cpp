@@ -152,9 +152,43 @@ void prb_register_fn(Prb_VM *vm, const char *name, Prb_CFunction fn)
     vm->machine->registerGlobal(strName, value);
 }
 
-Prb_Value *prb_lookup(Prb_VM *vm, const char *name)
+Prb_Value *prb_call_fn(Prb_VM *vm, const char *name, int argc, Prb_Value **argv)
 {
-    return valueptr_to_prbvalue(vm->machine->lookup(std::string(name)));
+    VM::ValuePtr val;
+    try
+    {
+        val = vm->machine->lookup(std::string(name));
+    }
+    catch(...)
+    {
+        // The most likely error we get here is that the function name does not
+        // exist in the current scope, so we just assume that
+        Prb_Value *error = new Prb_Value();
+        error->type = Prb_Error;
+        error->as.error = Prb_Error_NotExists;
+        
+        return error;
+    }
+
+    if (val->type != VM::ValueType::Function)
+    {
+        Prb_Value *error = new Prb_Value();
+        error->type = Prb_Error;
+        error->as.error = Prb_Error_NotAFunction;
+
+        return error;
+    }
+
+    std::vector<VM::ValuePtr> args;
+    args.reserve(argc);
+
+    for (int i = 0; i < argc; ++i)
+    {
+        args.push_back(prbvalue_to_valueptr(argv[i]));
+    }
+
+    auto ret = VM::call(val, args, std::make_shared<VM::FunctionContext>(vm->machine->getConstants(), vm->machine->getGlobals()));
+    return valueptr_to_prbvalue(ret);
 }
 
 void prb_destroy_vm(Prb_VM *vm)

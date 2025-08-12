@@ -21,7 +21,14 @@ typedef enum
     Prb_Number,
     Prb_Null,
     Prb_Function,
+    Prb_Error,
 } Prb_ValueType;
+
+typedef enum
+{
+    Prb_Error_NotAFunction,
+    Prb_Error_NotExists,
+} Prb_ErrorType;
 
 struct Prb_Value
 {
@@ -29,9 +36,11 @@ struct Prb_Value
 
     union
     {
-        char *string;
+        const char *string;
         double number;
         Prb_CFunction function;
+
+        Prb_ErrorType error;
     } as;
 };
 
@@ -42,10 +51,9 @@ void prb_destroy_vm(Prb_VM *vm);
 void prb_destroy_compiler(Prb_Compiler *compiler);
 
 void prb_run(Prb_VM *vm, Prb_Compiler *compiler);
-
 void prb_register_fn(Prb_VM *vm, const char *name, Prb_CFunction fn);
 
-Prb_Value *prb_lookup(Prb_VM *vm, const char *name);
+Prb_Value *prb_call_fn(Prb_VM *vm, const char *name, int argc, Prb_Value **argv);
 
 #ifdef __cplusplus
 } // extern "C"

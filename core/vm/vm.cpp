@@ -95,6 +95,11 @@ void Machine::setGlobals(std::unordered_map<std::string, ValuePtr> globals)
     m_globals = globals;
 }
 
+const std::vector<ValuePtr>& Machine::getConstants()
+{
+    return m_consts;
+}
+
 ValuePtr Machine::lookup(std::string name)
 {
     return m_scope->lookupVar(name);
