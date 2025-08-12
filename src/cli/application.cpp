@@ -2,7 +2,7 @@
 
 using namespace Probescript;
 
-fs::path g_currentCwd = std::filesystem::current_path();
+extern fs::path g_currentCwd = std::filesystem::current_path();
 
 extern std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals;
 

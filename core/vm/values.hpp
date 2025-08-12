@@ -245,9 +245,10 @@ struct FutureVal : public Value
 struct FunctionContext
 {
     std::vector<ValuePtr> constants;
+    std::unordered_map<std::string, ValuePtr> globals;
 
-    FunctionContext(std::vector<ValuePtr> constants)
-        : constants(constants) {}
+    FunctionContext(std::vector<ValuePtr> constants, std::unordered_map<std::string, ValuePtr> globals)
+        : constants(constants), globals(globals) {}
 };
 
 struct NativeFunctionVal : public Value

@@ -97,15 +97,17 @@ public:
         : m_bytecode(bytecode), m_scope(scope), m_consts(consts), m_globals(g_valueGlobals) {}
 
     Machine()
-        : m_globals(g_valueGlobals) {}
+        : m_globals(g_valueGlobals), m_scope(std::make_shared<Scope>()) {}
 
     void load(const std::vector<std::shared_ptr<Instruction>>& bytecode, std::vector<ValuePtr> consts);
 
     Signal run();
 
     void registerGlobal(const std::string& name, ValuePtr value);
-
+    
     ValuePtr lookup(std::string name);
+    
+    void setGlobals(std::unordered_map<std::string, ValuePtr> globals);
     std::unordered_map<std::string, ValuePtr> getGlobals();
 private:
     std::vector<std::shared_ptr<Instruction>> m_bytecode;

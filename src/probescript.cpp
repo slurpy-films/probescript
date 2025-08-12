@@ -65,7 +65,7 @@ VM::ValuePtr prbvalue_to_valueptr(Prb_Value *value)
     return result;
 }
 
-static VM::ValuePtr wrap_cfunc(Prb_CFunction cfunc)
+VM::ValuePtr wrap_cfunc(Prb_CFunction cfunc)
 {
     return std::make_shared<VM::NativeFunctionVal>(
         [cfunc](std::vector<VM::ValuePtr> args, std::shared_ptr<VM::FunctionContext>) -> VM::ValuePtr
@@ -130,9 +130,9 @@ void prb_run(Prb_VM *vm, Prb_Compiler *compiler)
     
     auto bcCompiler = Compiler(parsed, compiler->context);
 
-    for (const auto &[key, _] : vm->machine->getGlobals())
+    for (const auto &[key, val] : vm->machine->getGlobals())
     {
-        bcCompiler.registerGlobal(key);
+       bcCompiler.registerGlobal(key);
     }
 
     bcCompiler.compile();
@@ -148,7 +148,8 @@ void prb_register_fn(Prb_VM *vm, const char *name, Prb_CFunction fn)
 {
     if (!vm || !name || !fn) return;
     std::string strName(name);
-    vm->machine->registerGlobal(strName, wrap_cfunc(fn));
+    auto value = wrap_cfunc(fn);
+    vm->machine->registerGlobal(strName, value);
 }
 
 Prb_Value *prb_lookup(Prb_VM *vm, const char *name)

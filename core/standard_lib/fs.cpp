@@ -3,6 +3,8 @@
 using namespace Probescript;
 using namespace Probescript::Stdlib;
 
+fs::path g_currentCwd = fs::current_path();
+
 VM::ValuePtr Fs::getValFsModule()
 {
     return std::make_shared<VM::ObjectVal>(std::unordered_map<std::string, VM::ValuePtr>(

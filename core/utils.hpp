@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <memory>
 
-// Forward declare Value and ValuePtr to avoid circual includes
+// Forward declare Value and ValuePtr to avoid circular includes
 namespace Probescript::VM
 {
 

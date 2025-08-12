@@ -206,13 +206,13 @@ enum class BoolOperator
 struct Instruction
 {
     Opcode op;
-    size_t index;
-    int argc;
-    std::string name;
+    size_t index = 0;
+    int argc = 0;
+    std::string name = "";
     std::vector<std::shared_ptr<Instruction>> body;
     std::vector<std::string> parameters;
     BoolOperator boolop;
-    size_t line;
+    size_t line = 0;
     std::string property = "";
     bool boolLiteralValue;
 

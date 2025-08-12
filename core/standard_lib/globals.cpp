@@ -217,6 +217,8 @@ std::unordered_map<std::string, VM::ValuePtr> g_valueGlobals =
                 compiler.compile();
 
                 VM::Machine vm(compiler.getInstructions(), compiler.getConstants(), std::make_shared<VM::Scope>());
+                vm.setGlobals(ctx->globals);
+                
                 std::make_shared<Values::UndefinedVal>();
             }
             catch (const std::runtime_error& err)

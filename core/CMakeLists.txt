@@ -4,7 +4,7 @@ project(probescript-core)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../)
 
 file(GLOB_RECURSE CORE_SOURCES *.cpp **/*.cpp)
 

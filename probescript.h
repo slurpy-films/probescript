@@ -11,6 +11,7 @@ extern "C"
 
 typedef struct Prb_VM Prb_VM;
 typedef struct Prb_Compiler Prb_Compiler;
+typedef struct Prb_Value Prb_Value;
 
 typedef Prb_Value* (*Prb_CFunction)(int argc, Prb_Value **argv);
 
@@ -22,7 +23,7 @@ typedef enum
     Prb_Function,
 } Prb_ValueType;
 
-typedef struct
+struct Prb_Value
 {
     Prb_ValueType type;
 
@@ -32,7 +33,7 @@ typedef struct
         double number;
         Prb_CFunction function;
     } as;
-} Prb_Value;
+};
 
 Prb_VM *prb_create_vm(void);
 Prb_Compiler *prb_create_compiler(const char *filename);

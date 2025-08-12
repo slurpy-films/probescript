@@ -28,6 +28,7 @@ ValuePtr VM::call(ValuePtr fn, std::vector<ValuePtr> args, std::shared_ptr<Funct
 
         auto constants = context->constants;
         std::shared_ptr<Machine> vm = std::make_shared<Machine>(func->body, constants, scope);
+        vm->setGlobals(context->globals);
 
         if (func->async)
         {
@@ -87,6 +88,11 @@ void Machine::registerGlobal(const std::string& name, ValuePtr value)
 std::unordered_map<std::string, ValuePtr> Machine::getGlobals()
 {
     return m_globals;
+}
+
+void Machine::setGlobals(std::unordered_map<std::string, ValuePtr> globals)
+{
+    m_globals = globals;
 }
 
 ValuePtr Machine::lookup(std::string name)
@@ -231,7 +237,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
 
             if (fn->type == ValueType::NativeFunction)
             {
-                push(std::static_pointer_cast<NativeFunctionVal>(fn)->call(args, std::make_shared<FunctionContext>(m_consts)));
+                push(std::static_pointer_cast<NativeFunctionVal>(fn)->call(args, std::make_shared<FunctionContext>(m_consts, m_globals)));
                 break;
             }
 
@@ -249,6 +255,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 }
 
                 std::shared_ptr<Machine> vm = std::make_shared<Machine>(func->body, m_consts, scope);
+                vm->setGlobals(m_globals);
 
                 if (func->async)
                 {
@@ -291,7 +298,10 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 body.push_back(std::make_shared<Instruction>(Opcode::RETURN));
 
                 Machine vm(body, m_consts, scope);
+                vm.setGlobals(m_globals);
+
                 Signal result = vm.run();
+                
                 if (result.type == SignalType::Return)
                 {
                     push(result.val);
@@ -377,7 +387,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
 
                 if (thisObj->properties.find("new") != thisObj->properties.end())
                 {
-                    call(thisObj->properties["new"], args, std::make_shared<FunctionContext>(m_consts));
+                    call(thisObj->properties["new"], args, std::make_shared<FunctionContext>(m_consts, m_globals));
                 }
 
                 push(thisObj);
@@ -623,6 +633,8 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
         case Opcode::MAKE_MODULE:
         {
             Machine vm(instr->body, m_consts, std::make_shared<Scope>());
+            vm.setGlobals(m_globals);
+
             Signal result = vm.run();
 
             push(std::make_shared<ObjectVal>(result.exports));
@@ -705,7 +717,7 @@ Signal Machine::runInstruction(std::shared_ptr<Instruction> instr)
                 }
 
                 // Then we can call catch
-                call(catcher, { e.getValue() }, std::make_shared<FunctionContext>(m_consts));
+                call(catcher, { e.getValue() }, std::make_shared<FunctionContext>(m_consts, m_globals));
             }
             
             m_scope = m_scope->getParent();
