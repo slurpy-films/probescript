@@ -19,8 +19,6 @@ jobs:
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
-        with:
-          cmake-version: '3.29.3'
 
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@v4
