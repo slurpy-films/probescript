@@ -118,5 +118,23 @@ fn add(a, b) {
 
 ---
 
+## Types
+Variable types are inferred from the value, but you can also explictly type a variable like this:
+```probescript
+var explicit_type: str = "Hello!";
+var implicit_type = "Hello!"; 
+```
+
+Both variables are strings.
+
+To set a function's return type, add a `:` followed by the return type after the parameters:
+```probescript
+fn my_function(): str {
+    return "Hello!";
+}
+```
+
+---
+
 ## Documentation
 As of now, there is no documentation, but it is coming soon.
