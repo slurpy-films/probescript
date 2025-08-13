@@ -19,13 +19,15 @@ This strict isolation encourages clear module boundaries, promotes separation of
 
 ## Code Example
 
-```probescript
-probe Main {
-    Main() {
-        console.println("Hello, World!");
-    }
+<div style="background:#1e1e1e;border-radius:6px;padding:16px;overflow-x:auto;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;font-size:14px;line-height:1.5;">
+<code>
+<span style="color:#569CD6;">probe</span> <span style="color:#4EC9B0;">Main</span> {<br>
+&nbsp;&nbsp;<span style="color:#4EC9B0;">Main</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.<span style="color:#DCDCAA;">println</span>(<span style="color:#CE9178;">"Hello, World!"</span>);<br>
+&nbsp;&nbsp;}<br>
 }
-```
+</code>
+</div>
 
 The `Main` probe is the program entry point. Probes must define a function with the same name to serve as their entry (run) function.
 
@@ -46,7 +48,7 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
-```
+````
 
 ---
 
@@ -61,15 +63,14 @@ Probescript uses C-style curly brace syntax with semicolons.
 
 ### Control Flow:
 
-```probescript
-if (condition) {
-    // do something
+<div style="background:#1e1e1e;border-radius:6px;padding:16px;overflow-x:auto;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;font-size:14px;line-height:1.5;">
+<code>
+<span style="color:#569CD6;">if</span> (condition) {<br>
+}<br><br>
+<span style="color:#569CD6;">while</span> (condition) {<br>
 }
-
-while (condition) {
-    // loop
-}
-```
+</code>
+</div>
 
 ---
 
@@ -84,25 +85,23 @@ Probes are the fundamental building blocks of every Probescript program.
 
 ### Example:
 
-```probescript
-probe Greeter {
-    greet(name) {
-        console.println("Hello, " + name + "!");
-    }
-
-    Greeter() {
-        greet("World");
-    }
+<div style="background:#1e1e1e;border-radius:6px;padding:16px;overflow-x:auto;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;font-size:14px;line-height:1.5;">
+<code>
+<span style="color:#569CD6;">probe</span> <span style="color:#4EC9B0;">Greeter</span> {<br>
+&nbsp;&nbsp;<span style="color:#DCDCAA;">greet</span>(name) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.<span style="color:#DCDCAA;">println</span>(<span style="color:#CE9178;">"Hello, " </span>+ name + <span style="color:#CE9178;">"!"</span>);<br>
+&nbsp;&nbsp;}<br><br>
+&nbsp;&nbsp;<span style="color:#4EC9B0;">Greeter</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#DCDCAA;">greet</span>(<span style="color:#CE9178;">"World"</span>);<br>
+&nbsp;&nbsp;}<br>
+}<br><br>
+<span style="color:#569CD6;">probe</span> <span style="color:#4EC9B0;">Main</span> {<br>
+&nbsp;&nbsp;<span style="color:#4EC9B0;">Main</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#4EC9B0;">Greeter</span>();<br>
+&nbsp;&nbsp;}<br>
 }
-
-probe Main {
-    Main() {
-        Greeter(); // Calls the Greeter probe's run function
-    }
-}
-```
-
-This isolation makes probes ideal for structuring systems with clear boundaries and minimal side effects.
+</code>
+</div>
 
 ---
 
@@ -110,31 +109,43 @@ This isolation makes probes ideal for structuring systems with clear boundaries 
 
 Functions are declared using the `fn` keyword:
 
-```probescript
-fn add(a, b) {
-    return a + b;
+<div style="background:#1e1e1e;border-radius:6px;padding:16px;overflow-x:auto;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;font-size:14px;line-height:1.5;">
+<code>
+<span style="color:#569CD6;">fn</span> <span style="color:#DCDCAA;">add</span>(a, b) {<br>
+&nbsp;&nbsp;<span style="color:#569CD6;">return</span> a + b;<br>
 }
-```
+</code>
+</div>
 
 ---
 
 ## Types
+
 Variable types are inferred from the value, but you can also explictly type a variable like this:
-```probescript
-var explicit_type: str = "Hello!";
-var implicit_type = "Hello!"; 
-```
+
+<div style="background:#1e1e1e;border-radius:6px;padding:16px;overflow-x:auto;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;font-size:14px;line-height:1.5;">
+<code>
+<span style="color:#569CD6;">var</span> explicit_type: <span style="color:#4EC9B0;">str</span> = <span style="color:#CE9178;">"Hello!"</span>;<br>
+<span style="color:#569CD6;">var</span> implicit_type = <span style="color:#CE9178;">"Hello!"</span>;
+</code>
+</div>
 
 Both variables are strings.
 
 To set a function's return type, add a `:` followed by the return type after the parameters:
-```probescript
-fn my_function(): str {
-    return "Hello!";
+
+<div style="background:#1e1e1e;border-radius:6px;padding:16px;overflow-x:auto;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;font-size:14px;line-height:1.5;">
+<code>
+<span style="color:#569CD6;">fn</span> <span style="color:#DCDCAA;">my_function</span>(): <span style="color:#4EC9B0;">str</span> {<br>
+&nbsp;&nbsp;<span style="color:#569CD6;">return</span> <span style="color:#CE9178;">"Hello!"</span>;<br>
 }
-```
+</code>
+</div>
 
 ---
 
 ## Documentation
+
 As of now, there is no documentation, but it is coming soon.
+
+```
